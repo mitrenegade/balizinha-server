@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "default": "balizinha-dev",
+    "prod": "balizinha-c9cd7",
+    "dev": "balizinha-dev"
+  }
+}
