@@ -94,6 +94,24 @@ exports.createStripeCharge = functions.database.ref(`/charges/events/{eventId}/{
     });
 });
 
+exports.subscribeToOrganizerPush = functions.database.ref(`/organizers/{organizerId}`).onWrite(event => {
+    const organizerId = event.params.organizerId
+    const val = event.data.val()
+
+    return admin.database().ref(`/players/${organizerId}`).once('value').then(snapshot => {
+        return snapshot.val();
+    }).then(player => {
+        var token = player["fcmToken"]
+        var topic = "organizers"
+        if (token && token.length > 0) {
+            console.log("organizer: created " + organizerId + " subscribed to organizers")
+            return exports.subscribeToTopic(token, topic)
+        } else {
+            console.log("organizer: created " + organizerId + " but no token available")
+        }
+    })
+})
+
 exports.createStripeSubscription = functions.database.ref(`/charges/organizers/{organizerId}/{id}`).onWrite(event => {
 //function createStripeCharge(req, res, ref) {
     const val = event.data.val();
@@ -362,7 +380,7 @@ exports.subscribeToTopic = function(token, topic) {
         .then(function(response) {
         // See the MessagingTopicManagementResponse reference documentation
         // for the contents of response.
-            console.log("Successfully subscribed " + token + " to topic: " + topic + " response " + response);
+            console.log("Successfully subscribed " + token + " from topic: " + topic + " successful registrations: " + response["successCount"] + " failures: " + response["failureCount"]);
         })
         .catch(function(error) {
             console.log("Error subscribing to topic:", error);
@@ -375,7 +393,7 @@ exports.unsubscribeFromTopic = function(token, topic) {
         .then(function(response) {
         // See the MessagingTopicManagementResponse reference documentation
         // for the contents of response.
-            console.log("Successfully unsubscribed " + token + " from topic: " + topic + " response " + response);
+            console.log("Successfully unsubscribed " + token + " from topic: " + topic + " successful registrations: " + response["successCount"] + " failures: " + response["failureCount"]);
         })
         .catch(function(error) {
             console.log("Error unsubscribing from topic:", error);
