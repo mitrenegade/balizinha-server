@@ -9,7 +9,7 @@ admin.initializeApp(functions.config().firebase);
 const config = functions.config().dev
 const stripe = require('stripe')(config.stripe.token)
 
-exports.createStripeCustomer = functions.auth.user().onCreate(event => {
+exports.onCreateUser = functions.auth.user().onCreate(event => {
     const data = event.data;
     const email = data.email;
     const uid = data.uid;
@@ -19,32 +19,34 @@ exports.createStripeCustomer = functions.auth.user().onCreate(event => {
         return
     }
 
-    stripe.customers.create({
+    console.log("onCreateUser calling createPlayer with uid " + uid)
+    return exports.createPlayer(uid).then(function (result) {
+        console.log("onCreateUser createPlayer success with result " + result)
+        return exports.createStripeCustomer(email, uid)
+    })
+});
+
+exports.createPlayer = function(userId) {
+    var ref = `/players/${userId}`
+    console.log("Creating player for user " + userId)
+    return admin.database().ref(ref).set({"uid": userId})
+}
+
+exports.createStripeCustomer = function(email, uid) {
+    console.log("creating stripeCustomer " + uid + " " + email)
+    return stripe.customers.create({
         email: email
     }, function(err, customer) {
         ref = `/stripe_customers/${uid}/customer_id`
         if (err != undefined) {
             console.log('createStripeCustomer ' + ref + ' resulted in error ' + err)
+            return err
         } else {
             console.log('createStripeCustomer ' + ref + ' email ' + email + ' created with customer_id ' + customer.id)
+            return admin.database().ref(ref).set(customer.id);
         }
-        return admin.database().ref(ref).set(customer.id);
-        // asynchronously called
     });
-});
-
-exports.createStripeCustomerForLegacyUser = functions.https.onRequest( (req, res) => {
-    const email = req.body.email
-    const uid = req.body.id
-    stripe.customers.create({
-        email: email
-    }, function(err, customer) {
-        ref = `/stripe_customers/${uid}/customer_id`
-        console.log('legacy customer created ' + customer + ' err ' + err + ' ref ' + ref + " customer_id " + customer.id)
-        admin.database().ref(ref).set(customer.id);
-        res.send(200, {'customer': customer, 'error':err})
-    });
-});
+};
 
 exports.ephemeralKeys = functions.https.onRequest( (req, res) => {
     console.log('Called ephemeral keys with ' + req.body.api_version + ' and ' + req.body.customer_id)
@@ -409,3 +411,34 @@ exports.unsubscribeFromTopic = function(token, topic) {
         }
     );
 }
+
+// TEST calling cloud function from client
+exports.sampleCloudFunction = functions.https.onRequest((req, res) => {
+    const uid = req.query.uid
+    const email = req.query.email
+
+    // call this could function in the browser using this url:
+    // https://us-central1-balizinha-dev.cloudfunctions.net/sampleCloudFunction?uid=123&email=456
+
+    // the return must be a promise
+    console.log("SampleCloudFunction called with parameters: uid " + uid + " email " + email)
+    var ref = `/logs/SampleCloudFunction/${uid}`
+    console.log("Sample cloud function logging with id " + uid + " email " + email)
+    var params = {}
+    params["email"] = email
+    return admin.database().ref(ref).set(params).then(function (result) {
+        console.log("Sample cloud function result " + result)
+        return 1
+    }).then(function(number) {
+        console.log("Sample cloud function did something else that returned " + number)
+        return
+    })
+
+    // chain existing functions together:
+    // return exports.createPlayer(uid).then(function (result) {
+    //     console.log("test cloud function createPlayer success")
+    //     return exports.createStripeCustomer(email, uid)
+    // })
+
+})
+
