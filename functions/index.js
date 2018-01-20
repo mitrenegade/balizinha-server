@@ -23,7 +23,11 @@ exports.createStripeCustomer = functions.auth.user().onCreate(event => {
         email: email
     }, function(err, customer) {
         ref = `/stripe_customers/${uid}/customer_id`
-        console.log('customer' + customer + 'err ' + err + ' ref ' + ref + ' email ' + email)
+        if (err != undefined) {
+            console.log('createStripeCustomer ' + ref + ' resulted in error ' + err)
+        } else {
+            console.log('createStripeCustomer ' + ref + ' email ' + email + ' created with customer_id ' + customer.id)
+        }
         return admin.database().ref(ref).set(customer.id);
         // asynchronously called
     });
@@ -36,7 +40,7 @@ exports.createStripeCustomerForLegacyUser = functions.https.onRequest( (req, res
         email: email
     }, function(err, customer) {
         ref = `/stripe_customers/${uid}/customer_id`
-        console.log('legacy customer' + customer + 'err ' + err + ' ref ' + ref)
+        console.log('legacy customer created ' + customer + ' err ' + err + ' ref ' + ref + " customer_id " + customer.id)
         admin.database().ref(ref).set(customer.id);
         res.send(200, {'customer': customer, 'error':err})
     });
