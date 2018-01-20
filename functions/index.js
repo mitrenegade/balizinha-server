@@ -10,17 +10,22 @@ const config = functions.config().dev
 const stripe = require('stripe')(config.stripe.token)
 
 exports.createStripeCustomer = functions.auth.user().onCreate(event => {
-  const data = event.data;
-  const email = data.email;
-  const uid = data.uid;
+    const data = event.data;
+    const email = data.email;
+    const uid = data.uid;
 
-  stripe.customers.create({
-      email: email
+    if (email == undefined) {
+        console.log('anonymous customer ' + uid + ' created, not creating stripe customer. has provider data? ' + data.providerData)
+        return
+    }
+
+    stripe.customers.create({
+        email: email
     }, function(err, customer) {
         ref = `/stripe_customers/${uid}/customer_id`
-        console.log('customer' + customer + 'err ' + err + ' ref ' + ref)
+        console.log('customer' + customer + 'err ' + err + ' ref ' + ref + ' email ' + email)
         return admin.database().ref(ref).set(customer.id);
-  // asynchronously called
+        // asynchronously called
     });
 });
 
