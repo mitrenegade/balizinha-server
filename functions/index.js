@@ -319,7 +319,36 @@ exports.onUserJoinOrLeaveEvent = functions.database.ref('/eventUsers/{eventId}/{
     })
 })
 
+exports.createUniqueId = function() {
+    var secondsSince1970 = new Date().getTime() * 1000
+    var randomId = Math.floor(Math.random() * 899999 + 100000)
+    return `${secondsSince1970}.${randomId}`
+}
+
 // actions
+exports.createAction = function(type, userId, eventId, message) {
+    console.log("createAction type: " + type + " event id: " + eventId + " message: " + message)
+    // NOTE: ref url is actions. iOS < v0.7.1 uses /action
+
+    var actionId = createUniqueId()
+
+    var params = {}
+    params["type"] = type
+    params["event"] = eventId
+    params["user"] = userId
+    params["message"] = message
+    return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
+        return snapshot.val();
+    }).then(player => {
+        var name = player["name"]
+        params["username"] = name
+
+        var ref = `/actions/` + actionId
+        console.log("Creating action with unique id " + actionId)
+        return admin.database().ref(ref).set(params)
+    })
+}
+
 exports.onAction = functions.database.ref('/action/{actionId}').onWrite(event => {
     const actionId = event.params.actionId
     var data = event.data.val();
