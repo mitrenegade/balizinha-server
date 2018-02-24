@@ -329,6 +329,14 @@ exports.createAction = function(type, userId, eventId, message) {
         var ref = `/actions/` + actionId
         console.log("Creating action with unique id " + actionId)
         return admin.database().ref(ref).set(params)
+    }).then(action => {
+        // create eventAction
+        if (eventId != null) {
+            var ref = `/eventActions/` + eventId
+            console.log("Creating eventAction for event " + eventId + " and action " + actionId)
+            var params = {actionId: true}
+            return admin.database().ref(ref).set(params)
+        }
     })
 }
 
