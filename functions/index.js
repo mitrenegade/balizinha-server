@@ -99,10 +99,10 @@ exports.createStripeCharge = functions.database.ref(`/charges/events/{eventId}/{
         // still logging an exception with Stackdriver
         console.log("createStripeCharge error " + error)
         return event.data.adminRef.child('error').set(error.message)
-        // .then(() => {
-        //   return reportError(error, {user: event.params.userId});
-        // });
-    });
+    }).then (response => {
+        var type = "payForEvent"
+        return createAction(type, userId, eventId, null)
+    })
 });
 
 exports.subscribeToOrganizerPush = functions.database.ref(`/organizers/{organizerId}`).onWrite(event => {
@@ -228,6 +228,9 @@ exports.onEventChange = functions.database.ref('/events/{eventId}').onWrite(even
                 } else {
                     return console.log("event: " + eventId + " created " + eventCreated + " user " + ownerId + " did not have fcm token")
                 }
+            }).then(result => {
+                var type = "createEvent"
+                return createAction(type, ownerId, eventId, null)
             })
         } else {
             return console.log("event: " + eventId + " created " + eventCreated + " no owner id!")
@@ -247,32 +250,6 @@ exports.onEventChange = functions.database.ref('/events/{eventId}').onWrite(even
     } else {
         return console.log("event: " + eventId + " created " + eventCreated + " changed " + eventChanged + " state: " + data)
     }
-    // return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
-    //     return snapshot.val();
-    // }).then(player => {
-    //     var name = player["name"]
-    //     var email = player["email"]
-    //     var joinedString = "joined"
-    //     if (!eventUserData) {
-    //         joinedString = "left"
-    //     }
-    //     var msg = name + " has " + joinedString + " your game"
-    //     var title = "Event update"
-    //     var ownerTopic = "eventOwner" + eventId // join/leave message only for owners
-    //     console.log("Sending push for user " + name + " " + email + " joined event " + ownerTopic + " with message: " + msg)
-
-    //     var token = player["fcmToken"]
-    //     var eventTopic = "event" + eventId
-    //     if (token.length > 0) {
-    //         if (eventUserData) {
-    //             subscribeToTopic(token, topic)
-    //         } else {
-    //             unsubscribeFromTopic(token, topic)
-    //         }
-    //     }
-
-    //     return exports.sendPushToTopic(title, ownerTopic, msg)
-    // })
 })
 
 // join/leave event
@@ -316,6 +293,12 @@ exports.onUserJoinOrLeaveEvent = functions.database.ref('/eventUsers/{eventId}/{
         }
 
         return exports.sendPushToTopic(title, ownerTopic, msg)
+    }).then( result => { 
+        var type = "joinEvent"
+        if (!eventUserData) {
+            type = "leaveEvent"
+        }
+        return createAction(type, userId, eventId, null)
     })
 })
 
@@ -348,6 +331,10 @@ exports.createAction = function(type, userId, eventId, message) {
         return admin.database().ref(ref).set(params)
     })
 }
+
+// TODO: 
+// create eventActions
+
 
 exports.onAction = functions.database.ref('/action/{actionId}').onWrite(event => {
     const actionId = event.params.actionId
