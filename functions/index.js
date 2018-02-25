@@ -34,6 +34,37 @@ exports.createPlayer = function(userId) {
     return admin.database().ref(ref).set(params)
 }
 
+// event creation/change
+exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite(event => {
+    const playerId = event.params.userId
+    var playerChanged = false
+    var playerCreated = false
+    var playerDeleted = false
+    var data = event.data.val();
+
+    if (!event.data.previous.exists()) {
+        playerCreated = true
+    } else if (data["active"] == false) {
+        playerDeleted = true
+    }
+
+    if (!playerCreated && event.data.changed()) {
+        playerChanged = true;
+    }
+
+    // update city
+    if (playerChanged == true && data["city"] != null) {
+        var city = data["city"].tolowercase()
+        var ref = `/cityPlayers/` + city
+        console.log("Creating cityPlayers for city " + city + " and player " + playerId)
+        var params = {"playerId": true}
+        return admin.database().ref(ref).set(params)
+    } else {
+        return console.log("player: " + playerId + " created " + playerCreated + " changed " + playerChanged)
+    }
+})
+
+
 exports.createStripeCustomer = function(email, uid) {
     console.log("creating stripeCustomer " + uid + " " + email)
     return stripe.customers.create({
@@ -341,7 +372,7 @@ exports.createAction = function(type, userId, eventId, message) {
         if (eventId != null) {
             var ref = `/eventActions/` + eventId
             console.log("Creating eventAction for event " + eventId + " and action " + actionId)
-            var params = {actionId: true}
+            var params = {"actionId" : true}
             return admin.database().ref(ref).set(params)
         }
     })
