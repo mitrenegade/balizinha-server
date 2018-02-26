@@ -31,7 +31,7 @@ exports.createPlayer = function(userId) {
     var ref = `/players/${userId}`
     console.log("Creating player for user " + userId)
     var params = {"uid": userId}
-    params["createdAt"] = secondsSince1970()
+    params["createdAt"] = exports.secondsSince1970()
     return admin.database().ref(ref).set(params)
 }
 
@@ -338,17 +338,17 @@ exports.onUserJoinOrLeaveEvent = functions.database.ref('/eventUsers/{eventId}/{
 
 exports.secondsSince1970 = function() {
     var secondsSince1970 = new Date().getTime() / 1000
-    return secondsSince1970
+    return Math.floor(secondsSince1970)
 }
 
 exports.createUniqueId = function() {
-    var secondsSince1970 = secondsSince1970()
+    var secondsSince1970 = exports.secondsSince1970()
     var randomId = Math.floor(Math.random() * 899999 + 100000)
-    return '${secondsSince1970}.${randomId}.' + API_VERSION
+    return `${secondsSince1970}-${randomId}`
 }
 
 exports.getUniqueId = functions.https.onRequest( (req, res) => {
-    var uniqueId = createUniqueId()
+    var uniqueId = exports.createUniqueId()
     console.log('Called getUniqueId with result ' + uniqueId)
     res.status(200).json({"id": uniqueId})
 })
@@ -358,7 +358,7 @@ exports.createAction = function(type, userId, eventId, message) {
     console.log("createAction type: " + type + " event id: " + eventId + " message: " + message)
     // NOTE: ref url is actions. iOS < v0.7.1 uses /action
 
-    var actionId = createUniqueId()
+    var actionId = exports.createUniqueId()
 
     var params = {}
     params["type"] = type
