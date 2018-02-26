@@ -8,6 +8,7 @@ admin.initializeApp(functions.config().firebase);
 // TO TOGGLE BETWEEN DEV AND PROD: change this to .dev or .prod for functions:config variables to be correct
 const config = functions.config().dev
 const stripe = require('stripe')(config.stripe.token)
+const API_VERSION = 1.1
 
 exports.onCreateUser = functions.auth.user().onCreate(event => {
     const data = event.data;
@@ -343,8 +344,14 @@ exports.secondsSince1970 = function() {
 exports.createUniqueId = function() {
     var secondsSince1970 = secondsSince1970()
     var randomId = Math.floor(Math.random() * 899999 + 100000)
-    return `${secondsSince1970}.${randomId}`
+    return '${secondsSince1970}.${randomId}.' + API_VERSION
 }
+
+exports.getUniqueId = functions.https.onRequest( (req, res) => {
+    var uniqueId = createUniqueId()
+    console.log('Called getUniqueId with result ' + uniqueId)
+    res.status(200).json({"id": uniqueId})
+})
 
 // actions
 exports.createAction = function(type, userId, eventId, message) {
