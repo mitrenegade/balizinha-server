@@ -38,30 +38,31 @@ exports.createPlayer = function(userId) {
 // event creation/change
 exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite(event => {
     const playerId = event.params.userId
-    var playerChanged = false
-    var playerCreated = false
-    var playerDeleted = false
+    var changed = false
+    var created = false
+    var deleted = false
     var data = event.data.val();
 
     if (!event.data.previous.exists()) {
-        playerCreated = true
+        created = true
     } else if (data["active"] == false) {
-        playerDeleted = true
+        deleted = true
     }
 
-    if (!playerCreated && event.data.changed()) {
-        playerChanged = true;
+    if (!created && event.data.changed()) {
+        changed = true;
     }
 
     // update city
-    if (playerChanged == true && data["city"] != null) {
+    if (changed == true && data["city"] != null) {
         var city = data["city"].tolowercase()
         var ref = `/cityPlayers/` + city
         console.log("Creating cityPlayers for city " + city + " and player " + playerId)
         var params = {"playerId": true}
+        // TODO: test this
         return admin.database().ref(ref).set(params)
     } else {
-        return console.log("player: " + playerId + " created " + playerCreated + " changed " + playerChanged)
+        return console.log("player: " + playerId + " created " + created + " changed " + changed)
     }
 })
 
@@ -365,7 +366,6 @@ exports.createAction = function(type, userId, eventId, message) {
     params["event"] = eventId
     params["user"] = userId
     params["message"] = message
-    params["createdAt"] = exports.secondsSince1970()
 
     return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
         return snapshot.val();
@@ -374,7 +374,7 @@ exports.createAction = function(type, userId, eventId, message) {
         params["username"] = name
 
         var ref = `/actions/` + actionId
-        console.log("Creating action with unique id " + actionId)
+        console.log("Creating action with unique id " + actionId + " message: " + message + " createdAt: " + params["createdAt"])
         return admin.database().ref(ref).set(params)
     }).then(action => {
         // create eventAction
@@ -387,10 +387,36 @@ exports.createAction = function(type, userId, eventId, message) {
     })
 }
 
+exports.onActionChange = functions.database.ref('/actions/{actionId}').onWrite(event => {
+    // add a timestamp, because action can be created by the mobile client via chat
+    const actionId = event.params.actionId
+    var changed = false
+    var created = false
+    var deleted = false
+    var data = event.data.val();
+
+    if (!event.data.previous.exists()) {
+        created = true
+    } else if (data["active"] == false) {
+        deleted = true
+    }
+
+    if (!created && event.data.changed()) {
+        changed = true;
+    }
+
+    // update createdAt
+    if (created == true) {
+        var ref = `/actions/` + actionId
+        var createdAt = exports.secondsSince1970()
+        console.log("Action: adding createdAt " + createdAt)
+        return admin.database().ref(ref).update({"createdAt": createdAt})
+    }
+});
+
 // TODO: 
-// create eventActions
-
-
+// consolidate onAction, onChatAction and createAction/onActionChange
+// duplicate action on /actions url
 exports.onAction = functions.database.ref('/action/{actionId}').onWrite(event => {
     const actionId = event.params.actionId
     var data = event.data.val();
