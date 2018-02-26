@@ -365,6 +365,8 @@ exports.createAction = function(type, userId, eventId, message) {
     params["event"] = eventId
     params["user"] = userId
     params["message"] = message
+    params["createdAt"] = exports.secondsSince1970()
+
     return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
         return snapshot.val();
     }).then(player => {
