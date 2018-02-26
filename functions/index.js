@@ -134,7 +134,7 @@ exports.createStripeCharge = functions.database.ref(`/charges/events/{eventId}/{
         return event.data.adminRef.child('error').set(error.message)
     }).then (response => {
         var type = "payForEvent"
-        return createAction(type, userId, eventId, null)
+        return exports.createAction(type, userId, eventId, null)
     })
 });
 
@@ -151,7 +151,7 @@ exports.subscribeToOrganizerPush = functions.database.ref(`/organizers/{organize
             console.log("organizer: created " + organizerId + " subscribed to organizers")
             return exports.subscribeToTopic(token, topic)
         } else {
-            console.log("organizer: created " + organizerId + " but no token available")
+            console.log("subscribeToOrganizerPush: logged in with id: " + organizerId + " but no token available")
         }
     })
 })
@@ -263,7 +263,7 @@ exports.onEventChange = functions.database.ref('/events/{eventId}').onWrite(even
                 }
             }).then(result => {
                 var type = "createEvent"
-                return createAction(type, ownerId, eventId, null)
+                return exports.createAction(type, ownerId, eventId, null)
             })
         } else {
             return console.log("event: " + eventId + " created " + eventCreated + " no owner id!")
@@ -331,7 +331,7 @@ exports.onUserJoinOrLeaveEvent = functions.database.ref('/eventUsers/{eventId}/{
         if (!eventUserData) {
             type = "leaveEvent"
         }
-        return createAction(type, userId, eventId, null)
+        return exports.createAction(type, userId, eventId, null)
     })
 })
 
