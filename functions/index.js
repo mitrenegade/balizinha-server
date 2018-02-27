@@ -498,7 +498,7 @@ exports.subscribeToTopic = function(token, topic) {
 }
 
 exports.unsubscribeFromTopic = function(token, topic) {
-    admin.messaging().unsubscribeFromTopic(registrationToken, topic)
+    admin.messaging().unsubscribeFromTopic(token, topic)
         .then(function(response) {
         // See the MessagingTopicManagementResponse reference documentation
         // for the contents of response.
