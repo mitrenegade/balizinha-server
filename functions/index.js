@@ -405,21 +405,27 @@ exports.onActionChange = functions.database.ref('/actions/{actionId}').onWrite(e
         changed = true;
     }
 
-    // update createdAt
+    const actionType = data["type"]
     if (actionType == "chat") {
         const eventId = data["event"]
         const userId = data["user"]
-        const actionType = data["type"]
         exports.onChatAction(actionId, eventId, userId, data)
     }
 
+    // update createdAt
     if (created == true) {
-        var ref = `/actions/` + actionId
+        var ref = `/actions/${actionId}`
         var createdAt = exports.secondsSince1970()
         console.log("Action: adding createdAt " + createdAt)
-        return admin.database().ref(ref).update({"createdAt": createdAt})
+        return admin.database().ref(ref).update({"createdAt": createdAt}).then( result => {
+            // duplicate to /action endpoint for legacy
+            var legacyRef = `/action/${actionId}`
+            var params = data
+            params["createdAt"] = createdAt
+            console.log("Action: duplicating to legacy ref " + legacyRef + " with params " + JSON.stringify(params))
+            return admin.database().ref(legacyRef).set(params)
+        })
     }
-
 });
 
 exports.onChatAction = function(actionId, eventId, userId, data) {
