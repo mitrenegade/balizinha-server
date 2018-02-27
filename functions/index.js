@@ -32,7 +32,7 @@ exports.createPlayer = function(userId) {
     console.log("Creating player for user " + userId)
     var params = {"uid": userId}
     params["createdAt"] = exports.secondsSince1970()
-    return admin.database().ref(ref).set(params)
+    return admin.database().ref(ref).update(params)
 }
 
 // event creation/change
@@ -60,7 +60,7 @@ exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite(eve
         console.log("Creating cityPlayers for city " + city + " and player " + playerId)
         var params = {"playerId": true}
         // TODO: test this
-        return admin.database().ref(ref).set(params)
+        return admin.database().ref(ref).update(params)
     } else {
         return console.log("player: " + playerId + " created " + created + " changed " + changed)
     }
@@ -374,15 +374,16 @@ exports.createAction = function(type, userId, eventId, message) {
         params["username"] = name
 
         var ref = `/actions/` + actionId
-        console.log("Creating action with unique id " + actionId + " message: " + message + " createdAt: " + params["createdAt"])
+        console.log("Creating action with unique id " + actionId + " message: " + message)
         return admin.database().ref(ref).set(params)
     }).then(action => {
         // create eventAction
         if (eventId != null) {
             var ref = `/eventActions/` + eventId
-            console.log("Creating eventAction for event " + eventId + " and action " + actionId)
-            var params = {"actionId" : true}
-            return admin.database().ref(ref).set(params)
+            // when initializing a dict, use [var] notation. otherwise use params[var] = val
+            var params = { [actionId] : true}
+            console.log("Creating eventAction for event " + eventId + " and action " + actionId + " with params " + JSON.stringify(params))
+            return admin.database().ref(ref).update(params)
         }
     })
 }
