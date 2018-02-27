@@ -55,11 +55,10 @@ exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite(eve
 
     // update city
     if (changed == true && data["city"] != null) {
-        var city = data["city"].tolowercase()
+        var city = data["city"].toLowerCase()
         var ref = `/cityPlayers/` + city
         console.log("Creating cityPlayers for city " + city + " and player " + playerId)
-        var params = {"playerId": true}
-        // TODO: test this
+        var params = {[playerId]: true}
         return admin.database().ref(ref).update(params)
     } else {
         return console.log("player: " + playerId + " created " + created + " changed " + changed)
@@ -407,31 +406,21 @@ exports.onActionChange = functions.database.ref('/actions/{actionId}').onWrite(e
     }
 
     // update createdAt
+    if (actionType == "chat") {
+        const eventId = data["event"]
+        const userId = data["user"]
+        const actionType = data["type"]
+        exports.onChatAction(actionId, eventId, userId, data)
+    }
+
     if (created == true) {
         var ref = `/actions/` + actionId
         var createdAt = exports.secondsSince1970()
         console.log("Action: adding createdAt " + createdAt)
         return admin.database().ref(ref).update({"createdAt": createdAt})
     }
+
 });
-
-// TODO: 
-// consolidate onAction, onChatAction and createAction/onActionChange
-// duplicate action on /actions url
-exports.onAction = functions.database.ref('/action/{actionId}').onWrite(event => {
-    const actionId = event.params.actionId
-    var data = event.data.val();
-
-    const eventId = data["event"]
-    const userId = data["user"]
-    const actionType = data["type"]
-
-    if (actionType == "chat") {
-        return exports.onChatAction(actionId, eventId, userId, data)
-    } else {
-        return
-    }
-})
 
 exports.onChatAction = function(actionId, eventId, userId, data) {
     console.log("action: " + actionId + " event: " + eventId + " user: " + userId + " data: " + data)
