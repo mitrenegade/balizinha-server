@@ -374,12 +374,12 @@ exports.createAction = function(type, userId, eventId, message) {
         var name = player["name"]
         params["username"] = name
 
-        var ref = `/action/` + actionId
+        var ref = `/actions/` + actionId
         console.log("Creating action in /actions with unique id " + actionId + " message: " + message)
         return admin.database().ref(ref).set(params)
         .then(result => {
             // create the same under /action
-            var legacyref = `/actions/` + actionId
+            var legacyref = `/action/` + actionId
             console.log("Duplicating action under /action with unique id " + actionId + " message: " + message)
             return admin.database().ref(legacyref).set(params)
         })
@@ -396,7 +396,6 @@ exports.createAction = function(type, userId, eventId, message) {
 }
 
 exports.onActionChange = functions.database.ref('/actions/{actionId}').onWrite(event => {
-    // TODO: add a timestamp, because action can be created by the mobile client via chat
     const actionId = event.params.actionId
     var changed = false
     var created = false
@@ -414,10 +413,19 @@ exports.onActionChange = functions.database.ref('/actions/{actionId}').onWrite(e
     }
 
     const actionType = data["type"]
-    if (actionType == "chat") {
-        const eventId = data["event"]
-        const userId = data["user"]
-        return exports.onChatAction(actionId, eventId, userId, data)
+    if (actionType == "chat" && created == true) {
+    // for a chat action, update createdAt then create a duplicate
+        var ref = `/actions/` + actionId
+        var createdAt = exports.secondsSince1970()
+        console.log("Action: adding createdAt " + createdAt)
+        return admin.database().ref(ref).update({"createdAt": createdAt}).then(result => {
+            // create the same under /action
+            // TODO: deprecate in ios 0.7.3
+            var legacyref = `/action/` + actionId
+            data["createdAt"] = createdAt
+            console.log("Duplicating action under /action with unique id " + actionId + " message: " + data["message"])
+            return admin.database().ref(legacyref).set(data)
+        })
     }
 });
 
