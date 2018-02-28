@@ -365,6 +365,8 @@ exports.createAction = function(type, userId, eventId, message) {
     params["event"] = eventId
     params["user"] = userId
     params["message"] = message
+    var createdAt = exports.secondsSince1970()
+    params["createdAt"] = createdAt
 
     return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
         return snapshot.val();
@@ -372,9 +374,15 @@ exports.createAction = function(type, userId, eventId, message) {
         var name = player["name"]
         params["username"] = name
 
-        var ref = `/actions/` + actionId
-        console.log("Creating action with unique id " + actionId + " message: " + message)
+        var ref = `/action/` + actionId
+        console.log("Creating action in /actions with unique id " + actionId + " message: " + message)
         return admin.database().ref(ref).set(params)
+        .then(result => {
+            // create the same under /action
+            var legacyref = `/actions/` + actionId
+            console.log("Duplicating action under /action with unique id " + actionId + " message: " + message)
+            return admin.database().ref(legacyref).set(params)
+        })
     }).then(action => {
         // create eventAction
         if (eventId != null) {
@@ -388,7 +396,7 @@ exports.createAction = function(type, userId, eventId, message) {
 }
 
 exports.onActionChange = functions.database.ref('/actions/{actionId}').onWrite(event => {
-    // add a timestamp, because action can be created by the mobile client via chat
+    // TODO: add a timestamp, because action can be created by the mobile client via chat
     const actionId = event.params.actionId
     var changed = false
     var created = false
@@ -409,22 +417,7 @@ exports.onActionChange = functions.database.ref('/actions/{actionId}').onWrite(e
     if (actionType == "chat") {
         const eventId = data["event"]
         const userId = data["user"]
-        exports.onChatAction(actionId, eventId, userId, data)
-    }
-
-    // update createdAt
-    if (created == true) {
-        var ref = `/actions/${actionId}`
-        var createdAt = exports.secondsSince1970()
-        console.log("Action: adding createdAt " + createdAt)
-        return admin.database().ref(ref).update({"createdAt": createdAt}).then( result => {
-            // duplicate to /action endpoint for legacy
-            var legacyRef = `/action/${actionId}`
-            var params = data
-            params["createdAt"] = createdAt
-            console.log("Action: duplicating to legacy ref " + legacyRef + " with params " + JSON.stringify(params))
-            return admin.database().ref(legacyRef).set(params)
-        })
+        return exports.onChatAction(actionId, eventId, userId, data)
     }
 });
 
