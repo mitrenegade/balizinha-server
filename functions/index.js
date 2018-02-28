@@ -425,11 +425,53 @@ exports.onActionChange = functions.database.ref('/actions/{actionId}').onWrite(e
             data["createdAt"] = createdAt
             console.log("Duplicating action under /action with unique id " + actionId + " message: " + data["message"])
             return admin.database().ref(legacyref).set(data)
+        }).then(result => {
+            // create eventAction
+            var eventId = data["event"]
+            var ref = `/eventActions/` + eventId
+            // when initializing a dict, use [var] notation. otherwise use params[var] = val
+            var params = { [actionId] : true}
+            console.log("Creating eventAction for event " + eventId + " and action " + actionId + " with params " + JSON.stringify(params))
+            return admin.database().ref(ref).update(params)
+        }).then(result => {
+            // send push
+            exports.pushForChatAction(actionId, data["event"], data["user"], data)
         })
     }
 });
 
-exports.onChatAction = function(actionId, eventId, userId, data) {
+// duplicate legacy action for chat under /actions
+// TODO: deprecate this in 0.7.3
+exports.onLegacyActionChange = functions.database.ref('/action/{actionId}').onWrite(event => {
+    const actionId = event.params.actionId
+    var changed = false
+    var created = false
+    var deleted = false
+    var data = event.data.val();
+
+    if (!event.data.previous.exists()) {
+        created = true
+    } else if (data["active"] == false) {
+        deleted = true
+    }
+
+    if (!created && event.data.changed()) {
+        changed = true;
+    }
+
+    const actionType = data["type"]
+    if (actionType == "chat" && created == true) {
+    // for a chat action, update createdAt then create a duplicate
+        var ref = `/actions/` + actionId
+        console.log("Duplicating legacy action under /actions with unique id " + actionId + " message: " + data["message"])
+        return admin.database().ref(ref).set(data).then(result =>{
+            // send push
+            exports.pushForChatAction(actionId, data["event"], data["user"], data)
+        })
+    }
+});
+
+exports.pushForChatAction = function(actionId, eventId, userId, data) {
     console.log("action: " + actionId + " event: " + eventId + " user: " + userId + " data: " + data)
 
     var eventTopic = "event" + eventId
@@ -442,7 +484,7 @@ exports.onChatAction = function(actionId, eventId, userId, data) {
         var msg = name + " said: " + message
         var title = "Event chat"
         var topic = "event" + eventId 
-        console.log("Sending push for user " + name + " " + email + " for chat to topic " + topic + " with message: " + msg)
+        console.log("Sending push for chat by user " + name + " " + email + " for chat to topic " + topic + " with message: " + msg)
 
         return exports.sendPushToTopic(title, topic, msg)
     })
