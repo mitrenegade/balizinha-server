@@ -414,11 +414,18 @@ exports.onActionChange = functions.database.ref('/actions/{actionId}').onWrite(e
 
     const actionType = data["type"]
     if (actionType == "chat" && created == true) {
-    // for a chat action, update createdAt then create a duplicate
-        var ref = `/actions/` + actionId
-        var createdAt = exports.secondsSince1970()
-        console.log("Action: adding createdAt " + createdAt)
-        return admin.database().ref(ref).update({"createdAt": createdAt}).then(result => {
+    // for a chat action, update createdAt, username then create a duplicate
+        const createdAt = exports.secondsSince1970()
+        const userId = data["user"]
+        return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
+            return snapshot.val();
+        }).then(player => { 
+            // add player username and createdAt
+            var ref = `/actions/` + actionId
+            var name = player["name"]
+            console.log("Action: adding createdAt " + createdAt)
+            return admin.database().ref(ref).update({"createdAt": createdAt, "username": name})
+        }).then(result => {
             // create the same under /action
             // TODO: deprecate in ios 0.7.3
             var legacyref = `/action/` + actionId
@@ -462,17 +469,24 @@ exports.onLegacyActionChange = functions.database.ref('/action/{actionId}').onWr
     const actionType = data["type"]
     if (actionType == "chat" && created == true) {
     // for a chat action, update createdAt then create a duplicate
-        var ref = `/actions/` + actionId
-        console.log("Duplicating legacy action under /actions with unique id " + actionId + " message: " + data["message"])
-        return admin.database().ref(ref).set(data).then(result =>{
-            // send push
-            exports.pushForChatAction(actionId, data["event"], data["user"], data)
+        const userId = data["user"]
+        return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
+            return snapshot.val();
+        }).then(player => {
+            const username = player["name"]
+            var ref = `/actions/` + actionId
+            console.log("Duplicating legacy action under /actions with unique id " + actionId + " name " + username + " message: " + data["message"])
+            data["username"] = username
+            return admin.database().ref(ref).set(data).then(result =>{
+                // send push
+                exports.pushForChatAction(actionId, data["event"], data["user"], data)
+            })
         })
     }
 });
 
 exports.pushForChatAction = function(actionId, eventId, userId, data) {
-    console.log("action: " + actionId + " event: " + eventId + " user: " + userId + " data: " + data)
+    console.log("push for chat: " + actionId + " event: " + eventId + " user: " + userId + " data: " + JSON.stringify(data))
 
     var eventTopic = "event" + eventId
     return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
