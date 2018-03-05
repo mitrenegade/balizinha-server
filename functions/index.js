@@ -8,6 +8,7 @@ admin.initializeApp(functions.config().firebase);
 // TO TOGGLE BETWEEN DEV AND PROD: change this to .dev or .prod for functions:config variables to be correct
 const config = functions.config().dev
 const stripe = require('stripe')(config.stripe.token)
+const API_VERSION = 1.1
 
 exports.onCreateUser = functions.auth.user().onCreate(event => {
     const data = event.data;
@@ -29,8 +30,41 @@ exports.onCreateUser = functions.auth.user().onCreate(event => {
 exports.createPlayer = function(userId) {
     var ref = `/players/${userId}`
     console.log("Creating player for user " + userId)
-    return admin.database().ref(ref).set({"uid": userId})
+    var params = {"uid": userId}
+    params["createdAt"] = exports.secondsSince1970()
+    return admin.database().ref(ref).update(params)
 }
+
+// event creation/change
+exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite(event => {
+    const playerId = event.params.userId
+    var changed = false
+    var created = false
+    var deleted = false
+    var data = event.data.val();
+
+    if (!event.data.previous.exists()) {
+        created = true
+    } else if (data["active"] == false) {
+        deleted = true
+    }
+
+    if (!created && event.data.changed()) {
+        changed = true;
+    }
+
+    // update city
+    if (changed == true && data["city"] != null) {
+        var city = data["city"].toLowerCase()
+        var ref = `/cityPlayers/` + city
+        console.log("Creating cityPlayers for city " + city + " and player " + playerId)
+        var params = {[playerId]: true}
+        return admin.database().ref(ref).update(params)
+    } else {
+        return console.log("player: " + playerId + " created " + created + " changed " + changed)
+    }
+})
+
 
 exports.createStripeCustomer = function(email, uid) {
     console.log("creating stripeCustomer " + uid + " " + email)
@@ -99,10 +133,10 @@ exports.createStripeCharge = functions.database.ref(`/charges/events/{eventId}/{
         // still logging an exception with Stackdriver
         console.log("createStripeCharge error " + error)
         return event.data.adminRef.child('error').set(error.message)
-        // .then(() => {
-        //   return reportError(error, {user: event.params.userId});
-        // });
-    });
+    }).then (response => {
+        var type = "payForEvent"
+        return exports.createAction(type, userId, eventId, null)
+    })
 });
 
 exports.subscribeToOrganizerPush = functions.database.ref(`/organizers/{organizerId}`).onWrite(event => {
@@ -118,7 +152,7 @@ exports.subscribeToOrganizerPush = functions.database.ref(`/organizers/{organize
             console.log("organizer: created " + organizerId + " subscribed to organizers")
             return exports.subscribeToTopic(token, topic)
         } else {
-            console.log("organizer: created " + organizerId + " but no token available")
+            console.log("subscribeToOrganizerPush: logged in with id: " + organizerId + " but no token available")
         }
     })
 })
@@ -228,6 +262,9 @@ exports.onEventChange = functions.database.ref('/events/{eventId}').onWrite(even
                 } else {
                     return console.log("event: " + eventId + " created " + eventCreated + " user " + ownerId + " did not have fcm token")
                 }
+            }).then(result => {
+                var type = "createEvent"
+                return exports.createAction(type, ownerId, eventId, null)
             })
         } else {
             return console.log("event: " + eventId + " created " + eventCreated + " no owner id!")
@@ -247,32 +284,6 @@ exports.onEventChange = functions.database.ref('/events/{eventId}').onWrite(even
     } else {
         return console.log("event: " + eventId + " created " + eventCreated + " changed " + eventChanged + " state: " + data)
     }
-    // return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
-    //     return snapshot.val();
-    // }).then(player => {
-    //     var name = player["name"]
-    //     var email = player["email"]
-    //     var joinedString = "joined"
-    //     if (!eventUserData) {
-    //         joinedString = "left"
-    //     }
-    //     var msg = name + " has " + joinedString + " your game"
-    //     var title = "Event update"
-    //     var ownerTopic = "eventOwner" + eventId // join/leave message only for owners
-    //     console.log("Sending push for user " + name + " " + email + " joined event " + ownerTopic + " with message: " + msg)
-
-    //     var token = player["fcmToken"]
-    //     var eventTopic = "event" + eventId
-    //     if (token.length > 0) {
-    //         if (eventUserData) {
-    //             subscribeToTopic(token, topic)
-    //         } else {
-    //             unsubscribeFromTopic(token, topic)
-    //         }
-    //     }
-
-    //     return exports.sendPushToTopic(title, ownerTopic, msg)
-    // })
 })
 
 // join/leave event
@@ -316,27 +327,166 @@ exports.onUserJoinOrLeaveEvent = functions.database.ref('/eventUsers/{eventId}/{
         }
 
         return exports.sendPushToTopic(title, ownerTopic, msg)
+    }).then( result => { 
+        var type = "joinEvent"
+        if (!eventUserData) {
+            type = "leaveEvent"
+        }
+        return exports.createAction(type, userId, eventId, null)
     })
 })
 
-// actions
-exports.onAction = functions.database.ref('/action/{actionId}').onWrite(event => {
-    const actionId = event.params.actionId
-    var data = event.data.val();
+exports.secondsSince1970 = function() {
+    var secondsSince1970 = new Date().getTime() / 1000
+    return Math.floor(secondsSince1970)
+}
 
-    const eventId = data["event"]
-    const userId = data["user"]
-    const actionType = data["type"]
+exports.createUniqueId = function() {
+    var secondsSince1970 = exports.secondsSince1970()
+    var randomId = Math.floor(Math.random() * 899999 + 100000)
+    return `${secondsSince1970}-${randomId}`
+}
 
-    if (actionType == "chat") {
-        return exports.onChatAction(actionId, eventId, userId, data)
-    } else {
-        return
-    }
+exports.getUniqueId = functions.https.onRequest( (req, res) => {
+    var uniqueId = exports.createUniqueId()
+    console.log('Called getUniqueId with result ' + uniqueId)
+    res.status(200).json({"id": uniqueId})
 })
 
-exports.onChatAction = function(actionId, eventId, userId, data) {
-    console.log("action: " + actionId + " event: " + eventId + " user: " + userId + " data: " + data)
+// actions
+exports.createAction = function(type, userId, eventId, message) {
+    console.log("createAction type: " + type + " event id: " + eventId + " message: " + message)
+    // NOTE: ref url is actions. iOS < v0.7.1 uses /action
+
+    var actionId = exports.createUniqueId()
+
+    var params = {}
+    params["type"] = type
+    params["event"] = eventId
+    params["user"] = userId
+    params["message"] = message
+    var createdAt = exports.secondsSince1970()
+    params["createdAt"] = createdAt
+
+    return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
+        return snapshot.val();
+    }).then(player => {
+        var name = player["name"]
+        params["username"] = name
+
+        var ref = `/actions/` + actionId
+        console.log("Creating action in /actions with unique id " + actionId + " message: " + message)
+        return admin.database().ref(ref).set(params)
+        .then(result => {
+            // create the same under /action
+            var legacyref = `/action/` + actionId
+            console.log("Duplicating action under /action with unique id " + actionId + " message: " + message)
+            return admin.database().ref(legacyref).set(params)
+        })
+    }).then(action => {
+        // create eventAction
+        if (eventId != null) {
+            var ref = `/eventActions/` + eventId
+            // when initializing a dict, use [var] notation. otherwise use params[var] = val
+            var params = { [actionId] : true}
+            console.log("Creating eventAction for event " + eventId + " and action " + actionId + " with params " + JSON.stringify(params))
+            return admin.database().ref(ref).update(params)
+        }
+    })
+}
+
+exports.onActionChange = functions.database.ref('/actions/{actionId}').onWrite(event => {
+    const actionId = event.params.actionId
+    var changed = false
+    var created = false
+    var deleted = false
+    var data = event.data.val();
+
+    if (!event.data.previous.exists()) {
+        created = true
+    } else if (data["active"] == false) {
+        deleted = true
+    }
+
+    if (!created && event.data.changed()) {
+        changed = true;
+    }
+
+    const actionType = data["type"]
+    if (actionType == "chat" && created == true) {
+    // for a chat action, update createdAt, username then create a duplicate
+        const createdAt = exports.secondsSince1970()
+        const userId = data["user"]
+        return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
+            return snapshot.val();
+        }).then(player => { 
+            // add player username and createdAt
+            var ref = `/actions/` + actionId
+            var name = player["name"]
+            console.log("Action: adding createdAt " + createdAt)
+            return admin.database().ref(ref).update({"createdAt": createdAt, "username": name})
+        }).then(result => {
+            // create the same under /action
+            // TODO: deprecate in ios 0.7.3
+            var legacyref = `/action/` + actionId
+            data["createdAt"] = createdAt
+            console.log("Duplicating action under /action with unique id " + actionId + " message: " + data["message"])
+            return admin.database().ref(legacyref).set(data)
+        }).then(result => {
+            // create eventAction
+            var eventId = data["event"]
+            var ref = `/eventActions/` + eventId
+            // when initializing a dict, use [var] notation. otherwise use params[var] = val
+            var params = { [actionId] : true}
+            console.log("Creating eventAction for event " + eventId + " and action " + actionId + " with params " + JSON.stringify(params))
+            return admin.database().ref(ref).update(params)
+        }).then(result => {
+            // send push
+            exports.pushForChatAction(actionId, data["event"], data["user"], data)
+        })
+    }
+});
+
+// duplicate legacy action for chat under /actions
+// TODO: deprecate this in 0.7.3
+exports.onLegacyActionChange = functions.database.ref('/action/{actionId}').onWrite(event => {
+    const actionId = event.params.actionId
+    var changed = false
+    var created = false
+    var deleted = false
+    var data = event.data.val();
+
+    if (!event.data.previous.exists()) {
+        created = true
+    } else if (data["active"] == false) {
+        deleted = true
+    }
+
+    if (!created && event.data.changed()) {
+        changed = true;
+    }
+
+    const actionType = data["type"]
+    if (actionType == "chat" && created == true) {
+    // for a chat action, update createdAt then create a duplicate
+        const userId = data["user"]
+        return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
+            return snapshot.val();
+        }).then(player => {
+            const username = player["name"]
+            var ref = `/actions/` + actionId
+            console.log("Duplicating legacy action under /actions with unique id " + actionId + " name " + username + " message: " + data["message"])
+            data["username"] = username
+            return admin.database().ref(ref).set(data).then(result =>{
+                // send push
+                exports.pushForChatAction(actionId, data["event"], data["user"], data)
+            })
+        })
+    }
+});
+
+exports.pushForChatAction = function(actionId, eventId, userId, data) {
+    console.log("push for chat: " + actionId + " event: " + eventId + " user: " + userId + " data: " + JSON.stringify(data))
 
     var eventTopic = "event" + eventId
     return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
@@ -348,7 +498,7 @@ exports.onChatAction = function(actionId, eventId, userId, data) {
         var msg = name + " said: " + message
         var title = "Event chat"
         var topic = "event" + eventId 
-        console.log("Sending push for user " + name + " " + email + " for chat to topic " + topic + " with message: " + msg)
+        console.log("Sending push for chat by user " + name + " " + email + " for chat to topic " + topic + " with message: " + msg)
 
         return exports.sendPushToTopic(title, topic, msg)
     })
@@ -400,7 +550,7 @@ exports.subscribeToTopic = function(token, topic) {
 }
 
 exports.unsubscribeFromTopic = function(token, topic) {
-    admin.messaging().unsubscribeFromTopic(registrationToken, topic)
+    admin.messaging().unsubscribeFromTopic(token, topic)
         .then(function(response) {
         // See the MessagingTopicManagementResponse reference documentation
         // for the contents of response.
