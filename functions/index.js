@@ -60,9 +60,17 @@ exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite(eve
         console.log("Creating cityPlayers for city " + city + " and player " + playerId)
         var params = {[playerId]: true}
         return admin.database().ref(ref).update(params)
-    } else {
-        return console.log("player: " + playerId + " created " + created + " changed " + changed)
     }
+
+    if (changed == true && data["promotionId"] != null) {
+        var promo = data["promotionId"].toLowerCase()
+        var ref = `/promoPlayers/` + promo
+        console.log("Creating promoPlayers for promo " + promo + " and player " + playerId)
+        var params = {[playerId]: true}
+        return admin.database().ref(ref).update(params)
+    }
+
+    return console.log("player: " + playerId + " created " + created + " changed " + changed)
 })
 
 
