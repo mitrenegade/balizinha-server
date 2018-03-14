@@ -90,6 +90,30 @@ exports.createStripeCustomer = function(email, uid) {
     });
 };
 
+exports.savePaymentInfo = functions.https.onRequest( (req, res) => {
+    const userId = req.body.userId
+    const source = req.body.source
+    const last4 = req.body.last4
+    const label = req.body.label
+    var customer_id = "unknown"
+    console.log("SavePaymentInfo: userId " + userId + " source " + source + " last4 " + last4 + " label " + label)
+    var customerRef = `/stripe_customers/${userId}/customer_id`
+    return admin.database().ref(customerRef).once('value').then(snapshot => {
+        return snapshot.val();
+    }).then(customer => {
+        var userRef = `/stripe_customers/${userId}`
+        var params = {"source": source, "last4": last4, "label": label}
+        customer_id = customer
+        return admin.database().ref(userRef).update(params)
+    }).then(result => {
+        res.status(200).json({"customer_id": customer_id})
+    }).catch((err) => {
+        console.log("Probably no customer_id for userId. err " + err)
+        res.status(500).json({"error": err})
+    })
+})
+
+
 exports.ephemeralKeys = functions.https.onRequest( (req, res) => {
     console.log('Called ephemeral keys with ' + req.body.api_version + ' and ' + req.body.customer_id)
     const stripe_version = req.body.api_version;
