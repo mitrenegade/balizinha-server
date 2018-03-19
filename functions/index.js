@@ -76,10 +76,10 @@ exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite(eve
 
 exports.createStripeCustomer = function(email, uid) {
     console.log("creating stripeCustomer " + uid + " " + email)
+    ref = `/stripe_customers/${uid}/customer_id`
     return stripe.customers.create({
         email: email
     }, function(err, customer) {
-        ref = `/stripe_customers/${uid}/customer_id`
         if (err != undefined) {
             console.log('createStripeCustomer ' + ref + ' resulted in error ' + err)
             return err
@@ -87,8 +87,32 @@ exports.createStripeCustomer = function(email, uid) {
             console.log('createStripeCustomer ' + ref + ' email ' + email + ' created with customer_id ' + customer.id)
             return admin.database().ref(ref).set(customer.id);
         }
-    });
+    }).then(result => {
+        console.log('createStripeCustomer returning the value')
+        return admin.database().ref(ref).once('value')
+    })
 };
+
+exports.validateStripeCustomer = functions.https.onRequest( (req, res) => {
+    const userId = req.body.userId
+    const email = req.body.email
+    var customerRef = `/stripe_customers/${userId}/customer_id`
+    return admin.database().ref(customerRef).once('value')
+    .then(snapshot => {
+        return snapshot.val();
+    }).then(customer => {
+        if (customer != null) {
+            console.log("ValidateStripeCustomer: userId " + userId + " found customer_id " + customer)
+            res.status(200).json({"customer_id" : customer})
+        } else {
+            console.log("ValidateStripeCustomer: userId " + userId + " creating customer...")
+            return exports.createStripeCustomer(email, userId)
+        }
+    }).then(result => {
+        console.log("ValidateStripeCustomer: userId " + userId + " created customer with result " + JSON.stringify(result))
+        res.status(200).json({"customer_id": result})
+    })
+})
 
 exports.savePaymentInfo = functions.https.onRequest( (req, res) => {
     const userId = req.body.userId
