@@ -96,6 +96,15 @@ exports.createStripeCustomer = function(email, uid) {
 exports.validateStripeCustomer = functions.https.onRequest( (req, res) => {
     const userId = req.body.userId
     const email = req.body.email
+
+    if (userId == undefined || userId == "") {
+        res.status(500).json({"error": "Could not validate Striper customer: empty user id"})
+        return
+    }
+    if (email == undefined || email == "") {
+        res.status(500).json({"error": "Could not validate Striper customer: empty email"})
+        return
+    }
     var customerRef = `/stripe_customers/${userId}/customer_id`
     return admin.database().ref(customerRef).once('value')
     .then(snapshot => {
