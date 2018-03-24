@@ -6,9 +6,9 @@ const moment = require('moment')
 admin.initializeApp(functions.config().firebase);
 
 // TO TOGGLE BETWEEN DEV AND PROD: change this to .dev or .prod for functions:config variables to be correct
-const config = functions.config().dev
+const config = functions.config().prod
 const stripe = require('stripe')(config.stripe.token)
-const API_VERSION = 1.1
+const API_VERSION = 1.2
 
 exports.onCreateUser = functions.auth.user().onCreate(event => {
     const data = event.data;
@@ -60,18 +60,26 @@ exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite(eve
         console.log("Creating cityPlayers for city " + city + " and player " + playerId)
         var params = {[playerId]: true}
         return admin.database().ref(ref).update(params)
-    } else {
-        return console.log("player: " + playerId + " created " + created + " changed " + changed)
     }
+
+    if (changed == true && data["promotionId"] != null) {
+        var promo = data["promotionId"].toLowerCase()
+        var ref = `/promoPlayers/` + promo
+        console.log("Creating promoPlayers for promo " + promo + " and player " + playerId)
+        var params = {[playerId]: true}
+        return admin.database().ref(ref).update(params)
+    }
+
+    return console.log("player: " + playerId + " created " + created + " changed " + changed)
 })
 
 
 exports.createStripeCustomer = function(email, uid) {
     console.log("creating stripeCustomer " + uid + " " + email)
+    ref = `/stripe_customers/${uid}/customer_id`
     return stripe.customers.create({
         email: email
     }, function(err, customer) {
-        ref = `/stripe_customers/${uid}/customer_id`
         if (err != undefined) {
             console.log('createStripeCustomer ' + ref + ' resulted in error ' + err)
             return err
@@ -79,8 +87,65 @@ exports.createStripeCustomer = function(email, uid) {
             console.log('createStripeCustomer ' + ref + ' email ' + email + ' created with customer_id ' + customer.id)
             return admin.database().ref(ref).set(customer.id);
         }
-    });
+    }).then(result => {
+        console.log('createStripeCustomer returning the value')
+        return admin.database().ref(ref).once('value')
+    })
 };
+
+exports.validateStripeCustomer = functions.https.onRequest( (req, res) => {
+    const userId = req.body.userId
+    const email = req.body.email
+
+    if (userId == undefined || userId == "") {
+        res.status(500).json({"error": "Could not validate Striper customer: empty user id"})
+        return
+    }
+    if (email == undefined || email == "") {
+        res.status(500).json({"error": "Could not validate Striper customer: empty email"})
+        return
+    }
+    var customerRef = `/stripe_customers/${userId}/customer_id`
+    return admin.database().ref(customerRef).once('value')
+    .then(snapshot => {
+        return snapshot.val();
+    }).then(customer => {
+        if (customer != null) {
+            console.log("ValidateStripeCustomer: userId " + userId + " found customer_id " + customer)
+            res.status(200).json({"customer_id" : customer})
+        } else {
+            console.log("ValidateStripeCustomer: userId " + userId + " creating customer...")
+            return exports.createStripeCustomer(email, userId)
+        }
+    }).then(result => {
+        console.log("ValidateStripeCustomer: userId " + userId + " created customer with result " + JSON.stringify(result))
+        res.status(200).json({"customer_id": result})
+    })
+})
+
+exports.savePaymentInfo = functions.https.onRequest( (req, res) => {
+    const userId = req.body.userId
+    const source = req.body.source
+    const last4 = req.body.last4
+    const label = req.body.label
+    var customer_id = "unknown"
+    console.log("SavePaymentInfo: userId " + userId + " source " + source + " last4 " + last4 + " label " + label)
+    var customerRef = `/stripe_customers/${userId}/customer_id`
+    return admin.database().ref(customerRef).once('value').then(snapshot => {
+        return snapshot.val();
+    }).then(customer => {
+        var userRef = `/stripe_customers/${userId}`
+        var params = {"source": source, "last4": last4, "label": label}
+        customer_id = customer
+        return admin.database().ref(userRef).update(params)
+    }).then(result => {
+        res.status(200).json({"customer_id": customer_id})
+    }).catch((err) => {
+        console.log("Probably no customer_id for userId. err " + err)
+        res.status(500).json({"error": err})
+    })
+})
+
 
 exports.ephemeralKeys = functions.https.onRequest( (req, res) => {
     console.log('Called ephemeral keys with ' + req.body.api_version + ' and ' + req.body.customer_id)
