@@ -248,10 +248,10 @@ exports.refundCharge = functions.https.onRequest( (req, res) => {
         console.log("RefundCharge: updated charge " + JSON.stringify(updatedCharge))
         return admin.database().ref(chargeRef).update(updatedCharge)
     }).then((result) => {
-        res.status(200).json({"result": result}) // update does not return the charge object so result is empty
+        res.status(200).json(result) // update does not return the charge object so result is empty
     }).catch((error) => {
         console.log("RefundCharge: caught err " + JSON.stringify(error))
-        res.status(500).json({"error": error})
+        res.status(500).json(error)
     })
 })
 
