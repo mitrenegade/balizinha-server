@@ -6,7 +6,7 @@ const moment = require('moment')
 admin.initializeApp(functions.config().firebase);
 
 // TO TOGGLE BETWEEN DEV AND PROD: change this to .dev or .prod for functions:config variables to be correct
-const config = functions.config().prod
+const config = functions.config().dev
 const stripe = require('stripe')(config.stripe.token)
 const API_VERSION = 1.2
 
@@ -141,7 +141,7 @@ exports.savePaymentInfo = functions.https.onRequest( (req, res) => {
     }).then(result => {
         res.status(200).json({"customer_id": customer_id})
     }).catch((err) => {
-        console.log("Probably no customer_id for userId. err " + err)
+        console.log("Probably no customer_id for userId. err " + JSON.stringify(err))
         res.status(500).json({"error": err})
     })
 })
@@ -196,13 +196,64 @@ exports.createStripeCharge = functions.database.ref(`/charges/events/{eventId}/{
     }, error => {
         // We want to capture errors and render them in a user-friendly way, while
         // still logging an exception with Stackdriver
-        console.log("createStripeCharge error " + error)
+        console.log("createStripeCharge error " + JSON.stringify(error))
         return event.data.adminRef.child('error').set(error.message)
     }).then (response => {
         var type = "payForEvent"
         return exports.createAction(type, userId, eventId, null)
     })
 });
+
+exports.refundCharge = functions.https.onRequest( (req, res) => {
+    const chargeId = req.body.chargeId // charge Id from balizinha
+    const eventId = req.body.eventId
+    const organizerId = req.body.organizerId
+    const amount = req.body.amount // can be null // in cents
+    var type = ""
+    var typeId = ""
+    if (eventId != null) {
+        type = "events"
+        typeId = eventId
+    } else if (organizerId != null) {
+        type = "organizers"
+        typeId = organizerId
+    } else {
+        res.status(500).json({"error": "Must include eventId or organizerId"})
+        return
+    }
+
+    console.log("refundCharge: type " + type + " typeId " + typeId + " chargeId " + chargeId + " amount " + amount)
+    var chargeRef = `/charges/${type}/${typeId}/${chargeId}`
+    return admin.database().ref(chargeRef).once('value').then(snapshot => {
+        return snapshot.val();
+    }).then((charge) => {
+        // refund charge
+        var id = charge["id"]
+        var chargedAmount = charge["amount"]
+        var status = charge["status"] // just for debugging
+        var customer = charge["customer"]
+        var params = {"charge": id}
+        if (amount != null) {
+            params["amount"] = amount
+        }
+        console.log("RefundCharge: found charge with id " + id + " status " + status + " amount " + amount + " customer " + customer)
+        return stripe.refunds.create(params)
+    }).then((refund) => {
+        // retrieve the charge to update it
+        // refund should look like: {"id":"re_1C9DWEGxJEewqdf9n0zYcJHT","object":"refund","amount":100,"balance_transaction":"txn_1C9DWEGxJEewqdf9lhvIQLrj","charge":"ch_1C9DUlGxJEewqdf9MYZVyjgy","created":1521902334,"currency":"usd","metadata":{},"reason":null,"receipt_number":null,"status":"succeeded"}
+        console.log("Stripe: refund result " + JSON.stringify(refund))
+        var id = refund["charge"]
+        return stripe.charges.retrieve(id)
+    }).then((updatedCharge) => {
+        console.log("RefundCharge: updated charge " + JSON.stringify(updatedCharge))
+        return admin.database().ref(chargeRef).update(updatedCharge)
+    }).then((result) => {
+        res.status(200).json(result) // update does not return the charge object so result is empty
+    }).catch((error) => {
+        console.log("RefundCharge: caught err " + JSON.stringify(error))
+        res.status(500).json(error)
+    })
+})
 
 exports.subscribeToOrganizerPush = functions.database.ref(`/organizers/{organizerId}`).onWrite(event => {
     const organizerId = event.params.organizerId
