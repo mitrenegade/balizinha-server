@@ -6,7 +6,7 @@ const moment = require('moment')
 admin.initializeApp(functions.config().firebase);
 
 // TO TOGGLE BETWEEN DEV AND PROD: change this to .dev or .prod for functions:config variables to be correct
-const config = functions.config().dev
+const config = functions.config().prod
 const stripe = require('stripe')(config.stripe.token)
 const API_VERSION = 1.2
 
@@ -191,16 +191,16 @@ exports.createStripeCharge = functions.database.ref(`/charges/events/{eventId}/{
         return stripe.charges.create(charge, {idempotency_key});
     }).then(response => {
         // If the result is successful, write it back to the database
-        console.log("createStripeCharge success with response " + response)
-        return event.data.adminRef.update(response);
+        console.log("createStripeCharge success with response " + JSON.stringify(response))
+        return event.data.adminRef.update(response).then(result => {
+            var type = "payForEvent"
+            return exports.createAction(type, userId, eventId, null)
+        })
     }, error => {
         // We want to capture errors and render them in a user-friendly way, while
         // still logging an exception with Stackdriver
         console.log("createStripeCharge error " + JSON.stringify(error))
         return event.data.adminRef.child('error').set(error.message)
-    }).then (response => {
-        var type = "payForEvent"
-        return exports.createAction(type, userId, eventId, null)
     })
 });
 
@@ -491,12 +491,12 @@ exports.createAction = function(type, userId, eventId, message) {
         params["username"] = name
 
         var ref = `/actions/` + actionId
-        console.log("Creating action in /actions with unique id " + actionId + " message: " + message)
+        console.log("Creating action in /actions with unique id " + actionId + " message: " + message + " params: " + JSON.stringify(params))
         return admin.database().ref(ref).set(params)
         .then(result => {
             // create the same under /action
             var legacyref = `/action/` + actionId
-            console.log("Duplicating action under /action with unique id " + actionId + " message: " + message)
+            console.log("Duplicating action under /action with unique id " + actionId + " message: " + message + " params: " + JSON.stringify(params))
             return admin.database().ref(legacyref).set(params)
         })
     }).then(action => {
