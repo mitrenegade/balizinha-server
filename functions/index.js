@@ -3,12 +3,13 @@ const admin = require('firebase-admin');
 const logging = require('@google-cloud/logging')();
 const app = require('express')
 const moment = require('moment')
+const leagueModule = require('./league')
 admin.initializeApp(functions.config().firebase);
 
 // TO TOGGLE BETWEEN DEV AND PROD: change this to .dev or .prod for functions:config variables to be correct
-const config = functions.config().prod
+const config = functions.config().dev
 const stripe = require('stripe')(config.stripe.token)
-const API_VERSION = 1.2
+const API_VERSION = 1.3 // leagues
 
 exports.onCreateUser = functions.auth.user().onCreate(event => {
     const data = event.data;
@@ -707,4 +708,10 @@ exports.sampleCloudFunction = functions.https.onRequest((req, res) => {
     // })
 
 })
+
+// league
+// Pass database to child functions so they have access to it
+exports.createLeague = functions.https.onRequest((req, res) => {
+    leagueModule.createLeague(req, res, exports, admin);
+});
 
