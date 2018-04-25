@@ -3,12 +3,15 @@ const admin = require('firebase-admin');
 const logging = require('@google-cloud/logging')();
 const app = require('express')
 const moment = require('moment')
+const leagueModule = require('./league')
 admin.initializeApp(functions.config().firebase);
 
 // TO TOGGLE BETWEEN DEV AND PROD: change this to .dev or .prod for functions:config variables to be correct
-const config = functions.config().prod
+const config = functions.config().dev
 const stripe = require('stripe')(config.stripe.token)
-const API_VERSION = 1.2
+const API_VERSION = 1.3 // leagues
+
+const DEFAULT_LEAGUE_ID_DEV = "1523416155-990463"
 
 exports.onCreateUser = functions.auth.user().onCreate(event => {
     const data = event.data;
@@ -24,6 +27,8 @@ exports.onCreateUser = functions.auth.user().onCreate(event => {
     return exports.createPlayer(uid).then(function (result) {
         console.log("onCreateUser createPlayer success with result " + result)
         return exports.createStripeCustomer(email, uid)
+    }).then(result => {
+        return explorts.leagueModule.doJoinLeague(admin, uid, DEFAULT_LEAGUE_ID_DEV) // TODO: change this in functions.config
     })
 });
 
@@ -707,4 +712,30 @@ exports.sampleCloudFunction = functions.https.onRequest((req, res) => {
     // })
 
 })
+
+// league
+// Pass database to child functions so they have access to it
+
+// http functions
+exports.createLeague = functions.https.onRequest((req, res) => {
+    return leagueModule.createLeague(req, res, exports, admin);
+});
+
+exports.joinLeague = functions.https.onRequest((req, res) => {
+    return leagueModule.joinLeague(req, res, exports, admin)
+});
+
+exports.getPlayersForLeague = functions.https.onRequest((req, res) => {
+    return leagueModule.getPlayersForLeague(req, res, exports, admin)
+});
+
+exports.getLeaguesForPlayer = functions.https.onRequest((req, res) => {
+    return leagueModule.getLeaguesForPlayer(req, res, exports, admin)
+});
+
+// helper functions
+exports.doJoinLeague = function(admin, userId, leagueId) {
+    return leagueModule.doJoinLeague(admin, userId, leagueId)
+}
+
 
