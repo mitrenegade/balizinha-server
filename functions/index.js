@@ -324,19 +324,19 @@ exports.createStripeSubscription = functions.database.ref(`/charges/organizers/{
 });
 
 // cron job
-exports.daily_job =
-  functions.pubsub.topic('daily-tick').onPublish((event) => {
-    console.log("This job is run every day! " + Date.now())
-  }
-)
+// exports.daily_job =
+//   functions.pubsub.topic('daily-tick').onPublish((event) => {
+//     console.log("This job is run every day! " + Date.now())
+//   }
+// )
 
-// a job set once in the past so that a cron job with a manual trigger can be used from google app engine's tasks
-exports.testJob = functions.pubsub.topic('on-demand-tick').onPublish((event) => {
-    var testToken = "eQuL09AtiCQ:APA91bHc5Yr4TQAOS8h6Sph1tCwIczrkWVf7u279xFxVpjUHaYksDwGTUUcnRk5jcTBFlWoLBs2AW9jAo8zJAdXyLD8kRqrtVjQWGSRBaOmJuN32SN-EE4-BqAp-IWDiB8O3otORC4wt"
-    var msg = "test worked, sending test push to " + testToken
-    console.log(msg)
-    exports.sendPush(testToken, msg)
-})
+// // a job set once in the past so that a cron job with a manual trigger can be used from google app engine's tasks
+// exports.testJob = functions.pubsub.topic('on-demand-tick').onPublish((event) => {
+//     var testToken = "eQuL09AtiCQ:APA91bHc5Yr4TQAOS8h6Sph1tCwIczrkWVf7u279xFxVpjUHaYksDwGTUUcnRk5jcTBFlWoLBs2AW9jAo8zJAdXyLD8kRqrtVjQWGSRBaOmJuN32SN-EE4-BqAp-IWDiB8O3otORC4wt"
+//     var msg = "test worked, sending test push to " + testToken
+//     console.log(msg)
+//     exports.sendPush(testToken, msg)
+// })
 
 // event creation/change
 exports.onEventChange = functions.database.ref('/events/{eventId}').onWrite(event => {
