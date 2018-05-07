@@ -9,13 +9,19 @@ exports.createLeague = function(req, res, exports, admin) {
 
 	const leagueId = exports.createUniqueId()
     var ref = `/leagues/` + leagueId
-    var params = {"name": name, "city": city, "info": info, players: {[userId]: true}, "organizers": {[userId]: true}}
+    var params = {"name": name, "city": city, "info": info, "organizers": {[userId]: true}}
     var createdAt = exports.secondsSince1970()
     params["createdAt"] = createdAt
     // TODO: name validation?
     console.log("Creating league in /leagues with unique id " + leagueId + " name: " + name + " city: " + city + " organizer: " + userId)
     return admin.database().ref(ref).set(params).then(snapshot => {
-		res.send(200, {result: {"message": 'createLeague success', "id": leagueId}}); 
+    	exports.doJoinLeague(admin, userId, leagueId).then(result => {
+	    	if (result["result"] == "success") {
+				res.send(200, {result: {"message": 'createLeague success', "id": leagueId, "league": snapshot}}); 
+	    	} else {
+	    		res.send(500, result)
+	    	}
+    	})
     })
 }
 
@@ -43,7 +49,7 @@ exports.doJoinLeague = function(admin, userId, leagueId) {
     	} else {
 		    console.log("JoinLeague: user " + userId + " being added to league " + leagueId + " name: " + league["name"])
     		var leagueRef = `/leaguePlayers/${leagueId}`
-    		var params = {[userId]: true}
+    		var params = {[userId]: "member"}
     		return admin.database().ref(leagueRef).update(params)
     	}
 	}).then(result => {
