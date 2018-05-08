@@ -96,3 +96,26 @@ exports.getLeaguesForPlayer = function(req, res, exports, admin) {
 
 	// TODO: result sends back leaguePlayers structure, not just the id
 }
+
+// organizers
+exports.changeLeaguePlayerStatus = function(req, res, exports, admin) {
+	const userId = req.body.userId
+	const leagueId = req.body.leagueId
+	const status = req.body.status
+	var ref = `/leagues/${leagueId}` 
+    console.log("ChangeLeaguePlayerStatus: user " + userId + " league " + leagueId + " status: " + status)
+    // validation
+    if (status != "member" && status != "organizer" && status != "owner" && status != "inactive") {
+    	res.send(500, {"error": "invalid status"})
+    	return
+    }
+
+	var leagueRef = `/leaguePlayers/${leagueId}/${userId}`
+	return admin.database().ref(leagueRef).set(status).then(result => {
+		// result is null due to update
+		res.send(200,  {"result": "success"})
+    }).catch( (err) => {
+    	console.log("ChangeLeaguePlayerStatus: league " + leagueId + " error: " + err)
+    	res.send(500, {"error": err})
+    })
+}

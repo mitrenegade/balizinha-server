@@ -733,6 +733,10 @@ exports.getLeaguesForPlayer = functions.https.onRequest((req, res) => {
     return leagueModule.getLeaguesForPlayer(req, res, exports, admin)
 });
 
+exports.changeLeaguePlayerStatus = functions.https.onRequest((req, res) => {
+    return leagueModule.changeLeaguePlayerStatus(req, res, exports, admin)
+})
+
 // helper functions
 exports.doJoinLeague = function(admin, userId, leagueId) {
     return leagueModule.doJoinLeague(admin, userId, leagueId)
