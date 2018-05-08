@@ -9,7 +9,7 @@ exports.createLeague = function(req, res, exports, admin) {
 
 	const leagueId = exports.createUniqueId()
     var ref = `/leagues/` + leagueId
-    var params = {"name": name, "city": city, "info": info, "organizers": {[userId]: true}}
+    var params = {"name": name, "city": city, "info": info, "owner": userId}
     var createdAt = exports.secondsSince1970()
     params["createdAt"] = createdAt
     // TODO: name validation?
