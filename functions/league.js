@@ -9,13 +9,19 @@ exports.createLeague = function(req, res, exports, admin) {
 
 	const leagueId = exports.createUniqueId()
     var ref = `/leagues/` + leagueId
-    var params = {"name": name, "city": city, "info": info, players: {[userId]: true}, "organizers": {[userId]: true}}
+    var params = {"name": name, "city": city, "info": info, "owner": userId}
     var createdAt = exports.secondsSince1970()
     params["createdAt"] = createdAt
     // TODO: name validation?
     console.log("Creating league in /leagues with unique id " + leagueId + " name: " + name + " city: " + city + " organizer: " + userId)
-    return admin.database().ref(ref).set(params).then(snapshot => {
-		res.send(200, {result: {"message": 'createLeague success', "id": leagueId}}); 
+    return admin.database().ref(ref).set(params).then(() => {
+    	console.log("creating league ${leagueId} complete. calling joinLeague for player ${userId}")
+    	return exports.doJoinLeague(admin, userId, leagueId)
+    }).then(result => {
+    	console.log("joinLeague result " + JSON.stringify(result) + ". loading league")
+    	return admin.database().ref(ref).once('value')
+    }).then(snapshot => {
+	    res.send(200, {'league': snapshot.val()})
     })
 }
 
@@ -34,7 +40,8 @@ exports.joinLeague = function(req, res, exports, admin) {
 exports.doJoinLeague = function(admin, userId, leagueId) {
 	// when joining a league, /leaguePlayers/leagueId gets a new attribute of [playerId:true]
 	var ref = `/leagues/${leagueId}` 
-	return admin.database().ref(ref).once('value').then(snapshot => {
+	return admin.database().ref(ref).once('value')
+	.then(snapshot => {
         return snapshot.val();
     }).then(league => {	
     	if (league == null) {
@@ -43,7 +50,7 @@ exports.doJoinLeague = function(admin, userId, leagueId) {
     	} else {
 		    console.log("JoinLeague: user " + userId + " being added to league " + leagueId + " name: " + league["name"])
     		var leagueRef = `/leaguePlayers/${leagueId}`
-    		var params = {[userId]: true}
+    		var params = {[userId]: "member"}
     		return admin.database().ref(leagueRef).update(params)
     	}
 	}).then(result => {
@@ -89,4 +96,27 @@ exports.getLeaguesForPlayer = function(req, res, exports, admin) {
 	})
 
 	// TODO: result sends back leaguePlayers structure, not just the id
+}
+
+// organizers
+exports.changeLeaguePlayerStatus = function(req, res, exports, admin) {
+	const userId = req.body.userId
+	const leagueId = req.body.leagueId
+	const status = req.body.status
+	var ref = `/leagues/${leagueId}` 
+    console.log("ChangeLeaguePlayerStatus: user " + userId + " league " + leagueId + " status: " + status)
+    // validation
+    if (status != "member" && status != "organizer" && status != "owner" && status != "inactive") {
+    	res.send(500, {"error": "invalid status"})
+    	return
+    }
+
+	var leagueRef = `/leaguePlayers/${leagueId}/${userId}`
+	return admin.database().ref(leagueRef).set(status).then(result => {
+		// result is null due to update
+		res.send(200,  {"result": "success"})
+    }).catch( (err) => {
+    	console.log("ChangeLeaguePlayerStatus: league " + leagueId + " error: " + err)
+    	res.send(500, {"error": err})
+    })
 }
