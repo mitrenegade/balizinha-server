@@ -14,14 +14,14 @@ exports.createLeague = function(req, res, exports, admin) {
     params["createdAt"] = createdAt
     // TODO: name validation?
     console.log("Creating league in /leagues with unique id " + leagueId + " name: " + name + " city: " + city + " organizer: " + userId)
-    return admin.database().ref(ref).set(params).then(snapshot => {
-    	exports.doJoinLeague(admin, userId, leagueId).then(result => {
-	    	if (result["result"] == "success") {
-				res.send(200, {result: {"message": 'createLeague success', "id": leagueId, "league": snapshot}}); 
-	    	} else {
-	    		res.send(500, result)
-	    	}
-    	})
+    return admin.database().ref(ref).set(params).then(() => {
+    	console.log("creating league ${leagueId} complete. calling joinLeague for player ${userId}")
+    	return exports.doJoinLeague(admin, userId, leagueId)
+    }).then(result => {
+    	console.log("joinLeague result " + JSON.stringify(result) + ". loading league")
+    	return admin.database().ref(ref).once('value')
+    }).then(snapshot => {
+	    res.send(200, {'league': snapshot.val()})
     })
 }
 
@@ -40,7 +40,8 @@ exports.joinLeague = function(req, res, exports, admin) {
 exports.doJoinLeague = function(admin, userId, leagueId) {
 	// when joining a league, /leaguePlayers/leagueId gets a new attribute of [playerId:true]
 	var ref = `/leagues/${leagueId}` 
-	return admin.database().ref(ref).once('value').then(snapshot => {
+	return admin.database().ref(ref).once('value')
+	.then(snapshot => {
         return snapshot.val();
     }).then(league => {	
     	if (league == null) {
