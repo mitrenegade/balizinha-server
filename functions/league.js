@@ -19,9 +19,10 @@ exports.createLeague = function(req, res, exports, admin) {
     	return exports.doJoinLeague(admin, userId, leagueId)
     }).then(result => {
     	console.log("joinLeague result " + JSON.stringify(result) + ". loading league")
-    	return admin.database().ref(ref).once('value')
-    }).then(snapshot => {
-	    res.send(200, {'league': snapshot.val()})
+    	// can't return league as a snapshot. only return the id
+	    res.send(200, {'league': leagueId})
+    }).catch(err => {
+    	res.send(500, {'error': err})
     })
 }
 
