@@ -107,8 +107,8 @@ exports.changeLeaguePlayerStatus = function(req, res, exports, admin) {
 	var ref = `/leagues/${leagueId}` 
     console.log("ChangeLeaguePlayerStatus: user " + userId + " league " + leagueId + " status: " + status)
     // validation
-    if (status != "member" && status != "organizer" && status != "owner" && status != "inactive") {
-    	res.send(500, {"error": "invalid status"})
+    if (status != "member" && status != "organizer" && status != "owner" && status != "none") {
+    	res.send(500, {"error": "invalid status. cannot change user " + userId + " to " + status})
     	return
     }
 
