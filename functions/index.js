@@ -12,6 +12,7 @@ const stripe = require('stripe')(config.stripe.token)
 const API_VERSION = 1.3 // leagues
 
 const DEFAULT_LEAGUE_ID_DEV = "1523416155-990463"
+const DEFAULT_LEAGUE_ID_PROD = "1525175000-268371"
 
 exports.onCreateUser = functions.auth.user().onCreate(event => {
     const data = event.data;
@@ -28,7 +29,7 @@ exports.onCreateUser = functions.auth.user().onCreate(event => {
         console.log("onCreateUser createPlayer success with result " + result)
         return exports.createStripeCustomer(email, uid)
     }).then(result => {
-        return explorts.leagueModule.doJoinLeague(admin, uid, DEFAULT_LEAGUE_ID_DEV) // TODO: change this in functions.config
+        return exports.leagueModule.doJoinLeague(admin, uid, DEFAULT_LEAGUE_ID_DEV) // TODO: change this in functions.config
     })
 });
 
