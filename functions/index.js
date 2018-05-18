@@ -14,10 +14,10 @@ const API_VERSION = 1.3 // leagues
 const DEFAULT_LEAGUE_ID_DEV = "1523416155-990463"
 const DEFAULT_LEAGUE_ID_PROD = "1525175000-268371"
 
-exports.onCreateUser = functions.auth.user().onCreate(event => {
-    const data = event.data;
-    const email = data.email;
-    const uid = data.uid;
+exports.onCreateUser = functions.auth.user().onCreate(user => {
+    console.log("onCreateUser complete with user " + JSON.stringify(user))
+    const email = user.email;
+    const uid = user.uid;
 
     if (email == undefined) {
         console.log('anonymous customer ' + uid + ' created, not creating stripe customer. has provider data? ' + data.providerData)
@@ -28,8 +28,6 @@ exports.onCreateUser = functions.auth.user().onCreate(event => {
     return exports.createPlayer(uid).then(function (result) {
         console.log("onCreateUser createPlayer success with result " + result)
         return exports.createStripeCustomer(email, uid)
-    }).then(result => {
-        return exports.leagueModule.doJoinLeague(admin, uid, DEFAULT_LEAGUE_ID_DEV) // TODO: change this in functions.config
     })
 });
 
@@ -42,25 +40,22 @@ exports.createPlayer = function(userId) {
 }
 
 // event creation/change
-exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite(event => {
-    const playerId = event.params.userId
-    var changed = false
-    var created = false
-    var deleted = false
-    var data = event.data.val();
+exports.onPlayerCreate = functions.database.ref('/players/{userId}').onCreate((snapshot, context) => {
+    console.log("onPlayerCreate triggered with snapshot " + JSON.stringify(snapshot) + " context " + JSON.stringify(context))
+    var playerId = context.params.userId
+    var email = snapshot.email // snapshot only contains email
 
-    if (!event.data.previous.exists()) {
-        created = true
-    } else if (data["active"] == false) {
-        deleted = true
-    }
+    var ref = `/players/` + playerId
+    return admin.database().ref(ref).once('value')
+})
 
-    if (!created && event.data.changed()) {
-        changed = true;
-    }
+exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite((snapshot, context) => {
+    console.log("onPlayerChange triggered with snapshot " + JSON.stringify(snapshot) + " context " + JSON.stringify(context))
+    var playerId = context.params.userId
+    var data = snapshot.after
 
     // update city
-    if (changed == true && data["city"] != null) {
+    if (data["city"] != null) {
         var city = data["city"].toLowerCase()
         var ref = `/cityPlayers/` + city
         console.log("Creating cityPlayers for city " + city + " and player " + playerId)
@@ -68,7 +63,7 @@ exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite(eve
         return admin.database().ref(ref).update(params)
     }
 
-    if (changed == true && data["promotionId"] != null) {
+    if (data["promotionId"] != null) {
         var promo = data["promotionId"].toLowerCase()
         var ref = `/promoPlayers/` + promo
         console.log("Creating promoPlayers for promo " + promo + " and player " + playerId)
@@ -76,9 +71,8 @@ exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite(eve
         return admin.database().ref(ref).update(params)
     }
 
-    return console.log("player: " + playerId + " created " + created + " changed " + changed)
+    return data
 })
-
 
 exports.createStripeCustomer = function(email, uid) {
     console.log("creating stripeCustomer " + uid + " " + email)
