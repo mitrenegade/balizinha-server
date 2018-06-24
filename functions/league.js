@@ -54,6 +54,11 @@ exports.doJoinLeague = function(admin, userId, leagueId) {
     		var params = {[userId]: "member"}
     		return admin.database().ref(leagueRef).update(params)
     	}
+    }).then(result => {
+	    console.log("JoinLeague: league " + leagueId + " being added to user " + userId)
+		var leagueRef = `/playerLeagues/${userId}`
+		var params = {[leagueId]: true}
+		return admin.database().ref(leagueRef).update(params)
 	}).then(result => {
 		// result is null due to update
 		return {"result": "success"}
@@ -85,10 +90,14 @@ exports.getLeaguesForPlayer = function(req, res, exports, admin) {
 	// for alternatives using assignment, see https://stackoverflow.com/questions/41527058/many-to-many-relationship-in-firebase
 	const userId = req.body.userId
 	// find all leagueId where playerId = true
-	var ref = admin.database().ref("leaguePlayers")
+	// var ref = admin.database().ref("leaguePlayers")
 	console.log("getLeaguesForPlayer " + userId)
-	return ref.orderByChild(userId).equalTo("member").once('value').then(snapshot => {
-		console.log("orderByChild for userId " + userId + " result: " + JSON.stringify(snapshot))
+	// return ref.orderByChild(userId).equalTo("member").once('value').then(snapshot => {
+	// 	console.log("orderByChild for userId " + userId + " result: " + JSON.stringify(snapshot))
+	// 	return snapshot.val()
+	// getLeagues pulls a list of leagueIds from playerLeagues
+	var ref = admin.database().ref(`playerLeagues/${userId}`)
+	return ref.once('value').then(snapshot => {
 		return snapshot.val()
 	}).then(result => {
 		res.send(200, {"result": result})
