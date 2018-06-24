@@ -7,12 +7,13 @@ const leagueModule = require('./league')
 admin.initializeApp(functions.config().firebase);
 
 // TO TOGGLE BETWEEN DEV AND PROD: change this to .dev or .prod for functions:config variables to be correct
-const config = functions.config().prod
+const config = functions.config().dev
 const stripe = require('stripe')(config.stripe.token)
 const API_VERSION = 1.3 // leagues
 
 const DEFAULT_LEAGUE_ID_DEV = "1525785307-821232"
 const DEFAULT_LEAGUE_ID_PROD = "1525175000-268371"
+const DEFAULT_LEAGUE = DEFAULT_LEAGUE_ID_DEV // change this when switching to prod
 
 exports.onCreateUser = functions.auth.user().onCreate(user => {
     console.log("onCreateUser complete with user " + JSON.stringify(user))
@@ -45,7 +46,7 @@ exports.onPlayerCreate = functions.database.ref('/players/{userId}').onCreate((s
     var playerId = context.params.userId
     var email = snapshot.email // snapshot only contains email
 
-    return exports.doJoinLeague(admin, playerId, DEFAULT_LEAGUE_ID_PROD) // TODO: change this in functions.config
+    return exports.doJoinLeague(admin, playerId, DEFAULT_LEAGUE_ID)
 })
 
 exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite((snapshot, context) => {

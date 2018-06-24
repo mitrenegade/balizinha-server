@@ -87,8 +87,8 @@ exports.getLeaguesForPlayer = function(req, res, exports, admin) {
 	// find all leagueId where playerId = true
 	var ref = admin.database().ref("leaguePlayers")
 	console.log("getLeaguesForPlayer " + userId)
-	return ref.orderByChild(userId).equalTo(true).once('value').then(snapshot => {
-		console.log("orderByChild for userId " + userId)
+	return ref.orderByChild(userId).equalTo("member").once('value').then(snapshot => {
+		console.log("orderByChild for userId " + userId + " result: " + JSON.stringify(snapshot))
 		return snapshot.val()
 	}).then(result => {
 		res.send(200, {"result": result})
