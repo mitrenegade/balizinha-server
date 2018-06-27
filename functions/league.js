@@ -130,3 +130,29 @@ exports.changeLeaguePlayerStatus = function(req, res, exports, admin) {
     	res.send(500, {"error": err})
     })
 }
+
+exports.getEventsForLeague = function(req, res, exports, admin) {
+	const leagueId = req.body.leagueId
+	// var leagueRef = `/leaguePlayers/${leagueId}`
+	// console.log("getPlayersForLeague " + leagueId + " using ref " + admin.database().ref(leagueRef))
+	// return admin.database().ref(leagueRef).once('value').then(snapshot => {
+	// 	return snapshot.val()
+	// }).then(result => {
+	// 	res.send(200, {"result": result})
+	// }).catch( err => {
+	// 	res.send(500, {"error": error})
+	// })
+
+	// find all leagueId where playerId = true
+	var ref = admin.database().ref("events")
+	console.log("getEventsForLeague " + leagueId)
+	return ref.orderByChild("league").equalTo(leagueId).once('value').then(snapshot => {
+		console.log("orderByChild for league " + leagueId + " result: " + JSON.stringify(snapshot))
+		return snapshot.val()
+	}).then(result => {
+		res.send(200, {"result": result})
+	}).catch( err => {
+		res.send(500, {"error": error})
+	})
+	// TODO: result does not filter out players with value false
+}
