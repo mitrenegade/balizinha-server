@@ -19,9 +19,10 @@ exports.createLeague = function(req, res, exports, admin) {
     	return exports.doJoinLeague(admin, userId, leagueId)
     }).then(result => {
     	console.log("joinLeague result " + JSON.stringify(result) + ". loading league")
-    	return admin.database().ref(ref).once('value')
-    }).then(snapshot => {
-	    res.send(200, {'league': snapshot.val()})
+    	// can't return league as a snapshot. only return the id
+	    res.send(200, {'league': leagueId})
+    }).catch(err => {
+    	res.send(500, {'error': err})
     })
 }
 
@@ -53,6 +54,11 @@ exports.doJoinLeague = function(admin, userId, leagueId) {
     		var params = {[userId]: "member"}
     		return admin.database().ref(leagueRef).update(params)
     	}
+    }).then(result => {
+	    console.log("JoinLeague: league " + leagueId + " being added to user " + userId)
+		var leagueRef = `/playerLeagues/${userId}`
+		var params = {[leagueId]: true}
+		return admin.database().ref(leagueRef).update(params)
 	}).then(result => {
 		// result is null due to update
 		return {"result": "success"}
@@ -84,10 +90,14 @@ exports.getLeaguesForPlayer = function(req, res, exports, admin) {
 	// for alternatives using assignment, see https://stackoverflow.com/questions/41527058/many-to-many-relationship-in-firebase
 	const userId = req.body.userId
 	// find all leagueId where playerId = true
-	var ref = admin.database().ref("leaguePlayers")
+	// var ref = admin.database().ref("leaguePlayers")
 	console.log("getLeaguesForPlayer " + userId)
-	return ref.orderByChild(userId).equalTo(true).once('value').then(snapshot => {
-		console.log("orderByChild for userId " + userId)
+	// return ref.orderByChild(userId).equalTo("member").once('value').then(snapshot => {
+	// 	console.log("orderByChild for userId " + userId + " result: " + JSON.stringify(snapshot))
+	// 	return snapshot.val()
+	// getLeagues pulls a list of leagueIds from playerLeagues
+	var ref = admin.database().ref(`playerLeagues/${userId}`)
+	return ref.once('value').then(snapshot => {
 		return snapshot.val()
 	}).then(result => {
 		res.send(200, {"result": result})
@@ -106,8 +116,8 @@ exports.changeLeaguePlayerStatus = function(req, res, exports, admin) {
 	var ref = `/leagues/${leagueId}` 
     console.log("ChangeLeaguePlayerStatus: user " + userId + " league " + leagueId + " status: " + status)
     // validation
-    if (status != "member" && status != "organizer" && status != "owner" && status != "inactive") {
-    	res.send(500, {"error": "invalid status"})
+    if (status != "member" && status != "organizer" && status != "owner" && status != "none") {
+    	res.send(500, {"error": "invalid status. cannot change user " + userId + " to " + status})
     	return
     }
 
@@ -119,4 +129,30 @@ exports.changeLeaguePlayerStatus = function(req, res, exports, admin) {
     	console.log("ChangeLeaguePlayerStatus: league " + leagueId + " error: " + err)
     	res.send(500, {"error": err})
     })
+}
+
+exports.getEventsForLeague = function(req, res, exports, admin) {
+	const leagueId = req.body.leagueId
+	// var leagueRef = `/leaguePlayers/${leagueId}`
+	// console.log("getPlayersForLeague " + leagueId + " using ref " + admin.database().ref(leagueRef))
+	// return admin.database().ref(leagueRef).once('value').then(snapshot => {
+	// 	return snapshot.val()
+	// }).then(result => {
+	// 	res.send(200, {"result": result})
+	// }).catch( err => {
+	// 	res.send(500, {"error": error})
+	// })
+
+	// find all leagueId where playerId = true
+	var ref = admin.database().ref("events")
+	console.log("getEventsForLeague " + leagueId)
+	return ref.orderByChild("league").equalTo(leagueId).once('value').then(snapshot => {
+		console.log("orderByChild for league " + leagueId + " result: " + JSON.stringify(snapshot))
+		return snapshot.val()
+	}).then(result => {
+		res.send(200, {"result": result})
+	}).catch( err => {
+		res.send(500, {"error": error})
+	})
+	// TODO: result does not filter out players with value false
 }
