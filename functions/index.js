@@ -7,13 +7,13 @@ const leagueModule = require('./league')
 admin.initializeApp(functions.config().firebase);
 
 // TO TOGGLE BETWEEN DEV AND PROD: change this to .dev or .prod for functions:config variables to be correct
-const config = functions.config().prod
+const config = functions.config().dev
 const stripe = require('stripe')(config.stripe.token)
 const API_VERSION = 1.4 // leagues
 
 const DEFAULT_LEAGUE_ID_DEV = "1525785307-821232"
 const DEFAULT_LEAGUE_ID_PROD = "1525175000-268371"
-const DEFAULT_LEAGUE = DEFAULT_LEAGUE_ID_PROD // change this when switching to prod
+const DEFAULT_LEAGUE = DEFAULT_LEAGUE_ID_DEV // change this when switching to prod
 
 exports.onCreateUser = functions.auth.user().onCreate(user => {
     console.log("onCreateUser complete with user " + JSON.stringify(user))
@@ -98,11 +98,11 @@ exports.validateStripeCustomer = functions.https.onRequest( (req, res) => {
     const email = req.body.email
 
     if (userId == undefined || userId == "") {
-        res.status(500).json({"error": "Could not validate Striper customer: empty user id"})
+        res.status(500).json({"error": "Could not validate Stripe customer: empty user id"})
         return
     }
     if (email == undefined || email == "") {
-        res.status(500).json({"error": "Could not validate Striper customer: empty email"})
+        res.status(500).json({"error": "Could not validate Stripe customer: empty email"})
         return
     }
     var customerRef = `/stripe_customers/${userId}/customer_id`
@@ -333,6 +333,65 @@ exports.createStripeSubscription = functions.database.ref(`/charges/organizers/{
 //     exports.sendPush(testToken, msg)
 // })
 
+exports.createEvent1_4 = functions.https.onRequest((req, res) => {
+    const userId = req.body.userId
+    if (!userId) { res.status(500).json({"error": "A valid user is required to create event"}); return }
+
+    var league = req.body.league
+    var name = req.body.name
+    var type = req.body.type
+    if (!league) { league = DEFAULT_LEAGUE }
+    if (!name) { name = "Balizinha" }
+    if (!type) { type = "3 vs 3" }
+
+    const city = req.body.city
+    const state = req.body.state
+    const place = req.body.place
+    const info = req.body.info
+    const maxPlayers = req.body.maxPlayers
+
+    if (!city) { res.status(500).json({"error": "City is required to create event"}); return }
+    if (!place) { res.status(500).json({"error": "Location is required to create event"}); return }
+    if (!maxPlayers) { maxPlayers = 6 }
+
+    const startTime = req.body.startTime
+    const endTime = req.body.endTime
+    if (!startTime) { res.status(500).json({"error": "Start time is required to create event"}); return } // error if not exist
+    if (!endTime) { res.status(500).json({"error": "End time is required to create event"}); return }
+
+    const paymentRequired = req.body.paymentRequired
+    const amount = req.body.amount
+
+    const lat = req.body.lat
+    const lon = req.body.lon
+
+    var params = {"league": league, "name": name, "type": type, "city": city, "place": place, "startTime": startTime, "endTime": endTime}
+    var createdAt = exports.secondsSince1970()
+    params["createdAt"] = createdAt
+    params["organizer"] = userId
+    params["owner"] = userId // older apps used "owner" as the organizer
+
+    // optional params
+    if (paymentRequired) { params["paymentRequired"] = paymentRequired }
+    if (amount) { params["amount"] = amount }
+    if (state) { params["state"] = state }
+    if (info) { params["info"] = info }
+    if (lat) { params["lat"] = lat }
+    if (lon) { params["lon"] = lon }
+
+    var eventId = exports.createUniqueId()
+
+    var ref = `/events/` + eventId
+    return admin.database().ref(ref).set(params)
+    .then(result => {
+        console.log("CreateEvent v1.4 success for event " + eventId)
+        res.status(200).json({"result": result, "eventId": eventId})
+    }).catch(err => {
+        console.log("CreateEvent v1.4 error: " + JSON.stringify(error));
+        res.status(500).json({"error": error})
+    })
+})
+
 // event creation/change
 exports.onEventChange = functions.database.ref('/events/{eventId}').onWrite(event => {
     const eventId = event.params.eventId
@@ -493,12 +552,6 @@ exports.createAction = function(type, userId, eventId, message) {
         var ref = `/actions/` + actionId
         console.log("Creating action in /actions with unique id " + actionId + " message: " + message + " params: " + JSON.stringify(params))
         return admin.database().ref(ref).set(params)
-        .then(result => {
-            // create the same under /action
-            var legacyref = `/action/` + actionId
-            console.log("Duplicating action under /action with unique id " + actionId + " message: " + message + " params: " + JSON.stringify(params))
-            return admin.database().ref(legacyref).set(params)
-        })
     }).then(action => {
         // create eventAction
         if (eventId != null) {
