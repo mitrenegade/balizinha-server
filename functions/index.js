@@ -402,12 +402,30 @@ exports.createEvent1_4 = functions.https.onRequest((req, res) => {
         console.log("CreateEvent v1.4: createTopicForEvent")
         exports.createTopicForNewEvent(eventId, userId)
 
+        exports.joinOrLeaveEvent1_4(userId, eventId, true)
+
         res.status(200).json({"result": result, "eventId": eventId})
     }).catch(error => {
         console.log("CreateEvent v1.4 error: " + JSON.stringify(error));
         res.status(500).json({"error": error})
     })
 })
+
+exports.joinOrLeaveEvent1_4 = function(userId, eventId, join) {
+    var joinStr = ""
+    if (join) {
+        joinStr = "joining"
+    } else {
+        joinStr = "leaving"
+    }
+    console.log("joinOrLeaveEvent v1.4: " + userId + " " + joinStr + " " + eventId)
+
+    var params = { [userId] : join }
+    return admin.database().ref(`/eventUsers/${eventId}`).update(params).then(results => {
+        var params2 = { [eventId] : join }
+        return admin.database().ref(`userEvents/${userId}`).update(params2)
+    })
+}
 
 exports.createTopicForNewEvent = function(eventId, organizerId) {
     // subscribe organizer to event topic
