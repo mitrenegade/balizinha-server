@@ -474,11 +474,12 @@ exports.onUserJoinOrLeaveEvent = functions.database.ref('/eventUsers/{eventId}/{
 
     if (!old.exists()) {
         eventUserCreated = true;
+        console.log("onUserJoinOrLeaveEvent: created user " + userId + " for event " + eventId + ": " + JSON.stringify(eventUserData))
     }
-    if (!eventUserCreated && data.changed()) {
+    if (!eventUserCreated) {
         eventUserChanged = true;
+        console.log("onUserJoinOrLeaveEvent: updated user " + userId + " for event " + eventId + ": " + JSON.stringify(eventUserData))
     }
-    console.log("event: " + eventId + " user: " + userId + " state: " + JSON.stringify(eventUserData))
 
     return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
         return snapshot.val();
@@ -567,21 +568,25 @@ exports.createAction = function(type, userId, eventId, message) {
     })
 }
 
-exports.onActionChange = functions.database.ref('/actions/{actionId}').onWrite(event => {
-    const actionId = event.params.actionId
+exports.onActionChange = functions.database.ref('/actions/{actionId}').onWrite((snapshot, context) => {
+    const actionId = context.params.actionId
     var changed = false
     var created = false
     var deleted = false
-    var data = event.data.val();
+    var data = snapshot.after
+    var old = snapshot.before
 
-    if (!event.data.previous.exists()) {
+    if (!old.exists()) {
         created = true
-    } else if (data["active"] == false) {
+        console.log("onActionChange: created action " + actionId)
+    } else if (old["active"] == true && data["active"] == false) {
         deleted = true
+        console.log("onActionChange: deleted action " + actionId)
     }
 
-    if (!created && event.data.changed()) {
+    if (!created && !deleted) {
         changed = true;
+        console.log("onActionChange: changed action " + actionId)
     }
 
     const actionType = data["type"]
@@ -614,8 +619,12 @@ exports.onActionChange = functions.database.ref('/actions/{actionId}').onWrite(e
             return admin.database().ref(ref).update(params)
         }).then(result => {
             // send push
+            console.log("onActionChange: pushForChatAction with result " + JSON.stringify(result))
             exports.pushForChatAction(actionId, data["event"], data["user"], data)
+            return result
         })
+    } else {
+        return snapshot
     }
 });
 
