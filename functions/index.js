@@ -348,10 +348,11 @@ exports.createEvent1_4 = functions.https.onRequest((req, res) => {
     const state = req.body.state
     const place = req.body.place
     const info = req.body.info
-    const maxPlayers = req.body.maxPlayers
 
     if (!city) { res.status(500).json({"error": "City is required to create event"}); return }
     if (!place) { res.status(500).json({"error": "Location is required to create event"}); return }
+
+    var maxPlayers = req.body.maxPlayers
     if (!maxPlayers) { maxPlayers = 6 }
 
     const startTime = req.body.startTime
@@ -462,19 +463,22 @@ exports.onEventChange = functions.database.ref('/events/{eventId}').onWrite((sna
 
 // join/leave event
 exports.onUserJoinOrLeaveEvent = functions.database.ref('/eventUsers/{eventId}/{userId}').onWrite((snapshot, context) => {
-    const eventId = event.params.eventId
-    const userId = event.params.userId
+    const eventId = context.params.eventId
+    const userId = context.params.userId
+    var data = snapshot.after
+    var old = snapshot.before
+
     var eventUserChanged = false;
     var eventUserCreated = false;
-    var eventUserData = event.data.val();
+    var eventUserData = data.val();
 
-    if (!event.data.previous.exists()) {
+    if (!old.exists()) {
         eventUserCreated = true;
     }
-    if (!eventUserCreated && event.data.changed()) {
+    if (!eventUserCreated && data.changed()) {
         eventUserChanged = true;
     }
-    console.log("event: " + eventId + " user: " + userId + " state: " + eventUserData)
+    console.log("event: " + eventId + " user: " + userId + " state: " + JSON.stringify(eventUserData))
 
     return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
         return snapshot.val();
