@@ -384,67 +384,65 @@ exports.createEvent1_4 = functions.https.onRequest((req, res) => {
     var ref = `/events/` + eventId
     return admin.database().ref(ref).set(params)
     .then(result => {
-        console.log("CreateEvent v1.4 success for event " + eventId)
+        console.log("CreateEvent v1.4 success for event " + eventId + " with result " + JSON.stringify(result))
+
+        // side effects
+        // send push
+        var title = "New event available"
+        var topic = "general"
+        var placeName = city
+        if (!city) {
+            placeName = place
+        }
+        var msg = "A new event, " + name + ", is available in " + placeName
+        console.log("CreateEvent v1.4: sending push " + title + " to " + topic + " with msg " + msg)
+        exports.sendPushToTopic(title, topic, msg)
+
+        console.log("CreateEvent v1.4: createTopicForEvent")
+        exports.createTopicForNewEvent(eventId, userId)
+
         res.status(200).json({"result": result, "eventId": eventId})
-    }).catch(err => {
+    }).catch(error => {
         console.log("CreateEvent v1.4 error: " + JSON.stringify(error));
         res.status(500).json({"error": error})
     })
 })
 
+exports.createTopicForNewEvent = function(eventId, organizerId) {
+    // subscribe organizer to event topic
+    if (organizerId) {
+        return admin.database().ref(`/players/${organizerId}`).once('value').then(snapshot => {
+            return snapshot.val();
+        }).then(player => {
+            var token = player["fcmToken"]
+            var topic = "eventOrganizer" + eventId
+            if (token && token.length > 0) {
+                exports.subscribeToTopic(token, topic)
+                return console.log("createTopicForNewEvent: " + eventId + " subscribing " + organizerId + " to " + topic)
+            } else {
+                return console.log("createTopicForNewEvent: " + eventId + " user " + organizerId + " did not have fcm token")
+            }
+        }).then(result => {
+            var type = "createEvent"
+            return exports.createAction(type, organizerId, eventId, null)
+        })
+    } else {
+        return console.log("createTopicForNewEvent: " + eventId + " no organizer id!")
+    }
+}
+
 // event creation/change
-exports.onEventChange = functions.database.ref('/events/{eventId}').onWrite(event => {
-    const eventId = event.params.eventId
-    var eventChanged = false
-    var eventCreated = false
-    var eventDeleted = false
-    var data = event.data.val();
+exports.onEventChange = functions.database.ref('/events/{eventId}').onWrite((snapshot, context) => {
+    var eventId = context.params.eventId
+    var data = snapshot.after
+    var old = snapshot.before
 
-    if (!event.data.previous.exists()) {
-        eventCreated = true
-    } else if (data["active"] == false) {
-        eventDeleted = true
-    }
-
-    if (!eventCreated && event.data.changed()) {
-        eventChanged = true;
-    }
-
-    if (eventCreated == true) {
-        var title = "New event available"
-        var topic = "general"
-        var name = data["name"]
-        var city = data["city"]
-        if (!city) {
-            city = data["place"]
-        }
-
-        // send push
-        var msg = "A new event, " + name + ", is available in " + city
-        exports.sendPushToTopic(title, topic, msg)
-
-        // subscribe owner to event topic
-        var ownerId = data["owner"]
-        if (ownerId) {
-            return admin.database().ref(`/players/${ownerId}`).once('value').then(snapshot => {
-                return snapshot.val();
-            }).then(player => {
-                var token = player["fcmToken"]
-                var ownerTopic = "eventOwner" + eventId
-                if (token && token.length > 0) {
-                    exports.subscribeToTopic(token, ownerTopic)
-                    return console.log("event: " + eventId + " created " + eventCreated + " subscxribing " + ownerId + " to " + ownerTopic)
-                } else {
-                    return console.log("event: " + eventId + " created " + eventCreated + " user " + ownerId + " did not have fcm token")
-                }
-            }).then(result => {
-                var type = "createEvent"
-                return exports.createAction(type, ownerId, eventId, null)
-            })
-        } else {
-            return console.log("event: " + eventId + " created " + eventCreated + " no owner id!")
-        }
-    } else if (eventDeleted == true) {
+    if (!old.exists()) {
+        console.log("event created: " + eventId + " state: " + JSON.stringify(data))
+        return snapshot
+    } else if (old["active"] == true && data["active"] == false) {
+        return console.log("event deleted: " + eventId + " state: " + JSON.stringify(old))
+        // deleted
         var title = "Event cancelled"
         var topic = "event" + eventId
         var name = data["name"]
@@ -457,12 +455,13 @@ exports.onEventChange = functions.database.ref('/events/{eventId}').onWrite(even
         var msg = "An event you're going to, " + name + ", has been cancelled."
         return exports.sendPushToTopic(title, topic, msg)
     } else {
-        return console.log("event: " + eventId + " created " + eventCreated + " changed " + eventChanged + " state: " + data)
+        console.log("event change: " + eventId)
+        return snapshot
     }
 })
 
 // join/leave event
-exports.onUserJoinOrLeaveEvent = functions.database.ref('/eventUsers/{eventId}/{userId}').onWrite(event => {
+exports.onUserJoinOrLeaveEvent = functions.database.ref('/eventUsers/{eventId}/{userId}').onWrite((snapshot, context) => {
     const eventId = event.params.eventId
     const userId = event.params.userId
     var eventUserChanged = false;
@@ -488,8 +487,8 @@ exports.onUserJoinOrLeaveEvent = functions.database.ref('/eventUsers/{eventId}/{
         }
         var msg = name + " has " + joinedString + " your game"
         var title = "Event update"
-        var ownerTopic = "eventOwner" + eventId // join/leave message only for owners
-        console.log("Sending push for user " + name + " " + email + " joined event " + ownerTopic + " with message: " + msg)
+        var organizerTopic = "eventOrganizer" + eventId // join/leave message only for owners
+        console.log("Sending push for user " + name + " " + email + " joined event " + organizerTopic + " with message: " + msg)
 
         var token = player["fcmToken"]
         var eventTopic = "event" + eventId
@@ -501,7 +500,7 @@ exports.onUserJoinOrLeaveEvent = functions.database.ref('/eventUsers/{eventId}/{
             }
         }
 
-        return exports.sendPushToTopic(title, ownerTopic, msg)
+        return exports.sendPushToTopic(title, organizerTopic, msg)
     }).then( result => { 
         var type = "joinEvent"
         if (!eventUserData) {
