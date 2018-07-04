@@ -122,7 +122,12 @@ exports.changeLeaguePlayerStatus = function(req, res, exports, admin) {
     }
 
 	var leagueRef = `/leaguePlayers/${leagueId}/${userId}`
+		console.log("ChangeLeaguePlayerStatus: leaguePlayers/" + leagueId + " player " + userId + " status " + status)
 	return admin.database().ref(leagueRef).set(status).then(result => {
+		var playerRef = `/playerLeagues/${userId}/${leagueId}`
+		console.log("ChangeLeaguePlayerStatus: playerLeagues/" + userId + " league " + leagueId + " status " + status)
+		return admin.database().ref(playerRef).set(status)
+	}).then(result => {
 		// result is null due to update
 		res.send(200,  {"result": "success"})
     }).catch( (err) => {
