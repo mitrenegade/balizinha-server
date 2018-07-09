@@ -167,51 +167,57 @@ exports.ephemeralKeys = functions.https.onRequest( (req, res) => {
 });
 
 // Charge the Stripe customer whenever an amount is written to the Realtime database
-exports.createStripeCharge = functions.database.ref(`/charges/events/{eventId}/{id}`).onWrite((snapshot, context) => {
+exports.createStripeChargeV1_4 = functions.database.ref(`/charges/events/{eventId}/{chargeId}`).onWrite((snapshot, context) => {
 //function createStripeCharge(req, res, ref) {
     var eventId = context.params.eventId
-    var chargeId = context.params.id
-    var data = snapshot.after
+    var chargeId = context.params.chargeId
+    var data = snapshot.after.val()
     var old = snapshot.before
 
+    console.log("createStripeCharge v1.4: event " + eventId + " charge id " + chargeId + " data " + JSON.stringify(data))
     const userId = data.player_id
-    console.log("createStripeCharge for event " + eventId + " userId " + userId + " charge id " + chargeId)
     // This onWrite will trigger whenever anything is written to the path, so
     // noop if the charge was deleted, errored out, or the Stripe API returned a result (id exists) 
     if (data === null || data.id || data.error) {
         if (data.id) {
-            console.log("createStripeCharge failed because data already exists with id " + data.id)
+            console.log("createStripeCharge v1.4: failed because data already exists with id " + data.id)
         } else if (data.error) {
-            console.log("createStripeCharge failed because data had error " + data.error)
+            console.log("createStripeCharge v1.4: failed because data had error " + data.error)
         } else if (data === null) {
-            console.log("createStripeCharge failed because data was null")
+            console.log("createStripeCharge v1.4: failed because data was null")
         }
         return null
     }
     // Look up the Stripe customer id written in createStripeCustomer
-    return admin.database().ref(`/stripe_customers/${userId}/customer_id`).once('value').then(snapshot => {
+    var customerRef = `/stripe_customers/${userId}`
+    return admin.database().ref(customerRef).once('value').then(snapshot => {
         return snapshot.val();
-    }).then(customer => {
+    }).then(customerDict => {
         // Create a charge using the pushId as the idempotency key, protecting against double charges 
+        const customer = customerDict["customer_id"]
         const amount = data.amount;
         const idempotency_key = chargeId;
         const currency = 'USD'
         let charge = {amount, currency, customer};
-        if (data.source !== null) charge.source = data.source;
-        console.log("createStripeCharge amount " + amount + " customer " + customer + " source " + data.source)
+        if (data.source !== null) {
+            charge.source = data.source
+        }
+        console.log("createStripeCharge v1.4: amount " + amount + " customerId " + customer + " charge " + JSON.stringify(charge))
         return stripe.charges.create(charge, {idempotency_key});
     }).then(response => {
         // If the result is successful, write it back to the database
-        console.log("createStripeCharge success with response " + JSON.stringify(response))
-        return event.data.adminRef.update(response).then(result => {
+        console.log("createStripeCharge v1.4: success with response " + JSON.stringify(response))
+        const ref = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
+        return ref.update(response).then(result => {
             var type = "payForEvent"
             return exports.createAction(type, userId, eventId, null)
         })
     }, error => {
         // We want to capture errors and render them in a user-friendly way, while
         // still logging an exception with Stackdriver
-        console.log("createStripeCharge error " + JSON.stringify(error))
-        return event.data.adminRef.child('error').set(error.message)
+        console.log("createStripeCharge v1.4: error " + JSON.stringify(error))
+        const ref = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
+        return ref.child('error').set(error.message)
     })
 });
 
