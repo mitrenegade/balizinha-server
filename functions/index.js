@@ -7,13 +7,13 @@ const leagueModule = require('./league')
 admin.initializeApp(functions.config().firebase);
 
 // TO TOGGLE BETWEEN DEV AND PROD: change this to .dev or .prod for functions:config variables to be correct
-const config = functions.config().prod
+const config = functions.config().dev
 const stripe = require('stripe')(config.stripe.token)
 const API_VERSION = 1.4 // leagues
 
 const DEFAULT_LEAGUE_ID_DEV = "1525785307-821232"
 const DEFAULT_LEAGUE_ID_PROD = "1525175000-268371"
-const DEFAULT_LEAGUE = DEFAULT_LEAGUE_ID_PROD // change this when switching to prod
+const DEFAULT_LEAGUE = DEFAULT_LEAGUE_ID_DEV // change this when switching to prod
 
 exports.onCreateUser = functions.auth.user().onCreate(user => {
     console.log("onCreateUser complete with user " + JSON.stringify(user))
@@ -167,27 +167,38 @@ exports.ephemeralKeys = functions.https.onRequest( (req, res) => {
 });
 
 // Charge the Stripe customer whenever an amount is written to the Realtime database
-exports.createStripeCharge = functions.database.ref(`/charges/events/{eventId}/{id}`).onWrite(event => {
+exports.createStripeCharge = functions.database.ref(`/charges/events/{eventId}/{id}`).onWrite((snapshot, context) => {
 //function createStripeCharge(req, res, ref) {
-    const val = event.data.val();
-    const userId = val.player_id
-    const eventId = event.params.eventId
-    const chargeId = event.params.id
+    var eventId = context.params.eventId
+    var chargeId = context.params.id
+    var data = snapshot.after
+    var old = snapshot.before
+
+    const userId = data.player_id
     console.log("createStripeCharge for event " + eventId + " userId " + userId + " charge id " + chargeId)
     // This onWrite will trigger whenever anything is written to the path, so
     // noop if the charge was deleted, errored out, or the Stripe API returned a result (id exists) 
-    if (val === null || val.id || val.error) return null;
+    if (data === null || data.id || data.error) {
+        if (data.id) {
+            console.log("createStripeCharge failed because data already exists with id " + data.id)
+        } else if (data.error) {
+            console.log("createStripeCharge failed because data had error " + data.error)
+        } else if (data === null) {
+            console.log("createStripeCharge failed because data was null")
+        }
+        return null
+    }
     // Look up the Stripe customer id written in createStripeCustomer
     return admin.database().ref(`/stripe_customers/${userId}/customer_id`).once('value').then(snapshot => {
         return snapshot.val();
     }).then(customer => {
         // Create a charge using the pushId as the idempotency key, protecting against double charges 
-        const amount = val.amount;
+        const amount = data.amount;
         const idempotency_key = chargeId;
         const currency = 'USD'
         let charge = {amount, currency, customer};
-        if (val.source !== null) charge.source = val.source;
-        console.log("createStripeCharge amount " + amount + " customer " + customer + " source " + val.source)
+        if (data.source !== null) charge.source = data.source;
+        console.log("createStripeCharge amount " + amount + " customer " + customer + " source " + data.source)
         return stripe.charges.create(charge, {idempotency_key});
     }).then(response => {
         // If the result is successful, write it back to the database
