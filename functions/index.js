@@ -16,13 +16,13 @@ const DEFAULT_LEAGUE_ID_PROD = "1525175000-268371"
 const DEFAULT_LEAGUE = DEFAULT_LEAGUE_ID_DEV // change this when switching to prod
 
 exports.onCreateUser = functions.auth.user().onCreate(user => {
-    console.log("onCreateUser complete with user " + JSON.stringify(user))
+    console.log("onCreateUser v1.4 complete with user " + JSON.stringify(user))
     const email = user.email;
     const uid = user.uid;
 
     if (email == undefined) {
         console.log('anonymous customer ' + uid + ' created, not creating stripe customer. has provider data? ' + user.providerData)
-        return
+        return user
     }
 
     console.log("onCreateUser calling createPlayer with uid " + uid)
@@ -31,6 +31,21 @@ exports.onCreateUser = functions.auth.user().onCreate(user => {
         return exports.createStripeCustomer(email, uid)
     })
 });
+
+exports.onEmailSignupV1_4 = functions.https.onRequest((req, res) => {
+    // in v1_4, when a player is created, their email is added to the anonymous account already created.
+    // this causes onCreateUser to not be triggere a second time, thus createPlayer and createStripeCustomer are not called
+    // the client accessing v1_4 must call onEmailSignupV1_4 to trigger player and customer creation in order to continue signup
+    const userId = req.body.userId
+    const email = req.body.email
+    console.log("onCreateUser calling createPlayer with uid " + userId)
+    return exports.createPlayer(userId).then(function (result) {
+        console.log("onCreateUser createPlayer success with result " + result)
+        return exports.createStripeCustomer(email, userId)
+    }).then(result => {
+        res.status(200).json({"playerId": userId})
+    })
+})
 
 exports.createPlayer = function(userId) {
     var ref = `/players/${userId}`
