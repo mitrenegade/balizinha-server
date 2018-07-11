@@ -21,7 +21,7 @@ exports.onCreateUser = functions.auth.user().onCreate(user => {
     const uid = user.uid;
 
     if (email == undefined) {
-        console.log('anonymous customer ' + uid + ' created, not creating stripe customer. has provider data? ' + data.providerData)
+        console.log('anonymous customer ' + uid + ' created, not creating stripe customer. has provider data? ' + user.providerData)
         return
     }
 
@@ -272,9 +272,9 @@ exports.refundCharge = functions.https.onRequest( (req, res) => {
     })
 })
 
-exports.subscribeToOrganizerPush = functions.database.ref(`/organizers/{organizerId}`).onWrite(event => {
-    const organizerId = event.params.organizerId
-    const val = event.data.val()
+exports.subscribeToOrganizerPush = functions.database.ref(`/organizers/{organizerId}`).onWrite((snapshot, context) => {
+    var organizerId = context.params.organizerId
+    var val = snapshot.after.val()
 
     return admin.database().ref(`/players/${organizerId}`).once('value').then(snapshot => {
         return snapshot.val();
@@ -290,11 +290,12 @@ exports.subscribeToOrganizerPush = functions.database.ref(`/organizers/{organize
     })
 })
 
-exports.createStripeSubscription = functions.database.ref(`/charges/organizers/{organizerId}/{id}`).onWrite(event => {
+exports.createStripeSubscription = functions.database.ref(`/charges/organizers/{organizerId}/{chargeId}`).onWrite((snapshot, context) => {
 //function createStripeCharge(req, res, ref) {
-    const val = event.data.val();
-    const organizerId = event.params.organizerId
-    const chargeId = event.params.id
+    var organizerId = context.params.organizerId
+    var chargeId = context.params.chargeId
+    var val = snapshot.after.val()
+
     var isTrial = val["isTrial"]
     if (!isTrial) {
         isTrial = false
@@ -324,14 +325,16 @@ exports.createStripeSubscription = functions.database.ref(`/charges/organizers/{
     }).then(response => {
         // If the result is successful, write it back to the database
         console.log("createStripeSubscription success with response " + response)
-        return event.data.adminRef.update(response);
+        const ref = admin.database().ref(`/charges/organizers/${organizerId}/${chargeId}`)
+        return ref.update(response)
     }, error => {
         // We want to capture errors and render them in a user-friendly way, while
         // still logging an exception with Stackdriver
         const trialEnd = moment().add(trialMonths, 'months')
         const endDate = Math.floor(trialEnd.toDate().getTime()/1000) // to unix time
         console.log("createStripeSubscription error " + error.message + " trial end " + endDate)
-        return event.data.adminRef.update({"error": error.message, "status": "error", "deadline": endDate})
+        const ref = admin.database().ref(`/charges/organizers/${organizerId}/${chargeId}`)
+        return ref.update({"error": error.message, "status": "error", "deadline": endDate})
     });
 });
 
@@ -659,44 +662,6 @@ exports.onActionChange = functions.database.ref('/actions/{actionId}').onWrite((
         })
     } else {
         return snapshot
-    }
-});
-
-// duplicate legacy action for chat under /actions
-// TODO: deprecate this in 0.7.3
-exports.onLegacyActionChange = functions.database.ref('/action/{actionId}').onWrite(event => {
-    const actionId = event.params.actionId
-    var changed = false
-    var created = false
-    var deleted = false
-    var data = event.data.val();
-
-    if (!event.data.previous.exists()) {
-        created = true
-    } else if (data["active"] == false) {
-        deleted = true
-    }
-
-    if (!created && event.data.changed()) {
-        changed = true;
-    }
-
-    const actionType = data["type"]
-    if (actionType == "chat" && created == true) {
-    // for a chat action, update createdAt then create a duplicate
-        const userId = data["user"]
-        return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
-            return snapshot.val();
-        }).then(player => {
-            const username = player["name"]
-            var ref = `/actions/` + actionId
-            console.log("Duplicating legacy action under /actions with unique id " + actionId + " name " + username + " message: " + data["message"])
-            data["username"] = username
-            return admin.database().ref(ref).set(data).then(result =>{
-                // send push
-                exports.pushForChatAction(actionId, data["event"], data["user"], data)
-            })
-        })
     }
 });
 
