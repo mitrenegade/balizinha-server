@@ -7,13 +7,13 @@ const leagueModule = require('./league')
 admin.initializeApp(functions.config().firebase);
 
 // TO TOGGLE BETWEEN DEV AND PROD: change this to .dev or .prod for functions:config variables to be correct
-const config = functions.config().prod
+const config = functions.config().dev
 const stripe = require('stripe')(config.stripe.token)
 const API_VERSION = 1.4 // leagues
 
 const DEFAULT_LEAGUE_ID_DEV = "1525785307-821232"
 const DEFAULT_LEAGUE_ID_PROD = "1525175000-268371"
-const DEFAULT_LEAGUE = DEFAULT_LEAGUE_ID_PROD // change this when switching to prod
+const DEFAULT_LEAGUE = DEFAULT_LEAGUE_ID_DEV // change this when switching to prod
 
 exports.onCreateUser = functions.auth.user().onCreate(user => {
     console.log("onCreateUser complete with user " + JSON.stringify(user))
@@ -52,10 +52,10 @@ exports.onPlayerCreate = functions.database.ref('/players/{userId}').onCreate((s
 exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite((snapshot, context) => {
     console.log("onPlayerChange triggered with snapshot " + JSON.stringify(snapshot) + " context " + JSON.stringify(context))
     var playerId = context.params.userId
-    var data = snapshot.after
+    var data = snapshot.after.val()
 
     // update city
-    if (data["city"] != null) {
+    if (data["city"] != undefined) {
         var city = data["city"].toLowerCase()
         var ref = `/cityPlayers/` + city
         console.log("Creating cityPlayers for city " + city + " and player " + playerId)
@@ -63,7 +63,7 @@ exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite((sn
         return admin.database().ref(ref).update(params)
     }
 
-    if (data["promotionId"] != null) {
+    if (data["promotionId"] != undefined) {
         var promo = data["promotionId"].toLowerCase()
         var ref = `/promoPlayers/` + promo
         console.log("Creating promoPlayers for promo " + promo + " and player " + playerId)
@@ -110,7 +110,7 @@ exports.validateStripeCustomer = functions.https.onRequest( (req, res) => {
     .then(snapshot => {
         return snapshot.val();
     }).then(customer => {
-        if (customer != null) {
+        if (customer != undefined) {
             console.log("ValidateStripeCustomer: userId " + userId + " found customer_id " + customer)
             res.status(200).json({"customer_id" : customer})
         } else {
@@ -167,40 +167,57 @@ exports.ephemeralKeys = functions.https.onRequest( (req, res) => {
 });
 
 // Charge the Stripe customer whenever an amount is written to the Realtime database
-exports.createStripeCharge = functions.database.ref(`/charges/events/{eventId}/{id}`).onWrite(event => {
+exports.createStripeChargeV1_4 = functions.database.ref(`/charges/events/{eventId}/{chargeId}`).onWrite((snapshot, context) => {
 //function createStripeCharge(req, res, ref) {
-    const val = event.data.val();
-    const userId = val.player_id
-    const eventId = event.params.eventId
-    const chargeId = event.params.id
-    console.log("createStripeCharge for event " + eventId + " userId " + userId + " charge id " + chargeId)
+    var eventId = context.params.eventId
+    var chargeId = context.params.chargeId
+    var data = snapshot.after.val()
+    var old = snapshot.before
+
+    console.log("createStripeCharge v1.4: event " + eventId + " charge id " + chargeId + " data " + JSON.stringify(data))
+    const userId = data.player_id
     // This onWrite will trigger whenever anything is written to the path, so
     // noop if the charge was deleted, errored out, or the Stripe API returned a result (id exists) 
-    if (val === null || val.id || val.error) return null;
+    if (data == undefined || data.id || data.error) {
+        if (data.id) {
+            console.log("createStripeCharge v1.4: failed because data already exists with id " + data.id)
+        } else if (data.error) {
+            console.log("createStripeCharge v1.4: failed because data had error " + data.error)
+        } else if (data == undefined) {
+            console.log("createStripeCharge v1.4: failed because data was null")
+        }
+        return null
+    }
     // Look up the Stripe customer id written in createStripeCustomer
-    return admin.database().ref(`/stripe_customers/${userId}/customer_id`).once('value').then(snapshot => {
+    var customerRef = `/stripe_customers/${userId}`
+    return admin.database().ref(customerRef).once('value').then(snapshot => {
         return snapshot.val();
-    }).then(customer => {
+    }).then(customerDict => {
         // Create a charge using the pushId as the idempotency key, protecting against double charges 
-        const amount = val.amount;
+        const customer = customerDict["customer_id"]
+        const amount = data.amount;
         const idempotency_key = chargeId;
         const currency = 'USD'
         let charge = {amount, currency, customer};
-        if (val.source !== null) charge.source = val.source;
-        console.log("createStripeCharge amount " + amount + " customer " + customer + " source " + val.source)
+        if (data.source != undefined) {
+            charge.source = data.source
+        }
+        console.log("createStripeCharge v1.4: amount " + amount + " customerId " + customer + " charge " + JSON.stringify(charge))
         return stripe.charges.create(charge, {idempotency_key});
     }).then(response => {
         // If the result is successful, write it back to the database
-        console.log("createStripeCharge success with response " + JSON.stringify(response))
-        return event.data.adminRef.update(response).then(result => {
+        console.log("createStripeCharge v1.4: success with response " + JSON.stringify(response))
+        const ref = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
+        return ref.update(response).then(result => {
             var type = "payForEvent"
             return exports.createAction(type, userId, eventId, null)
         })
     }, error => {
         // We want to capture errors and render them in a user-friendly way, while
         // still logging an exception with Stackdriver
-        console.log("createStripeCharge error " + JSON.stringify(error))
-        return event.data.adminRef.child('error').set(error.message)
+        console.log("createStripeCharge v1.4: error " + JSON.stringify(error))
+        const ref = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
+        return ref.child('error').set(error.message)
     })
 });
 
@@ -211,10 +228,10 @@ exports.refundCharge = functions.https.onRequest( (req, res) => {
     const amount = req.body.amount // can be null // in cents
     var type = ""
     var typeId = ""
-    if (eventId != null) {
+    if (eventId != undefined) {
         type = "events"
         typeId = eventId
-    } else if (organizerId != null) {
+    } else if (organizerId != undefined) {
         type = "organizers"
         typeId = organizerId
     } else {
@@ -233,7 +250,7 @@ exports.refundCharge = functions.https.onRequest( (req, res) => {
         var status = charge["status"] // just for debugging
         var customer = charge["customer"]
         var params = {"charge": id}
-        if (amount != null) {
+        if (amount != undefined) {
             params["amount"] = amount
         }
         console.log("RefundCharge: found charge with id " + id + " status " + status + " amount " + amount + " customer " + customer)
@@ -453,7 +470,7 @@ exports.createTopicForNewEvent = function(eventId, organizerId) {
 // event creation/change
 exports.onEventChange = functions.database.ref('/events/{eventId}').onWrite((snapshot, context) => {
     var eventId = context.params.eventId
-    var data = snapshot.after
+    var data = snapshot.after.val()
     var old = snapshot.before
 
     if (!old.exists()) {
@@ -483,20 +500,19 @@ exports.onEventChange = functions.database.ref('/events/{eventId}').onWrite((sna
 exports.onUserJoinOrLeaveEvent = functions.database.ref('/eventUsers/{eventId}/{userId}').onWrite((snapshot, context) => {
     const eventId = context.params.eventId
     const userId = context.params.userId
-    var data = snapshot.after
+    var data = snapshot.after.val()
     var old = snapshot.before
 
     var eventUserChanged = false;
     var eventUserCreated = false;
-    var eventUserData = data.val();
 
     if (!old.exists()) {
         eventUserCreated = true;
-        console.log("onUserJoinOrLeaveEvent: created user " + userId + " for event " + eventId + ": " + JSON.stringify(eventUserData))
+        console.log("onUserJoinOrLeaveEvent: created user " + userId + " for event " + eventId + ": " + JSON.stringify(data))
     }
     if (!eventUserCreated) {
         eventUserChanged = true;
-        console.log("onUserJoinOrLeaveEvent: updated user " + userId + " for event " + eventId + ": " + JSON.stringify(eventUserData))
+        console.log("onUserJoinOrLeaveEvent: updated user " + userId + " for event " + eventId + ": " + JSON.stringify(data))
     }
 
     return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
@@ -505,7 +521,7 @@ exports.onUserJoinOrLeaveEvent = functions.database.ref('/eventUsers/{eventId}/{
         var name = player["name"]
         var email = player["email"]
         var joinedString = "joined"
-        if (!eventUserData) {
+        if (data == false) {
             joinedString = "left"
         }
         var msg = name + " has " + joinedString + " your game"
@@ -516,7 +532,7 @@ exports.onUserJoinOrLeaveEvent = functions.database.ref('/eventUsers/{eventId}/{
         var token = player["fcmToken"]
         var eventTopic = "event" + eventId
         if (token && token.length > 0) {
-            if (eventUserData) {
+            if (data == true) {
                 exports.subscribeToTopic(token, eventTopic)
             } else {
                 exports.unsubscribeFromTopic(token, eventTopic)
@@ -526,7 +542,7 @@ exports.onUserJoinOrLeaveEvent = functions.database.ref('/eventUsers/{eventId}/{
         return exports.sendPushToTopic(title, organizerTopic, msg)
     }).then( result => { 
         var type = "joinEvent"
-        if (!eventUserData) {
+        if (data == false) {
             type = "leaveEvent"
         }
         return exports.createAction(type, userId, eventId, null)
@@ -576,7 +592,7 @@ exports.createAction = function(type, userId, eventId, message) {
         return admin.database().ref(ref).set(params)
     }).then(action => {
         // create eventAction
-        if (eventId != null) {
+        if (eventId != undefined) {
             var ref = `/eventActions/` + eventId
             // when initializing a dict, use [var] notation. otherwise use params[var] = val
             var params = { [actionId] : true}
@@ -591,7 +607,7 @@ exports.onActionChange = functions.database.ref('/actions/{actionId}').onWrite((
     var changed = false
     var created = false
     var deleted = false
-    var data = snapshot.after
+    var data = snapshot.after.val()
     var old = snapshot.before
 
     if (!old.exists()) {
