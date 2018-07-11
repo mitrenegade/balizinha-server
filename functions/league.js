@@ -57,7 +57,7 @@ exports.doJoinLeague = function(admin, userId, leagueId) {
     }).then(result => {
 	    console.log("JoinLeague: league " + leagueId + " being added to user " + userId)
 		var leagueRef = `/playerLeagues/${userId}`
-		var params = {[leagueId]: true}
+		var params = {[leagueId]: "member"}
 		return admin.database().ref(leagueRef).update(params)
 	}).then(result => {
 		// result is null due to update
