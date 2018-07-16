@@ -27,23 +27,10 @@ exports.createLeague = function(req, res, exports, admin) {
     })
 }
 
-exports.joinLeagueV1_4 = function(req, res, exports, admin) {
+exports.joinLeaveLeagueV1_4 = function(req, res, exports, admin) {
 	const userId = req.body.userId
 	const leagueId = req.body.leagueId
-	const isJoin = true
-	return exports.doJoinLeaveLeagueV1_4(admin, userId, leagueId, isJoin).then(result => {
-		if (result["error"] != null) {
-			res.send(500, result["error"])
-		} else {
-			res.send(200, {result: result})
-		}
-	})
-}
-
-exports.leaveLeagueV1_4 = function(req, res, exports, admin) {
-	const userId = req.body.userId
-	const leagueId = req.body.leagueId
-	const isJoin = false
+	const isJoin = req.body.isJoin
 	return exports.doJoinLeaveLeagueV1_4(admin, userId, leagueId, isJoin).then(result => {
 		if (result["error"] != null) {
 			res.send(500, result["error"])

@@ -801,12 +801,8 @@ exports.joinLeague = functions.https.onRequest((req, res) => {
     return leagueModule.joinLeague(req, res, exports, admin)
 });
 
-exports.joinLeagueV1_4 = functions.https.onRequest((req, res) => {
-    return leagueModule.joinLeagueV1_4(req, res, exports, admin)
-});
-
-exports.leaveLeagueV1_4 = functions.https.onRequest((req, res) => {
-    return leagueModule.leaveLeagueV1_4(req, res, exports, admin)
+exports.joinLeaveLeagueV1_4 = functions.https.onRequest((req, res) => {
+    return leagueModule.joinLeaveLeagueV1_4(req, res, exports, admin)
 });
 
 exports.getPlayersForLeague = functions.https.onRequest((req, res) => {
