@@ -62,7 +62,8 @@ exports.onPlayerCreate = functions.database.ref('/players/{userId}').onCreate((s
     var playerId = context.params.userId
     var email = snapshot.email // snapshot only contains email
 
-    return exports.doJoinLeague(admin, playerId, DEFAULT_LEAGUE)
+    const isJoin = true
+    return exports.doJoinLeaveLeagueV1_5(admin, playerId, DEFAULT_LEAGUE, isJoin)
 })
 
 exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite((snapshot, context) => {
@@ -800,6 +801,10 @@ exports.joinLeague = functions.https.onRequest((req, res) => {
     return leagueModule.joinLeague(req, res, exports, admin)
 });
 
+exports.joinLeaveLeagueV1_4 = functions.https.onRequest((req, res) => {
+    return leagueModule.joinLeaveLeagueV1_4(req, res, exports, admin)
+});
+
 exports.getPlayersForLeague = functions.https.onRequest((req, res) => {
     return leagueModule.getPlayersForLeague(req, res, exports, admin)
 });
@@ -817,8 +822,8 @@ exports.getEventsForLeague = functions.https.onRequest((req, res) => {
 });
 
 // helper functions
-exports.doJoinLeague = function(admin, userId, leagueId) {
-    return leagueModule.doJoinLeague(admin, userId, leagueId)
+exports.doJoinLeaveLeagueV1_4 = function(admin, userId, leagueId, isJoin) {
+    return leagueModule.doJoinLeaveLeagueV1_4(admin, userId, leagueId, isJoin)
 }
 
 
