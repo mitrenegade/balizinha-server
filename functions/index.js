@@ -4,6 +4,8 @@ const logging = require('@google-cloud/logging')();
 const app = require('express')
 const moment = require('moment')
 const leagueModule = require('./league')
+const eventModule = require('./event')
+
 admin.initializeApp(functions.config().firebase);
 
 // TO TOGGLE BETWEEN DEV AND PROD: change this to .dev or .prod for functions:config variables to be correct
@@ -486,87 +488,6 @@ exports.createTopicForNewEvent = function(eventId, organizerId) {
     }
 }
 
-// event creation/change
-exports.onEventChange = functions.database.ref('/events/{eventId}').onWrite((snapshot, context) => {
-    var eventId = context.params.eventId
-    var data = snapshot.after.val()
-    var old = snapshot.before
-
-    if (!old.exists()) {
-        console.log("event created: " + eventId + " state: " + JSON.stringify(data))
-        return snapshot
-    } else if (old["active"] == true && data["active"] == false) {
-        return console.log("event deleted: " + eventId + " state: " + JSON.stringify(old))
-        // deleted
-        var title = "Event cancelled"
-        var topic = "event" + eventId
-        var name = data["name"]
-        var city = data["city"]
-        if (!city) {
-            city = data["place"]
-        }
-
-        // send push
-        var msg = "An event you're going to, " + name + ", has been cancelled."
-        return exports.sendPushToTopic(title, topic, msg)
-    } else {
-        console.log("event change: " + eventId)
-        return snapshot
-    }
-})
-
-// join/leave event
-exports.onUserJoinOrLeaveEvent = functions.database.ref('/eventUsers/{eventId}/{userId}').onWrite((snapshot, context) => {
-    const eventId = context.params.eventId
-    const userId = context.params.userId
-    var data = snapshot.after.val()
-    var old = snapshot.before
-
-    var eventUserChanged = false;
-    var eventUserCreated = false;
-
-    if (!old.exists()) {
-        eventUserCreated = true;
-        console.log("onUserJoinOrLeaveEvent: created user " + userId + " for event " + eventId + ": " + JSON.stringify(data))
-    }
-    if (!eventUserCreated) {
-        eventUserChanged = true;
-        console.log("onUserJoinOrLeaveEvent: updated user " + userId + " for event " + eventId + ": " + JSON.stringify(data))
-    }
-
-    return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
-        return snapshot.val();
-    }).then(player => {
-        var name = player["name"]
-        var email = player["email"]
-        var joinedString = "joined"
-        if (data == false) {
-            joinedString = "left"
-        }
-        var msg = name + " has " + joinedString + " your game"
-        var title = "Event update"
-        var organizerTopic = "eventOrganizer" + eventId // join/leave message only for owners
-        console.log("Sending push for user " + name + " " + email + " joined event " + organizerTopic + " with message: " + msg)
-
-        var token = player["fcmToken"]
-        var eventTopic = "event" + eventId
-        if (token && token.length > 0) {
-            if (data == true) {
-                exports.subscribeToTopic(token, eventTopic)
-            } else {
-                exports.unsubscribeFromTopic(token, eventTopic)
-            }
-        }
-
-        return exports.sendPushToTopic(title, organizerTopic, msg)
-    }).then( result => { 
-        var type = "joinEvent"
-        if (data == false) {
-            type = "leaveEvent"
-        }
-        return exports.createAction(type, userId, eventId, null)
-    })
-})
 
 exports.secondsSince1970 = function() {
     var secondsSince1970 = new Date().getTime() / 1000
@@ -788,7 +709,7 @@ exports.sampleCloudFunction = functions.https.onRequest((req, res) => {
 
 })
 
-// league
+// LEAGUE //////////////////////////////////////////////////////////////////////////////////
 // Pass database to child functions so they have access to it
 
 // http functions
@@ -825,7 +746,13 @@ exports.doJoinLeaveLeagueV1_4 = function(admin, userId, leagueId, isJoin) {
     return leagueModule.doJoinLeaveLeagueV1_4(admin, userId, leagueId, isJoin)
 }
 
+// EVENT //////////////////////////////////////////////////////////////////////////////////
+exports.createEvent1_4 = functions.https.onRequest((req, res) => {
+    return eventModule.createEvent(req, res, exports, admin)
+})
 
-
-
+// helper functions
+exports.joinOrLeaveEvent1_4 = function(userId, eventId, join) {
+    return leagueModule.doJoinLeaveEventV1_4(userId, eventId, join)
+}
 
