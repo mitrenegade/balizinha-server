@@ -10,6 +10,7 @@ admin.initializeApp(functions.config().firebase);
 const config = functions.config().prod
 const stripe = require('stripe')(config.stripe.token)
 const API_VERSION = 1.4 // leagues
+const BUILD_VERSION = 100 // for internal tracking
 
 const DEFAULT_LEAGUE_ID_DEV = "1525785307-821232"
 const DEFAULT_LEAGUE_ID_PROD = "1525175000-268371"
@@ -25,9 +26,7 @@ exports.onCreateUser = functions.auth.user().onCreate(user => {
         return user
     }
 
-    return exports.doEmailSignup(userId, email).then(result => {
-        res.status(200).json({"playerId": userId})
-    })
+    return exports.doEmailSignup(userId, email)
 });
 
 exports.doEmailSignup = function(userId, email) {
@@ -63,7 +62,7 @@ exports.onPlayerCreate = functions.database.ref('/players/{userId}').onCreate((s
     var email = snapshot.email // snapshot only contains email
 
     const isJoin = true
-    return exports.doJoinLeaveLeagueV1_5(admin, playerId, DEFAULT_LEAGUE, isJoin)
+    return exports.doJoinLeaveLeagueV1_4(admin, playerId, DEFAULT_LEAGUE, isJoin)
 })
 
 exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite((snapshot, context) => {
