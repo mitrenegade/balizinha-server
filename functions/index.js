@@ -10,6 +10,7 @@ admin.initializeApp(functions.config().firebase);
 const config = functions.config().prod
 const stripe = require('stripe')(config.stripe.token)
 const API_VERSION = 1.4 // leagues
+const BUILD_VERSION = 100 // for internal tracking
 
 const DEFAULT_LEAGUE_ID_DEV = "1525785307-821232"
 const DEFAULT_LEAGUE_ID_PROD = "1525175000-268371"
