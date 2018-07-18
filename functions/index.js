@@ -25,9 +25,7 @@ exports.onCreateUser = functions.auth.user().onCreate(user => {
         return user
     }
 
-    return exports.doEmailSignup(userId, email).then(result => {
-        res.status(200).json({"playerId": userId})
-    })
+    return exports.doEmailSignup(userId, email)
 });
 
 exports.doEmailSignup = function(userId, email) {
