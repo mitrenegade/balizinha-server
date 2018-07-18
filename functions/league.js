@@ -49,18 +49,20 @@ exports.doJoinLeaveLeagueV1_4 = function(admin, userId, leagueId, isJoin) {
 		status = "none"
 	}
 
+	console.log("DoJoinLeaveLeagueV1_4: status " + status)
+
 	var ref = `/leagues/${leagueId}` 
 	return admin.database().ref(ref).once('value')
 	.then(snapshot => {
         return snapshot.val();
     }).then(league => {	
     	if (league == null) {
-    		console.log("JoinLeaveLeague v1.5: league not found")
+    		console.log("JoinLeaveLeague v1.4: league not found")
     		throw new Error("League not found")
     	} else {
     		var leagueRef = `/leaguePlayers/${leagueId}`
     		var params = {[userId]: status}
-		    console.log("JoinLeaveLeague v1.5: update leaguePlayers status " + status " + user " + userId + " league " + leagueId + " name: " + league["name"])
+		    console.log("JoinLeaveLeague v1.5: update leaguePlayers status " + status + " + user " + userId + " league " + leagueId + " name: " + league["name"])
     		return admin.database().ref(leagueRef).update(params)
     	}
     }).then(result => {
