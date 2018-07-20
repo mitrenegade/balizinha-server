@@ -62,11 +62,11 @@ exports.doJoinLeaveLeagueV1_4 = function(admin, userId, leagueId, isJoin) {
     	} else {
     		var leagueRef = `/leaguePlayers/${leagueId}`
     		var params = {[userId]: status}
-		    console.log("JoinLeaveLeague v1.5: update leaguePlayers status " + status + " + user " + userId + " league " + leagueId + " name: " + league["name"])
+		    console.log("JoinLeaveLeague v1.4: update leaguePlayers status " + status + " + user " + userId + " league " + leagueId + " name: " + league["name"])
     		return admin.database().ref(leagueRef).update(params)
     	}
     }).then(result => {
-	    console.log("JoinLeaveLeague v1.5: update playerLeagues status " + status + " league " + leagueId + " user " + userId)
+	    console.log("JoinLeaveLeague v1.4: update playerLeagues status " + status + " league " + leagueId + " user " + userId)
 		var leagueRef = `/playerLeagues/${userId}`
 		var params = {[leagueId]: status}
 		return admin.database().ref(leagueRef).update(params)
@@ -74,7 +74,7 @@ exports.doJoinLeaveLeagueV1_4 = function(admin, userId, leagueId, isJoin) {
 		// result is null due to update
 		return {"result": "success", "userId": userId, "leagueId": leagueId, "status": status}
     }).catch( (err) => {
-    	console.log("JoinLeaveLeague v1.5: league " + leagueId + " error: " + err)
+    	console.log("JoinLeaveLeague v1.4: league " + leagueId + " error: " + err)
     	return {"error": err}
     })
 }
