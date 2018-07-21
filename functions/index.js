@@ -535,7 +535,7 @@ exports.doJoinLeaveLeagueV1_4 = function(admin, userId, leagueId, isJoin) {
 
 // EVENT //////////////////////////////////////////////////////////////////////////////////
 exports.createEvent1_4 = functions.https.onRequest((req, res) => {
-    return eventModule.createEvent(req, res, exports, admin)
+    return eventModule.createEventV1_4(req, res, exports, admin)
 })
 
 // on database changes

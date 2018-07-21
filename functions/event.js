@@ -1,4 +1,4 @@
-exports.createEvent1_4 = function(req, res, exports, admin) {
+exports.createEventV1_4 = function(req, res, exports, admin) {
     const userId = req.body.userId
     if (!userId) { res.status(500).json({"error": "A valid user is required to create event"}); return }
 
