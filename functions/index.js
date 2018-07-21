@@ -493,7 +493,7 @@ exports.createTopicForNewEvent = function(eventId, organizerId) {
 }
 
 exports.sendPushToTopic = function(title, topic, msg) {
-    return pushModule.sendPushToTopicV1_5(title, topic, msg, exports, admin)
+    return pushModule.sendPushToTopicV1_5(title, topic, msg, admin)
 }
 
 exports.sendPush = function(token, msg) {
