@@ -1,6 +1,6 @@
 exports.createEventV1_4 = function(req, res, exports, admin) {
     const userId = req.body.userId
-    if (!userId) { res.status(500).json({"error": "A valid user is required to create event"}); return }
+    if (userId == undefined) { res.status(500).json({"error": "A valid user is required to create event"}); return }
 
     var league = req.body.league
     var name = req.body.name
@@ -14,8 +14,8 @@ exports.createEventV1_4 = function(req, res, exports, admin) {
     const place = req.body.place
     const info = req.body.info
 
-    if (!city) { res.status(500).json({"error": "City is required to create event"}); return }
-    if (!place) { res.status(500).json({"error": "Location is required to create event"}); return }
+    if (city == undefined) { res.status(500).json({"error": "City is required to create event"}); return }
+    if (place == undefined) { res.status(500).json({"error": "Location is required to create event"}); return }
 
     var maxPlayers = req.body.maxPlayers
     if (maxPlayers == undefined) { maxPlayers = 6 }
@@ -52,42 +52,58 @@ exports.createEventV1_4 = function(req, res, exports, admin) {
     .then(result => {
         // join event
         console.log("CreateEvent v1.4 success for event " + eventId + " with result " + JSON.stringify(result))
-        return exports.joinOrLeaveEvent1_4(userId, eventId, true, admin)
+        return exports.doJoinOrLeaveEventV1_4(userId, eventId, true, admin)
     }).then(result => {
         // send push
         // TODO: make these promises as well
+        console.log("CreateEvent v1.4 sending push")
         var title = "New event available"
         var topic = "general"
         var placeName = city
-        if (!city) {
+        if (city == undefined) {
             placeName = place
         }
         var msg = "A new event, " + name + ", is available in " + placeName
         console.log("CreateEvent v1.4: sending push " + title + " to " + topic + " with msg " + msg)
-        exports.sendPushToTopic(title, topic, msg)
+        exports.sendPushToTopic(title, topic, msg) // TODO: this gets called twice
 
         console.log("CreateEvent v1.4: createTopicForEvent")
-        exports.createTopicForNewEvent(eventId, userId)
+        return exports.createTopicForNewEvent(eventId, userId)
 
     }).then(result => {
         // create action
+        console.log("CreateEvent v1.4 createAction event " + eventId + " organizer " + userId)
         var type = "createEvent"
-        return exports.createAction(type, organizerId, eventId, null)
+        return exports.createAction(type, userId, eventId, null)
     }).then(result => {
-        res.status(200).json({"result": result, "eventId": eventId})
-    }).catch(error => {
-        console.log("CreateEvent v1.4 error: " + JSON.stringify(error));
-        res.status(500).json({"error": error})
+        return res.status(200).json({"result": result, "eventId": eventId})
     })
+    // .catch(error => {
+    //     console.log("CreateEvent v1.4 error: " + JSON.stringify(error));
+    //     return res.status(500).json({"error": error})
+    // })
 }
 
-exports.joinOrLeaveEvent1_4 = function(userId, eventId, join, admin) {
+// helper function
+exports.doJoinOrLeaveEventV1_4 = function(userId, eventId, join, admin) {
     console.log("joinOrLeaveEvent v1.4: " + userId + " join? " + join + " " + eventId)
-
     var params = { [userId] : join }
     return admin.database().ref(`/eventUsers/${eventId}`).update(params).then(results => {
         var params2 = { [eventId] : join }
         return admin.database().ref(`userEvents/${userId}`).update(params2)
+    })
+}
+
+// cloud function
+exports.joinOrLeaveEventV1_5 = function(req, res, exports, admin) {
+    var userId = req.body.userId
+    var eventId = req.body.eventId
+    var join = req.body.join
+
+    console.log("joinOrLeaveEvent v1.5: " + userId + " join? " + join + " " + eventId)
+    return exports.doJoinOrLeaveEventV1_4(userId, eventId, join, admin).then(result => {
+        console.log("joinOrLeaveEvent v1.5: results " + JSON.stringify(result))
+        return res.status(200).json({"result": result, "eventId": eventId})
     })
 }
 
@@ -96,6 +112,8 @@ exports.onEventChangeV1_4 = function(snapshot, context, exports, admin) {
     var eventId = context.params.eventId
     var data = snapshot.after.val()
     var old = snapshot.before
+
+    console.log("onEventChange v1.4: event " + eventId + " data " + JSON.stringify(data))
 
     if (!old.exists()) {
         console.log("event created: " + eventId + " state: " + JSON.stringify(data))
