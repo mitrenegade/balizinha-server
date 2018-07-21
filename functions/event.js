@@ -52,7 +52,7 @@ exports.createEventV1_4 = function(req, res, exports, admin) {
     .then(result => {
         // join event
         console.log("CreateEvent v1.4 success for event " + eventId + " with result " + JSON.stringify(result))
-        return exports.joinOrLeaveEventV1_4(userId, eventId, true, admin)
+        return exports.doJoinOrLeaveEventV1_4(userId, eventId, true, admin)
     }).then(result => {
         // send push
         // TODO: make these promises as well
@@ -84,7 +84,8 @@ exports.createEventV1_4 = function(req, res, exports, admin) {
     // })
 }
 
-exports.joinOrLeaveEventV1_4 = function(userId, eventId, join, admin) {
+// helper function
+exports.doJoinOrLeaveEventV1_4 = function(userId, eventId, join, admin) {
     console.log("joinOrLeaveEvent v1.4: " + userId + " join? " + join + " " + eventId)
 
     var params = { [userId] : join }
@@ -92,6 +93,16 @@ exports.joinOrLeaveEventV1_4 = function(userId, eventId, join, admin) {
         var params2 = { [eventId] : join }
         return admin.database().ref(`userEvents/${userId}`).update(params2)
     })
+}
+
+// cloud function
+exports.joinOrLeaveEventV1_5 = function(req, res, exports, admin) {
+    console.log("joinOrLeaveEvent v1.5: " + userId + " join? " + join + " " + eventId)
+    var userId = req.body.userId
+    var eventId = req.body.eventId
+    var join = req.body.join
+
+    return exports.doJoinOrLeaveEventV1_4(userId, eventId, join, admin)
 }
 
 // event creation/change

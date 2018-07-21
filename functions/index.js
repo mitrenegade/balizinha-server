@@ -538,6 +538,10 @@ exports.createEvent1_4 = functions.https.onRequest((req, res) => {
     return eventModule.createEventV1_4(req, res, exports, admin)
 })
 
+exports.joinOrLeaveEventV1_5 = functions.https.onRequest((req, res) => {
+    return eventModule.joinOrLeaveEventV1_5(req, res, exports, admin)
+})
+
 // on database changes
 exports.onEventChange = functions.database.ref('/events/{eventId}').onWrite((snapshot, context) => {
     return eventModule.onEventChangeV1_4(snapshot, context, exports, admin)
@@ -552,8 +556,8 @@ exports.onEventDelete = functions.database.ref('/events/{eventId}').onDelete((sn
 })
 
 // helpers - must be defined here in order to use in module
-exports.joinOrLeaveEventV1_4 = function(userId, eventId, join, admin) {
-    return eventModule.joinOrLeaveEventV1_4(userId, eventId, join, admin)
+exports.doJoinOrLeaveEventV1_4 = function(userId, eventId, join, admin) {
+    return eventModule.doJoinOrLeaveEventV1_4(userId, eventId, join, admin)
 }
 
 // ACTION //////////////////////////////////////////////////////////////////////////////////
