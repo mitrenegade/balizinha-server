@@ -102,7 +102,7 @@ exports.joinOrLeaveEventV1_5 = function(req, res, exports, admin) {
 
     console.log("joinOrLeaveEvent v1.5: " + userId + " join? " + join + " " + eventId)
     return exports.doJoinOrLeaveEventV1_4(userId, eventId, join, admin).then(result => {
-        console.log("joinOrLeaveEvent v1.5: results " + JSON.stringiy(result))
+        console.log("joinOrLeaveEvent v1.5: results " + JSON.stringify(result))
         return res.status(200).json({"result": result, "eventId": eventId})
     })
 }
