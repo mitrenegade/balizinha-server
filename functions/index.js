@@ -371,100 +371,6 @@ exports.createStripeSubscription = functions.database.ref(`/charges/organizers/{
 //     exports.sendPush(testToken, msg)
 // })
 
-exports.createEvent1_4 = functions.https.onRequest((req, res) => {
-    const userId = req.body.userId
-    if (!userId) { res.status(500).json({"error": "A valid user is required to create event"}); return }
-
-    var league = req.body.league
-    var name = req.body.name
-    var type = req.body.type
-    if (league == undefined) { league = DEFAULT_LEAGUE }
-    if (name == undefined) { name = "Balizinha" }
-    if (type == undefined) { type = "3 vs 3" }
-
-    const city = req.body.city
-    const state = req.body.state
-    const place = req.body.place
-    const info = req.body.info
-
-    if (!city) { res.status(500).json({"error": "City is required to create event"}); return }
-    if (!place) { res.status(500).json({"error": "Location is required to create event"}); return }
-
-    var maxPlayers = req.body.maxPlayers
-    if (maxPlayers == undefined) { maxPlayers = 6 }
-
-    const startTime = req.body.startTime
-    const endTime = req.body.endTime
-    if (startTime == undefined) { res.status(500).json({"error": "Start time is required to create event"}); return } // error if not exist
-    if (endTime == undefined) { res.status(500).json({"error": "End time is required to create event"}); return }
-
-    const paymentRequired = req.body.paymentRequired
-    const amount = req.body.amount
-
-    const lat = req.body.lat
-    const lon = req.body.lon
-
-    var params = {"league": league, "name": name, "type": type, "city": city, "place": place, "startTime": startTime, "endTime": endTime, "maxPlayers": maxPlayers}
-    var createdAt = exports.secondsSince1970()
-    params["createdAt"] = createdAt
-    params["organizer"] = userId
-    params["owner"] = userId // older apps used "owner" as the organizer
-
-    // optional params
-    if (paymentRequired) { params["paymentRequired"] = paymentRequired }
-    if (amount) { params["amount"] = amount }
-    if (state) { params["state"] = state }
-    if (info) { params["info"] = info }
-    if (lat) { params["lat"] = lat }
-    if (lon) { params["lon"] = lon }
-
-    var eventId = exports.createUniqueId()
-
-    var ref = `/events/` + eventId
-    return admin.database().ref(ref).set(params)
-    .then(result => {
-        console.log("CreateEvent v1.4 success for event " + eventId + " with result " + JSON.stringify(result))
-
-        // side effects
-        // send push
-        var title = "New event available"
-        var topic = "general"
-        var placeName = city
-        if (!city) {
-            placeName = place
-        }
-        var msg = "A new event, " + name + ", is available in " + placeName
-        console.log("CreateEvent v1.4: sending push " + title + " to " + topic + " with msg " + msg)
-        exports.sendPushToTopic(title, topic, msg)
-
-        console.log("CreateEvent v1.4: createTopicForEvent")
-        exports.createTopicForNewEvent(eventId, userId)
-
-        exports.joinOrLeaveEvent1_4(userId, eventId, true)
-
-        res.status(200).json({"result": result, "eventId": eventId})
-    }).catch(error => {
-        console.log("CreateEvent v1.4 error: " + JSON.stringify(error));
-        res.status(500).json({"error": error})
-    })
-})
-
-exports.joinOrLeaveEvent1_4 = function(userId, eventId, join) {
-    var joinStr = ""
-    if (join) {
-        joinStr = "joining"
-    } else {
-        joinStr = "leaving"
-    }
-    console.log("joinOrLeaveEvent v1.4: " + userId + " " + joinStr + " " + eventId)
-
-    var params = { [userId] : join }
-    return admin.database().ref(`/eventUsers/${eventId}`).update(params).then(results => {
-        var params2 = { [eventId] : join }
-        return admin.database().ref(`userEvents/${userId}`).update(params2)
-    })
-}
-
 exports.createTopicForNewEvent = function(eventId, organizerId) {
     // subscribe organizer to event topic
     if (organizerId) {
@@ -756,3 +662,11 @@ exports.joinOrLeaveEvent1_4 = function(userId, eventId, join) {
     return leagueModule.doJoinLeaveEventV1_4(userId, eventId, join)
 }
 
+// on database changes
+exports.onEventChange = functions.database.ref('/events/{eventId}').onWrite((snapshot, context) => {
+    return eventModule.onEventChange(snapshot, context, exports, admin)
+})
+
+exports.onUserJoinOrLeaveEvent = functions.database.ref('/eventUsers/{eventId}/{userId}').onWrite((snapshot, context) => {
+    return eventModule.onUserJoinOrLeaveEvent(snapshot, context, exports, admin)
+})

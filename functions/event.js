@@ -5,9 +5,9 @@ exports.createEvent1_4 = function(req, res, exports, admin) {
     var league = req.body.league
     var name = req.body.name
     var type = req.body.type
-    if (!league) { league = DEFAULT_LEAGUE }
-    if (!name) { name = "Balizinha" }
-    if (!type) { type = "3 vs 3" }
+    if (league == undefined) { league = DEFAULT_LEAGUE }
+    if (name == undefined) { name = "Balizinha" }
+    if (type == undefined) { type = "3 vs 3" }
 
     const city = req.body.city
     const state = req.body.state
@@ -18,12 +18,12 @@ exports.createEvent1_4 = function(req, res, exports, admin) {
     if (!place) { res.status(500).json({"error": "Location is required to create event"}); return }
 
     var maxPlayers = req.body.maxPlayers
-    if (!maxPlayers) { maxPlayers = 6 }
+    if (maxPlayers == undefined) { maxPlayers = 6 }
 
     const startTime = req.body.startTime
     const endTime = req.body.endTime
-    if (!startTime) { res.status(500).json({"error": "Start time is required to create event"}); return } // error if not exist
-    if (!endTime) { res.status(500).json({"error": "End time is required to create event"}); return }
+    if (startTime == undefined) { res.status(500).json({"error": "Start time is required to create event"}); return } // error if not exist
+    if (endTime == undefined) { res.status(500).json({"error": "End time is required to create event"}); return }
 
     const paymentRequired = req.body.paymentRequired
     const amount = req.body.amount
@@ -31,7 +31,7 @@ exports.createEvent1_4 = function(req, res, exports, admin) {
     const lat = req.body.lat
     const lon = req.body.lon
 
-    var params = {"league": league, "name": name, "type": type, "city": city, "place": place, "startTime": startTime, "endTime": endTime}
+    var params = {"league": league, "name": name, "type": type, "city": city, "place": place, "startTime": startTime, "endTime": endTime, "maxPlayers": maxPlayers}
     var createdAt = exports.secondsSince1970()
     params["createdAt"] = createdAt
     params["organizer"] = userId
@@ -93,8 +93,7 @@ exports.joinOrLeaveEvent1_4 = function(userId, eventId, join) {
 }
 
 // event creation/change
-BOBBY TODO: change this to exports.onEventChange function with input params
-exports.onEventChange = functions.database.ref('/events/{eventId}').onWrite((snapshot, context) => {
+exports.onEventChange = function(snapshot, context, exports, admin) {
     var eventId = context.params.eventId
     var data = snapshot.after.val()
     var old = snapshot.before
@@ -123,8 +122,7 @@ exports.onEventChange = functions.database.ref('/events/{eventId}').onWrite((sna
 })
 
 // join/leave event
-BOBBY TODO: change this to exports.onEventChange function with input params
-exports.onUserJoinOrLeaveEvent = functions.database.ref('/eventUsers/{eventId}/{userId}').onWrite((snapshot, context) => {
+exports.onUserJoinOrLeaveEvent = function(snapshot, context, exports, admin) {
     const eventId = context.params.eventId
     const userId = context.params.userId
     var data = snapshot.after.val()
