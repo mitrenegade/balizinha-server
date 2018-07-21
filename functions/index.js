@@ -476,6 +476,10 @@ exports.onActionChange = functions.database.ref('/actions/{actionId}').onWrite((
     return actionModule.onActionChange(snapshot, context, exports, admin)
 })
 
+exports.pushForChatAction = function(actionId, eventId, userId, data) {
+    return actionModule.pushForChatAction(actionId, eventId, userId, data, exports, admin)
+}
+
 // PUSH //////////////////////////////////////////////////////////////////////////////////
 
 // database changes
@@ -484,12 +488,12 @@ exports.subscribeToOrganizerPush = functions.database.ref(`/organizers/{organize
 })
 
 // helper functions
-exports.createTopicForNewEvent = function(eventId, organizerId, exports, admin) {
-    return pushModule.createTopicForNewEventV1_5(eventId, organizerId)
+exports.createTopicForNewEvent = function(eventId, organizerId) {
+    return pushModule.createTopicForNewEventV1_5(eventId, organizerId, exports, admin)
 }
 
-exports.sendPushToTopic = function(title, topic, msg, exports, admin) {
-    return pushModule.sendPushToTopicV1_5(title, topic, msg)
+exports.sendPushToTopic = function(title, topic, msg) {
+    return pushModule.sendPushToTopicV1_5(title, topic, msg, exports, admin)
 }
 
 exports.sendPush = function(token, msg) {

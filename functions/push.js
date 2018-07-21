@@ -19,7 +19,7 @@ exports.subscribeToOrganizerPushV1_5 = function(snapshot, context, exports, admi
             console.log("subscribeToOrganizerPush: logged in with id: " + organizerId + " but no token available")
         }
     })
-})
+}
 
 exports.createTopicForNewEventV1_5 = function(eventId, organizerId, exports, admin) {
     // subscribe organizer to event topic
