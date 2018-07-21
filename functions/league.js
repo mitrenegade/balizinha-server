@@ -33,9 +33,9 @@ exports.joinLeaveLeagueV1_4 = function(req, res, exports, admin) {
 	const isJoin = req.body.isJoin
 	return exports.doJoinLeaveLeagueV1_4(admin, userId, leagueId, isJoin).then(result => {
 		if (result["error"] != null) {
-			res.send(500, result["error"])
+			return res.send(500, result["error"])
 		} else {
-			res.send(200, {result: result})
+			return res.send(200, {result: result})
 		}
 	})
 }
@@ -87,9 +87,9 @@ exports.getPlayersForLeague = function(req, res, exports, admin) {
 	return admin.database().ref(leagueRef).once('value').then(snapshot => {
 		return snapshot.val()
 	}).then(result => {
-		res.send(200, {"result": result})
+		return res.send(200, {"result": result})
 	}).catch( err => {
-		res.send(500, {"error": error})
+		return res.send(500, {"error": error})
 	})
 
 	// TODO: result does not filter out players with value false
@@ -111,9 +111,9 @@ exports.getLeaguesForPlayer = function(req, res, exports, admin) {
 	return ref.once('value').then(snapshot => {
 		return snapshot.val()
 	}).then(result => {
-		res.send(200, {"result": result})
+		return res.send(200, {"result": result})
 	}).catch( err => {
-		res.send(500, {"error": error})
+		return res.send(500, {"error": error})
 	})
 
 	// TODO: result sends back leaguePlayers structure, not just the id
@@ -140,10 +140,10 @@ exports.changeLeaguePlayerStatus = function(req, res, exports, admin) {
 		return admin.database().ref(playerRef).set(status)
 	}).then(result => {
 		// result is null due to update
-		res.send(200,  {"result": "success"})
+		return res.send(200,  {"result": "success"})
     }).catch( (err) => {
     	console.log("ChangeLeaguePlayerStatus: league " + leagueId + " error: " + err)
-    	res.send(500, {"error": err})
+    	return res.send(500, {"error": err})
     })
 }
 
@@ -166,9 +166,9 @@ exports.getEventsForLeague = function(req, res, exports, admin) {
 		console.log("orderByChild for league " + leagueId + " result: " + JSON.stringify(snapshot))
 		return snapshot.val()
 	}).then(result => {
-		res.send(200, {"result": result})
+		return res.send(200, {"result": result})
 	}).catch( err => {
-		res.send(500, {"error": error})
+		return res.send(500, {"error": error})
 	})
 	// TODO: result does not filter out players with value false
 }
