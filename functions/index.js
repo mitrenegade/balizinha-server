@@ -4,6 +4,9 @@ const logging = require('@google-cloud/logging')();
 const app = require('express')
 const moment = require('moment')
 const leagueModule = require('./league')
+const eventModule = require('./event')
+const actionModule = require('./action')
+
 admin.initializeApp(functions.config().firebase);
 
 // TO TOGGLE BETWEEN DEV AND PROD: change this to .dev or .prod for functions:config variables to be correct
@@ -37,13 +40,14 @@ exports.doEmailSignup = function(userId, email) {
     })
 }
 
-exports.onEmailSignupV1_4 = functions.https.onRequest((req, res) => {
-    // in v1_4, when a player is created, their email is added to the anonymous account already created.
+// TODO tactually implement this in client
+exports.onEmailSignupV1_5 = functions.https.onRequest((req, res) => {
+    // in v1_5, when a player is created, their email is added to the anonymous account already created.
     // this causes onCreateUser to not be triggere a second time, thus createPlayer and createStripeCustomer are not called
     // the client accessing v1_4 must call onEmailSignupV1_4 to trigger player and customer creation in order to continue signup
     const userId = req.body.userId
     const email = req.body.email
-    console.log("onEmailSignup v1.4: client call to create email user " + userId + " with email " + email)
+    console.log("onEmailSignup v1.5: client call to create email user " + userId + " with email " + email)
     exports.doEmailSignup(userId, email)
 })
 
@@ -369,204 +373,22 @@ exports.createStripeSubscription = functions.database.ref(`/charges/organizers/{
 //     exports.sendPush(testToken, msg)
 // })
 
-exports.createEvent1_4 = functions.https.onRequest((req, res) => {
-    const userId = req.body.userId
-    if (!userId) { res.status(500).json({"error": "A valid user is required to create event"}); return }
-
-    var league = req.body.league
-    var name = req.body.name
-    var type = req.body.type
-    if (league == undefined) { league = DEFAULT_LEAGUE }
-    if (name == undefined) { name = "Balizinha" }
-    if (type == undefined) { type = "3 vs 3" }
-
-    const city = req.body.city
-    const state = req.body.state
-    const place = req.body.place
-    const info = req.body.info
-
-    if (!city) { res.status(500).json({"error": "City is required to create event"}); return }
-    if (!place) { res.status(500).json({"error": "Location is required to create event"}); return }
-
-    var maxPlayers = req.body.maxPlayers
-    if (maxPlayers == undefined) { maxPlayers = 6 }
-
-    const startTime = req.body.startTime
-    const endTime = req.body.endTime
-    if (startTime == undefined) { res.status(500).json({"error": "Start time is required to create event"}); return } // error if not exist
-    if (endTime == undefined) { res.status(500).json({"error": "End time is required to create event"}); return }
-
-    const paymentRequired = req.body.paymentRequired
-    const amount = req.body.amount
-
-    const lat = req.body.lat
-    const lon = req.body.lon
-
-    var params = {"league": league, "name": name, "type": type, "city": city, "place": place, "startTime": startTime, "endTime": endTime, "maxPlayers": maxPlayers}
-    var createdAt = exports.secondsSince1970()
-    params["createdAt"] = createdAt
-    params["organizer"] = userId
-    params["owner"] = userId // older apps used "owner" as the organizer
-
-    // optional params
-    if (paymentRequired) { params["paymentRequired"] = paymentRequired }
-    if (amount) { params["amount"] = amount }
-    if (state) { params["state"] = state }
-    if (info) { params["info"] = info }
-    if (lat) { params["lat"] = lat }
-    if (lon) { params["lon"] = lon }
-
-    var eventId = exports.createUniqueId()
-
-    var ref = `/events/` + eventId
-    return admin.database().ref(ref).set(params)
-    .then(result => {
-        console.log("CreateEvent v1.4 success for event " + eventId + " with result " + JSON.stringify(result))
-
-        // side effects
-        // send push
-        var title = "New event available"
-        var topic = "general"
-        var placeName = city
-        if (!city) {
-            placeName = place
-        }
-        var msg = "A new event, " + name + ", is available in " + placeName
-        console.log("CreateEvent v1.4: sending push " + title + " to " + topic + " with msg " + msg)
-        exports.sendPushToTopic(title, topic, msg)
-
-        console.log("CreateEvent v1.4: createTopicForEvent")
-        exports.createTopicForNewEvent(eventId, userId)
-
-        exports.joinOrLeaveEvent1_4(userId, eventId, true)
-
-        res.status(200).json({"result": result, "eventId": eventId})
-    }).catch(error => {
-        console.log("CreateEvent v1.4 error: " + JSON.stringify(error));
-        res.status(500).json({"error": error})
-    })
-})
-
-exports.joinOrLeaveEvent1_4 = function(userId, eventId, join) {
-    var joinStr = ""
-    if (join) {
-        joinStr = "joining"
-    } else {
-        joinStr = "leaving"
-    }
-    console.log("joinOrLeaveEvent v1.4: " + userId + " " + joinStr + " " + eventId)
-
-    var params = { [userId] : join }
-    return admin.database().ref(`/eventUsers/${eventId}`).update(params).then(results => {
-        var params2 = { [eventId] : join }
-        return admin.database().ref(`userEvents/${userId}`).update(params2)
-    })
-}
-
 exports.createTopicForNewEvent = function(eventId, organizerId) {
     // subscribe organizer to event topic
-    if (organizerId) {
-        return admin.database().ref(`/players/${organizerId}`).once('value').then(snapshot => {
-            return snapshot.val();
-        }).then(player => {
-            var token = player["fcmToken"]
-            var topic = "eventOrganizer" + eventId
-            if (token && token.length > 0) {
-                exports.subscribeToTopic(token, topic)
-                return console.log("createTopicForNewEvent: " + eventId + " subscribing " + organizerId + " to " + topic)
-            } else {
-                return console.log("createTopicForNewEvent: " + eventId + " user " + organizerId + " did not have fcm token")
-            }
-        }).then(result => {
-            var type = "createEvent"
-            return exports.createAction(type, organizerId, eventId, null)
-        })
-    } else {
-        return console.log("createTopicForNewEvent: " + eventId + " no organizer id!")
-    }
-}
-
-// event creation/change
-exports.onEventChange = functions.database.ref('/events/{eventId}').onWrite((snapshot, context) => {
-    var eventId = context.params.eventId
-    var data = snapshot.after.val()
-    var old = snapshot.before
-
-    if (!old.exists()) {
-        console.log("event created: " + eventId + " state: " + JSON.stringify(data))
-        return snapshot
-    } else if (old["active"] == true && data["active"] == false) {
-        return console.log("event deleted: " + eventId + " state: " + JSON.stringify(old))
-        // deleted
-        var title = "Event cancelled"
-        var topic = "event" + eventId
-        var name = data["name"]
-        var city = data["city"]
-        if (!city) {
-            city = data["place"]
-        }
-
-        // send push
-        var msg = "An event you're going to, " + name + ", has been cancelled."
-        return exports.sendPushToTopic(title, topic, msg)
-    } else {
-        console.log("event change: " + eventId)
-        return snapshot
-    }
-})
-
-// join/leave event
-exports.onUserJoinOrLeaveEvent = functions.database.ref('/eventUsers/{eventId}/{userId}').onWrite((snapshot, context) => {
-    const eventId = context.params.eventId
-    const userId = context.params.userId
-    var data = snapshot.after.val()
-    var old = snapshot.before
-
-    var eventUserChanged = false;
-    var eventUserCreated = false;
-
-    if (!old.exists()) {
-        eventUserCreated = true;
-        console.log("onUserJoinOrLeaveEvent: created user " + userId + " for event " + eventId + ": " + JSON.stringify(data))
-    }
-    if (!eventUserCreated) {
-        eventUserChanged = true;
-        console.log("onUserJoinOrLeaveEvent: updated user " + userId + " for event " + eventId + ": " + JSON.stringify(data))
-    }
-
-    return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
+    return admin.database().ref(`/players/${organizerId}`).once('value').then(snapshot => {
         return snapshot.val();
     }).then(player => {
-        var name = player["name"]
-        var email = player["email"]
-        var joinedString = "joined"
-        if (data == false) {
-            joinedString = "left"
-        }
-        var msg = name + " has " + joinedString + " your game"
-        var title = "Event update"
-        var organizerTopic = "eventOrganizer" + eventId // join/leave message only for owners
-        console.log("Sending push for user " + name + " " + email + " joined event " + organizerTopic + " with message: " + msg)
-
         var token = player["fcmToken"]
-        var eventTopic = "event" + eventId
+        var topic = "eventOrganizer" + eventId
         if (token && token.length > 0) {
-            if (data == true) {
-                exports.subscribeToTopic(token, eventTopic)
-            } else {
-                exports.unsubscribeFromTopic(token, eventTopic)
-            }
+            exports.subscribeToTopic(token, topic)
+            return console.log("createTopicForNewEvents: " + eventId + " subscribing " + organizerId + " to " + topic)
+        } else {
+            return console.log("createTopicForNewEvent: " + eventId + " user " + organizerId + " did not have fcm token")
         }
-
-        return exports.sendPushToTopic(title, organizerTopic, msg)
-    }).then( result => { 
-        var type = "joinEvent"
-        if (data == false) {
-            type = "leaveEvent"
-        }
-        return exports.createAction(type, userId, eventId, null)
     })
-})
+}
+
 
 exports.secondsSince1970 = function() {
     var secondsSince1970 = new Date().getTime() / 1000
@@ -585,120 +407,6 @@ exports.getUniqueId = functions.https.onRequest( (req, res) => {
     res.status(200).json({"id": uniqueId})
 })
 
-// actions
-exports.createAction = function(type, userId, eventId, message) {
-    console.log("createAction type: " + type + " event id: " + eventId + " message: " + message)
-    // NOTE: ref url is actions. iOS < v0.7.1 uses /action
-
-    var actionId = exports.createUniqueId()
-
-    var params = {}
-    params["type"] = type
-    params["event"] = eventId
-    params["user"] = userId
-    params["message"] = message
-    var createdAt = exports.secondsSince1970()
-    params["createdAt"] = createdAt
-
-    return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
-        return snapshot.val();
-    }).then(player => {
-        var name = player["name"]
-        params["username"] = name
-
-        var ref = `/actions/` + actionId
-        console.log("Creating action in /actions with unique id " + actionId + " message: " + message + " params: " + JSON.stringify(params))
-        return admin.database().ref(ref).set(params)
-    }).then(action => {
-        // create eventAction
-        if (eventId != undefined) {
-            var ref = `/eventActions/` + eventId
-            // when initializing a dict, use [var] notation. otherwise use params[var] = val
-            var params = { [actionId] : true}
-            console.log("Creating eventAction for event " + eventId + " and action " + actionId + " with params " + JSON.stringify(params))
-            return admin.database().ref(ref).update(params)
-        }
-    })
-}
-
-exports.onActionChange = functions.database.ref('/actions/{actionId}').onWrite((snapshot, context) => {
-    const actionId = context.params.actionId
-    var changed = false
-    var created = false
-    var deleted = false
-    var data = snapshot.after.val()
-    var old = snapshot.before
-
-    if (!old.exists()) {
-        created = true
-        console.log("onActionChange: created action " + actionId)
-    } else if (old["active"] == true && data["active"] == false) {
-        deleted = true
-        console.log("onActionChange: deleted action " + actionId)
-    }
-
-    if (!created && !deleted) {
-        changed = true;
-        console.log("onActionChange: changed action " + actionId)
-    }
-
-    const actionType = data["type"]
-    if (actionType == "chat" && created == true) {
-    // for a chat action, update createdAt, username then create a duplicate
-        const createdAt = exports.secondsSince1970()
-        const userId = data["user"]
-        return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
-            return snapshot.val();
-        }).then(player => { 
-            // add player username and createdAt
-            var ref = `/actions/` + actionId
-            var name = player["name"]
-            console.log("Action: adding createdAt " + createdAt)
-            return admin.database().ref(ref).update({"createdAt": createdAt, "username": name})
-        }).then(result => {
-            // create the same under /action
-            // TODO: deprecate in ios 0.7.3
-            var legacyref = `/action/` + actionId
-            data["createdAt"] = createdAt
-            console.log("Duplicating action under /action with unique id " + actionId + " message: " + data["message"])
-            return admin.database().ref(legacyref).set(data)
-        }).then(result => {
-            // create eventAction
-            var eventId = data["event"]
-            var ref = `/eventActions/` + eventId
-            // when initializing a dict, use [var] notation. otherwise use params[var] = val
-            var params = { [actionId] : true}
-            console.log("Creating eventAction for event " + eventId + " and action " + actionId + " with params " + JSON.stringify(params))
-            return admin.database().ref(ref).update(params)
-        }).then(result => {
-            // send push
-            console.log("onActionChange: pushForChatAction with result " + JSON.stringify(result))
-            exports.pushForChatAction(actionId, data["event"], data["user"], data)
-            return result
-        })
-    } else {
-        return snapshot
-    }
-});
-
-exports.pushForChatAction = function(actionId, eventId, userId, data) {
-    console.log("push for chat: " + actionId + " event: " + eventId + " user: " + userId + " data: " + JSON.stringify(data))
-
-    var eventTopic = "event" + eventId
-    return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
-        return snapshot.val();
-    }).then(player => {
-        var name = player["name"]
-        var email = player["email"]
-        var message = data["message"]
-        var msg = name + " said: " + message
-        var title = "Event chat"
-        var topic = "event" + eventId 
-        console.log("Sending push for chat by user " + name + " " + email + " for chat to topic " + topic + " with message: " + msg)
-
-        return exports.sendPushToTopic(title, topic, msg)
-    })
-}
 
 // Push
 exports.sendPushToTopic = function(title, topic, msg) {
@@ -788,7 +496,7 @@ exports.sampleCloudFunction = functions.https.onRequest((req, res) => {
 
 })
 
-// league
+// LEAGUE //////////////////////////////////////////////////////////////////////////////////
 // Pass database to child functions so they have access to it
 
 // http functions
@@ -825,7 +533,29 @@ exports.doJoinLeaveLeagueV1_4 = function(admin, userId, leagueId, isJoin) {
     return leagueModule.doJoinLeaveLeagueV1_4(admin, userId, leagueId, isJoin)
 }
 
+// EVENT //////////////////////////////////////////////////////////////////////////////////
+exports.createEvent1_4 = functions.https.onRequest((req, res) => {
+    return eventModule.createEvent(req, res, exports, admin)
+})
 
+// on database changes
+exports.onEventChange = functions.database.ref('/events/{eventId}').onWrite((snapshot, context) => {
+    return eventModule.onEventChangeV1_4(snapshot, context, exports, admin)
+})
 
+exports.onUserJoinOrLeaveEvent = functions.database.ref('/eventUsers/{eventId}/{userId}').onWrite((snapshot, context) => {
+    return eventModule.onUserJoinOrLeaveEventV1_4(snapshot, context, exports, admin)
+})
 
+exports.onEventDelete = functions.database.ref('/events/{eventId}').onDelete((snapshot, context) => {
+    return eventModule.onEventDeleteV1_4(snapshot, context, exports, admin)
+})
 
+// ACTION //////////////////////////////////////////////////////////////////////////////////
+exports.createAction = function(type, userId, eventId, message) {
+    return actionModule.createAction(type, userId, eventId, message, exports, admin)
+}
+
+exports.onActionChange = functions.database.ref('/actions/{actionId}').onWrite((snapshot, context) => {
+    return actionModule.onActionChange(snapshot, context, exports, admin)
+})
