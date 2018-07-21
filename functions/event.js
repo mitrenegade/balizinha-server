@@ -52,7 +52,7 @@ exports.createEvent1_4 = function(req, res, exports, admin) {
     .then(result => {
         // join event
         console.log("CreateEvent v1.4 success for event " + eventId + " with result " + JSON.stringify(result))
-        return exports.joinOrLeaveEvent1_4(userId, eventId, true)
+        return exports.joinOrLeaveEvent1_4(userId, eventId, true, admin)
     }).then(result => {
         // send push
         // TODO: make these promises as well
@@ -81,7 +81,7 @@ exports.createEvent1_4 = function(req, res, exports, admin) {
     })
 }
 
-exports.joinOrLeaveEvent1_4 = function(userId, eventId, join) {
+exports.joinOrLeaveEvent1_4 = function(userId, eventId, join, admin) {
     console.log("joinOrLeaveEvent v1.4: " + userId + " join? " + join + " " + eventId)
 
     var params = { [userId] : join }

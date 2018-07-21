@@ -538,11 +538,6 @@ exports.createEvent1_4 = functions.https.onRequest((req, res) => {
     return eventModule.createEvent(req, res, exports, admin)
 })
 
-// helper functions
-exports.joinOrLeaveEvent1_4 = function(userId, eventId, join) {
-    return leagueModule.doJoinLeaveEventV1_4(userId, eventId, join)
-}
-
 // on database changes
 exports.onEventChange = functions.database.ref('/events/{eventId}').onWrite((snapshot, context) => {
     return eventModule.onEventChangeV1_4(snapshot, context, exports, admin)
