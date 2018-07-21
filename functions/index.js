@@ -6,6 +6,7 @@ const moment = require('moment')
 const leagueModule = require('./league')
 const eventModule = require('./event')
 const actionModule = require('./action')
+const pushModule = require('./push')
 
 admin.initializeApp(functions.config().firebase);
 
@@ -292,24 +293,6 @@ exports.refundCharge = functions.https.onRequest( (req, res) => {
     })
 })
 
-exports.subscribeToOrganizerPush = functions.database.ref(`/organizers/{organizerId}`).onWrite((snapshot, context) => {
-    var organizerId = context.params.organizerId
-    var val = snapshot.after.val()
-
-    return admin.database().ref(`/players/${organizerId}`).once('value').then(snapshot => {
-        return snapshot.val();
-    }).then(player => {
-        var token = player["fcmToken"]
-        var topic = "organizers"
-        if (token && token.length > 0) {
-            console.log("organizer: created " + organizerId + " subscribed to organizers")
-            return exports.subscribeToTopic(token, topic)
-        } else {
-            console.log("subscribeToOrganizerPush: logged in with id: " + organizerId + " but no token available")
-        }
-    })
-})
-
 exports.createStripeSubscription = functions.database.ref(`/charges/organizers/{organizerId}/{chargeId}`).onWrite((snapshot, context) => {
 //function createStripeCharge(req, res, ref) {
     var organizerId = context.params.organizerId
@@ -373,23 +356,6 @@ exports.createStripeSubscription = functions.database.ref(`/charges/organizers/{
 //     exports.sendPush(testToken, msg)
 // })
 
-exports.createTopicForNewEvent = function(eventId, organizerId) {
-    // subscribe organizer to event topic
-    return admin.database().ref(`/players/${organizerId}`).once('value').then(snapshot => {
-        return snapshot.val();
-    }).then(player => {
-        var token = player["fcmToken"]
-        var topic = "eventOrganizer" + eventId
-        if (token && token.length > 0) {
-            exports.subscribeToTopic(token, topic)
-            return console.log("createTopicForNewEvents: " + eventId + " subscribing " + organizerId + " to " + topic)
-        } else {
-            return console.log("createTopicForNewEvent: " + eventId + " user " + organizerId + " did not have fcm token")
-        }
-    })
-}
-
-
 exports.secondsSince1970 = function() {
     var secondsSince1970 = new Date().getTime() / 1000
     return Math.floor(secondsSince1970)
@@ -406,65 +372,6 @@ exports.getUniqueId = functions.https.onRequest( (req, res) => {
     console.log('Called getUniqueId with result ' + uniqueId)
     res.status(200).json({"id": uniqueId})
 })
-
-
-// Push
-exports.sendPushToTopic = function(title, topic, msg) {
-        var topicString = "/topics/" + topic
-        // topicString = topicString.replace(/-/g , '_');
-        console.log("send push to topic " + topicString)
-        var payload = {
-            notification: {
-                title: title,
-                body: msg,
-                sound: 'default',
-                badge: '1'
-            }
-        };
-        return admin.messaging().sendToTopic(topicString, payload);
-}
-
-exports.sendPush = function(token, msg) {
-        //var testToken = "duvn2V1qsbk:APA91bEEy7DylD9iZctBtaKz5nS9CVZxpaAdaPwhIauzQ2jw81BF-oE0nhgvN3U10mqClTue0siwDH41JZP2kLqU0CkThOoBBdFQYWOr8X_6qHIknBE-Oa195qOy8XSbJvXeQj4wQa9T"
-        
-        var tokens = [token]
-        console.log("send push to token " + token)
-        var payload = {
-            notification: {
-                title: 'Firebase Notification',
-                body: msg,
-                sound: 'default',
-                badge: "2"
-            }
-        };
-        return admin.messaging().sendToDevice(tokens, payload);
-}
-
-exports.subscribeToTopic = function(token, topic) {
-    admin.messaging().subscribeToTopic(token, topic)
-        .then(function(response) {
-        // See the MessagingTopicManagementResponse reference documentation
-        // for the contents of response.
-            console.log("Successfully subscribed " + token + " from topic: " + topic + " successful registrations: " + response["successCount"] + " failures: " + response["failureCount"]);
-        })
-        .catch(function(error) {
-            console.log("Error subscribing to topic:", error);
-        }
-    );
-}
-
-exports.unsubscribeFromTopic = function(token, topic) {
-    admin.messaging().unsubscribeFromTopic(token, topic)
-        .then(function(response) {
-        // See the MessagingTopicManagementResponse reference documentation
-        // for the contents of response.
-            console.log("Successfully unsubscribed " + token + " from topic: " + topic + " successful registrations: " + response["successCount"] + " failures: " + response["failureCount"]);
-        })
-        .catch(function(error) {
-            console.log("Error unsubscribing from topic:", error);
-        }
-    );
-}
 
 // TEST calling cloud function from client
 exports.sampleCloudFunction = functions.https.onRequest((req, res) => {
@@ -542,7 +449,7 @@ exports.joinOrLeaveEventV1_5 = functions.https.onRequest((req, res) => {
     return eventModule.joinOrLeaveEventV1_5(req, res, exports, admin)
 })
 
-// on database changes
+// database changes
 exports.onEventChange = functions.database.ref('/events/{eventId}').onWrite((snapshot, context) => {
     return eventModule.onEventChangeV1_4(snapshot, context, exports, admin)
 })
@@ -568,3 +475,31 @@ exports.createAction = function(type, userId, eventId, message) {
 exports.onActionChange = functions.database.ref('/actions/{actionId}').onWrite((snapshot, context) => {
     return actionModule.onActionChange(snapshot, context, exports, admin)
 })
+
+// PUSH //////////////////////////////////////////////////////////////////////////////////
+
+// database changes
+exports.subscribeToOrganizerPush = functions.database.ref(`/organizers/{organizerId}`).onWrite((snapshot, context) => {
+    return pushModule.subscribeToOrganizerPushV1_5(snapshot, context, exports, admin)
+})
+
+// helper functions
+exports.createTopicForNewEvent = function(eventId, organizerId, exports, admin) {
+    return pushModule.createTopicForNewEventV1_5(eventId, organizerId)
+}
+
+exports.sendPushToTopic = function(title, topic, msg, exports, admin) {
+    return pushModule.sendPushToTopicV1_5(title, topic, msg)
+}
+
+exports.sendPush = function(token, msg) {
+    return pushModule.sendPushV1_5(token, msg, exports, admin)
+}
+
+exports.subscribeToTopic = function(token, topic) {
+    return pushModule.subscribeToTopicV1_5(token, topic, admin)
+}
+
+exports.unsubscribeFromTopic = function(token, topic) {
+    return pushModule.subscribeToTopicV1_5(token, topic, admin)
+}
