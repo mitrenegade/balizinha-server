@@ -118,7 +118,7 @@ exports.onEventChangeV1_4 = function(snapshot, context, exports, admin) {
         console.log("event change: " + eventId)
         return snapshot
     }
-})
+}
 
 // join/leave event
 exports.onUserJoinOrLeaveEventV1_4 = function(snapshot, context, exports, admin) {
@@ -171,7 +171,7 @@ exports.onUserJoinOrLeaveEventV1_4 = function(snapshot, context, exports, admin)
         }
         return exports.createAction(type, userId, eventId, null)
     })
-})
+}
 
 exports.onEventDeleteV1_4 = function(snapshot, context, exports, admin) {
     var eventId = context.params.eventId
