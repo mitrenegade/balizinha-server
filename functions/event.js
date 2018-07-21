@@ -93,7 +93,7 @@ exports.joinOrLeaveEvent1_4 = function(userId, eventId, join) {
 }
 
 // event creation/change
-exports.onEventChange = function(snapshot, context, exports, admin) {
+exports.onEventChangeV1_4 = function(snapshot, context, exports, admin) {
     var eventId = context.params.eventId
     var data = snapshot.after.val()
     var old = snapshot.before
@@ -122,7 +122,7 @@ exports.onEventChange = function(snapshot, context, exports, admin) {
 })
 
 // join/leave event
-exports.onUserJoinOrLeaveEvent = function(snapshot, context, exports, admin) {
+exports.onUserJoinOrLeaveEventV1_4 = function(snapshot, context, exports, admin) {
     const eventId = context.params.eventId
     const userId = context.params.userId
     var data = snapshot.after.val()
@@ -173,3 +173,15 @@ exports.onUserJoinOrLeaveEvent = function(snapshot, context, exports, admin) {
         return exports.createAction(type, userId, eventId, null)
     })
 })
+
+exports.onEventDeleteV1_4 = function(snapshot, context, exports, admin) {
+    var eventId = context.params.eventId
+    var data = snapshot.after.val()
+    var old = snapshot.before
+
+    console.log("Event delete v1.4: id " + eventId + " snapsht before " + JSON.stringify(old) + " after " + JSON.stringify(data))
+    // do nothing
+    // should we delete all actionIds?
+    // should we delete all leagueEvents?
+    // should we delete all playerEvents?
+}

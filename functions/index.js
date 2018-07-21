@@ -40,7 +40,7 @@ exports.doEmailSignup = function(userId, email) {
     })
 }
 
-// TODO actually implement this in client
+// TODO tactually implement this in client
 exports.onEmailSignupV1_5 = functions.https.onRequest((req, res) => {
     // in v1_5, when a player is created, their email is added to the anonymous account already created.
     // this causes onCreateUser to not be triggere a second time, thus createPlayer and createStripeCustomer are not called
@@ -552,11 +552,15 @@ exports.joinOrLeaveEvent1_4 = function(userId, eventId, join) {
 
 // on database changes
 exports.onEventChange = functions.database.ref('/events/{eventId}').onWrite((snapshot, context) => {
-    return eventModule.onEventChange(snapshot, context, exports, admin)
+    return eventModule.onEventChangeV1_4(snapshot, context, exports, admin)
 })
 
 exports.onUserJoinOrLeaveEvent = functions.database.ref('/eventUsers/{eventId}/{userId}').onWrite((snapshot, context) => {
-    return eventModule.onUserJoinOrLeaveEvent(snapshot, context, exports, admin)
+    return eventModule.onUserJoinOrLeaveEventV1_4(snapshot, context, exports, admin)
+})
+
+exports.onEventDelete = functions.database.ref('/events/{eventId}').onDelete((snapshot, context) => {
+    return eventModule.onEventDeleteV1_4(snapshot, context, exports, admin)
 })
 
 // ACTION //////////////////////////////////////////////////////////////////////////////////
