@@ -50,10 +50,12 @@ exports.createEvent1_4 = function(req, res, exports, admin) {
     var ref = `/events/` + eventId
     return admin.database().ref(ref).set(params)
     .then(result => {
+        // join event
         console.log("CreateEvent v1.4 success for event " + eventId + " with result " + JSON.stringify(result))
-
-        // side effects
+        return exports.joinOrLeaveEvent1_4(userId, eventId, true)
+    }).then(result => {
         // send push
+        // TODO: make these promises as well
         var title = "New event available"
         var topic = "general"
         var placeName = city
@@ -67,8 +69,11 @@ exports.createEvent1_4 = function(req, res, exports, admin) {
         console.log("CreateEvent v1.4: createTopicForEvent")
         exports.createTopicForNewEvent(eventId, userId)
 
-        exports.joinOrLeaveEvent1_4(userId, eventId, true)
-
+    }).then(result => {
+        // create action
+        var type = "createEvent"
+        return exports.createAction(type, organizerId, eventId, null)
+    }).then(result => {
         res.status(200).json({"result": result, "eventId": eventId})
     }).catch(error => {
         console.log("CreateEvent v1.4 error: " + JSON.stringify(error));
@@ -77,13 +82,7 @@ exports.createEvent1_4 = function(req, res, exports, admin) {
 }
 
 exports.joinOrLeaveEvent1_4 = function(userId, eventId, join) {
-    var joinStr = ""
-    if (join) {
-        joinStr = "joining"
-    } else {
-        joinStr = "leaving"
-    }
-    console.log("joinOrLeaveEvent v1.4: " + userId + " " + joinStr + " " + eventId)
+    console.log("joinOrLeaveEvent v1.4: " + userId + " join? " + join + " " + eventId)
 
     var params = { [userId] : join }
     return admin.database().ref(`/eventUsers/${eventId}`).update(params).then(results => {

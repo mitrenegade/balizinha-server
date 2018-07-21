@@ -375,25 +375,18 @@ exports.createStripeSubscription = functions.database.ref(`/charges/organizers/{
 
 exports.createTopicForNewEvent = function(eventId, organizerId) {
     // subscribe organizer to event topic
-    if (organizerId) {
-        return admin.database().ref(`/players/${organizerId}`).once('value').then(snapshot => {
-            return snapshot.val();
-        }).then(player => {
-            var token = player["fcmToken"]
-            var topic = "eventOrganizer" + eventId
-            if (token && token.length > 0) {
-                exports.subscribeToTopic(token, topic)
-                return console.log("createTopicForNewEvent: " + eventId + " subscribing " + organizerId + " to " + topic)
-            } else {
-                return console.log("createTopicForNewEvent: " + eventId + " user " + organizerId + " did not have fcm token")
-            }
-        }).then(result => {
-            var type = "createEvent"
-            return exports.createAction(type, organizerId, eventId, null)
-        })
-    } else {
-        return console.log("createTopicForNewEvent: " + eventId + " no organizer id!")
-    }
+    return admin.database().ref(`/players/${organizerId}`).once('value').then(snapshot => {
+        return snapshot.val();
+    }).then(player => {
+        var token = player["fcmToken"]
+        var topic = "eventOrganizer" + eventId
+        if (token && token.length > 0) {
+            exports.subscribeToTopic(token, topic)
+            return console.log("createTopicForNewEvents: " + eventId + " subscribing " + organizerId + " to " + topic)
+        } else {
+            return console.log("createTopicForNewEvent: " + eventId + " user " + organizerId + " did not have fcm token")
+        }
+    })
 }
 
 
