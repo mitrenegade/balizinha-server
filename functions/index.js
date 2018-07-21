@@ -5,6 +5,7 @@ const app = require('express')
 const moment = require('moment')
 const leagueModule = require('./league')
 const eventModule = require('./event')
+const actionModule = require('./action')
 
 admin.initializeApp(functions.config().firebase);
 
@@ -39,13 +40,14 @@ exports.doEmailSignup = function(userId, email) {
     })
 }
 
-exports.onEmailSignupV1_4 = functions.https.onRequest((req, res) => {
-    // in v1_4, when a player is created, their email is added to the anonymous account already created.
+// TODO actually implement this in client
+exports.onEmailSignupV1_5 = functions.https.onRequest((req, res) => {
+    // in v1_5, when a player is created, their email is added to the anonymous account already created.
     // this causes onCreateUser to not be triggere a second time, thus createPlayer and createStripeCustomer are not called
     // the client accessing v1_4 must call onEmailSignupV1_4 to trigger player and customer creation in order to continue signup
     const userId = req.body.userId
     const email = req.body.email
-    console.log("onEmailSignup v1.4: client call to create email user " + userId + " with email " + email)
+    console.log("onEmailSignup v1.5: client call to create email user " + userId + " with email " + email)
     exports.doEmailSignup(userId, email)
 })
 
