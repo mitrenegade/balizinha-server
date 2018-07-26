@@ -50,31 +50,23 @@ exports.createEventV1_4 = function(req, res, exports, admin) {
     var ref = `/events/` + eventId
     return admin.database().ref(ref).set(params)
     .then(result => {
-        // join event
-        console.log("CreateEvent v1.4 success for event " + eventId + " with result " + JSON.stringify(result))
-        return exports.doJoinOrLeaveEventV1_4(userId, eventId, true, admin)
-    }).then(result => {
-        // send push
-        // TODO: make these promises as well
-        console.log("CreateEvent v1.4 sending push")
-        var title = "New event available"
-        var topic = "general"
-        var placeName = city
-        if (city == undefined) {
-            placeName = place
-        }
-        var msg = "A new event, " + name + ", is available in " + placeName
-        console.log("CreateEvent v1.4: sending push " + title + " to " + topic + " with msg " + msg)
-        exports.sendPushToTopic(title, topic, msg) // TODO: this gets called twice
-
-        console.log("CreateEvent v1.4: createTopicForEvent")
-        return exports.createTopicForNewEvent(eventId, userId)
-
-    }).then(result => {
         // create action
         console.log("CreateEvent v1.4 createAction event " + eventId + " organizer " + userId)
         var type = "createEvent"
         return exports.createAction(type, userId, eventId, null)
+    }).then(result => {
+        // join event
+        console.log("CreateEvent v1.4 success for event " + eventId + " with result " + JSON.stringify(result))
+        return exports.doJoinOrLeaveEventV1_4(userId, eventId, true, admin)
+    }).then(result => {
+        console.log("CreateEvent v1.4: createTopicForEvent")
+        return exports.createOrganizerTopicForNewEventV1_5(eventId, userId)
+    }).then(result => {
+        var placeName = city
+        if (city == undefined) {
+            placeName = place
+        }
+        return exports.pushForCreateEventV1_5(eventId, name, place)
     }).then(result => {
         return res.status(200).json({"result": result, "eventId": eventId})
     })
@@ -160,16 +152,11 @@ exports.onUserJoinOrLeaveEventV1_4 = function(snapshot, context, exports, admin)
     return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
         return snapshot.val();
     }).then(player => {
-        var name = player["name"]
-        var email = player["email"]
+        name = player["name"]
         var joinedString = "joined"
         if (data == false) {
             joinedString = "left"
         }
-        var msg = name + " has " + joinedString + " your game"
-        var title = "Event update"
-        var organizerTopic = "eventOrganizer" + eventId // join/leave message only for owners
-        console.log("Sending push for user " + name + " " + email + " joined event " + organizerTopic + " with message: " + msg)
 
         var token = player["fcmToken"]
         var eventTopic = "event" + eventId
@@ -180,8 +167,13 @@ exports.onUserJoinOrLeaveEventV1_4 = function(snapshot, context, exports, admin)
                 exports.unsubscribeFromTopic(token, eventTopic)
             }
         }
-
-        return exports.sendPushToTopic(title, organizerTopic, msg)
+        return name
+    }).then(name => {
+        var join = true
+        if (data == false) {
+            join = false
+        }
+        exports.pushForJoinEventV1_5(eventId, name, join)
     }).then( result => { 
         var type = "joinEvent"
         if (data == false) {
