@@ -50,6 +50,11 @@ exports.createEventV1_4 = function(req, res, exports, admin) {
     var ref = `/events/` + eventId
     return admin.database().ref(ref).set(params)
     .then(result => {
+        // create action
+        console.log("CreateEvent v1.4 createAction event " + eventId + " organizer " + userId)
+        var type = "createEvent"
+        return exports.createAction(type, userId, eventId, null)
+    }).then(result => {
         // join event
         console.log("CreateEvent v1.4 success for event " + eventId + " with result " + JSON.stringify(result))
         return exports.doJoinOrLeaveEventV1_4(userId, eventId, true, admin)
@@ -62,11 +67,6 @@ exports.createEventV1_4 = function(req, res, exports, admin) {
             placeName = place
         }
         return exports.pushForCreateEventV1_5(eventId, name, place)
-    }).then(result => {
-        // create action
-        console.log("CreateEvent v1.4 createAction event " + eventId + " organizer " + userId)
-        var type = "createEvent"
-        return exports.createAction(type, userId, eventId, null)
     }).then(result => {
         return res.status(200).json({"result": result, "eventId": eventId})
     })
