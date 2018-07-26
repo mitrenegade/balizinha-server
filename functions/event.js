@@ -57,7 +57,11 @@ exports.createEventV1_4 = function(req, res, exports, admin) {
         console.log("CreateEvent v1.4: createTopicForEvent")
         return exports.createOrganizerTopicForNewEventV1_5(eventId, userId)
     }).then(result => {
-        return exports.pushForCreateEventV1_5(eventId)
+        var placeName = city
+        if (city == undefined) {
+            placeName = place
+        }
+        return exports.pushForCreateEventV1_5(eventId, name, place)
     }).then(result => {
         // create action
         console.log("CreateEvent v1.4 createAction event " + eventId + " organizer " + userId)
@@ -169,7 +173,7 @@ exports.onUserJoinOrLeaveEventV1_4 = function(snapshot, context, exports, admin)
         if (data == false) {
             join = false
         }
-        exports.pushForJoinEventV1_5(name, eventId, join)
+        exports.pushForJoinEventV1_5(eventId, name, join)
     }).then( result => { 
         var type = "joinEvent"
         if (data == false) {
