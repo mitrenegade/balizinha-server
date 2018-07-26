@@ -21,18 +21,18 @@ exports.subscribeToOrganizerPushV1_5 = function(snapshot, context, exports, admi
     })
 }
 
-exports.createTopicForNewEventV1_5 = function(eventId, organizerId, exports, admin) {
-    // subscribe organizer to event topic
+exports.createOrganizerTopicForNewEventV1_5 = function(eventId, organizerId, exports, admin) {
+    // subscribe organizer to event topic - messages about users joining and leaving
     return admin.database().ref(`/players/${organizerId}`).once('value').then(snapshot => {
         return snapshot.val();
     }).then(player => {
         var token = player["fcmToken"]
         var topic = "eventOrganizer" + eventId
         if (token && token.length > 0) {
-            exports.subscribeToTopic(token, topic)
-            return console.log("createTopicForNewEvents: " + eventId + " subscribing " + organizerId + " to " + topic)
+        	console.log("CreateOrganizerTopicForNewEvent v1.5: " + eventId + " subscribing " + organizerId + " to " + topic)
+            return exports.subscribeToTopic(token, topic)
         } else {
-            return console.log("createTopicForNewEvent: " + eventId + " user " + organizerId + " did not have fcm token")
+            return console.log("CreateOrganizerTopicForNewEvent v1.5: " + eventId + " user " + organizerId + " did not have fcm token")
         }
     })
 }
@@ -93,4 +93,29 @@ exports.unsubscribeFromTopicV1_5 = function(token, topic, admin) {
             console.log("Error unsubscribing from topic:", error);
         }
     );
+}
+
+exports.pushForCreateEventV1_5 = function(eventId, exports, admin) {
+    console.log("CreateEvent v1.5 sending push")
+    var title = "New event available"
+    var topic = "general"
+    var placeName = city
+    if (city == undefined) {
+        placeName = place
+    }
+    var msg = "A new event, " + name + ", is available in " + placeName
+    console.log("CreateEvent v1.4: sending push " + title + " to " + topic + " with msg " + msg)
+    return exports.sendPushToTopic(title, topic, msg) // TODO: this gets called twice
+}
+
+exports.pushForJoinEventV1_5 = function(name, eventId, join, exports, admin) {
+	var joinedString = "joined"
+	if (!join) {
+		joinedString = "left"
+	}
+    var msg = name + " has " + joinedString + " your game"
+    var title = "Event update"
+    var organizerTopic = "eventOrganizer" + eventId // join/leave message only for owners
+    console.log("Sending push for user " + name + " joined event " + organizerTopic + " with message: " + msg)
+    return exports.sendPushToTopic(title, organizerTopic, msg)
 }

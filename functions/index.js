@@ -463,6 +463,14 @@ exports.onEventDelete = functions.database.ref('/events/{eventId}').onDelete((sn
 })
 
 // helpers - must be defined here in order to use in module
+exports.pushForCreateEventV1_5 = function(eventId) {
+    return pushModule.pushForCreateEventV1_5(eventId, exports, admin)
+}
+
+exports.pushForJoinEventV1_5 = function(name, eventId, join) {
+    return pushModule.pushForJoinEventV1_5(name, eventId, join, exports, admin)
+}
+
 exports.doJoinOrLeaveEventV1_4 = function(userId, eventId, join, admin) {
     return eventModule.doJoinOrLeaveEventV1_4(userId, eventId, join, admin)
 }
@@ -488,8 +496,8 @@ exports.subscribeToOrganizerPush = functions.database.ref(`/organizers/{organize
 })
 
 // helper functions
-exports.createTopicForNewEvent = function(eventId, organizerId) {
-    return pushModule.createTopicForNewEventV1_5(eventId, organizerId, exports, admin)
+exports.createOrganizerTopicForNewEventV1_5 = function(eventId, organizerId) {
+    return pushModule.createOrganizerTopicForNewEventV1_5(eventId, organizerId, exports, admin)
 }
 
 exports.sendPushToTopic = function(title, topic, msg) {
