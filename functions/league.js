@@ -15,9 +15,9 @@ exports.createLeague = function(req, res, exports, admin) {
     // TODO: name validation?
     console.log("Creating league in /leagues with unique id " + leagueId + " name: " + name + " city: " + city + " organizer: " + userId)
     return admin.database().ref(ref).set(params).then(() => {
-    	console.log("creating league ${leagueId} complete. calling joinLeague for player ${userId}")
+    	console.log("creating league " + leagueId + " complete. calling joinLeague for player " + userId)
     	const isJoin = true
-    	return exports.doJoinLeaveLeague(admin, userId, leagueId, isJoin)
+    	return exports.doJoinLeaveLeagueV1_4(admin, userId, leagueId, isJoin)
     }).then(result => {
     	console.log("joinLeague result " + JSON.stringify(result) + ". loading league")
     	// can't return league as a snapshot. only return the id

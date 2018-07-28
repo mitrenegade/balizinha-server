@@ -16,7 +16,7 @@ const stripe = require('stripe')(config.stripe.token)
 // 1.4 leagues
 // 1.5 event.js, league.js, action.js, push.js
 const API_VERSION = 1.5
-const BUILD_VERSION = 102 // for internal tracking
+const BUILD_VERSION = 103 // for internal tracking
 
 const DEFAULT_LEAGUE_ID_DEV = "1525785307-821232"
 const DEFAULT_LEAGUE_ID_PROD = "1525175000-268371"
