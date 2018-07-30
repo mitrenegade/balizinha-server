@@ -448,7 +448,12 @@ exports.getLeaguesForPlayer = functions.https.onRequest((req, res) => {
  * This is used by owners and admin app to update membership status, including organizer and ownership
  */
 exports.changeLeaguePlayerStatus = functions.https.onRequest((req, res) => {
-    return leagueModule.changeLeaguePlayerStatus(req, res, exports, admin)
+    let api = req.body.apiVersion
+    if (api == "1.5") {
+        return leagueModule.changeLeaguePlayerStatusV1_5(req, res, exports, admin)
+    }
+    // V1.4 is default
+    return leagueModule.changeLeaguePlayerStatusV1_4(req, res, exports, admin)
 })
 
 /**
@@ -462,6 +467,10 @@ exports.getEventsForLeague = functions.https.onRequest((req, res) => {
 // helper functions
 exports.doJoinLeaveLeagueV1_4 = function(admin, userId, leagueId, isJoin) {
     return leagueModule.doJoinLeaveLeagueV1_4(admin, userId, leagueId, isJoin)
+}
+
+exports.doUpdatePlayerStatusV1_5 = function(admin, userId, leagueId, status) {
+    return leagueModule.doUpdatePlayerStatusV1_5(admin, userId, leagueId, status)
 }
 
 // EVENT //////////////////////////////////////////////////////////////////////////////////

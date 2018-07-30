@@ -79,6 +79,41 @@ exports.doJoinLeaveLeagueV1_4 = function(admin, userId, leagueId, isJoin) {
     })
 }
 
+// helper function for all changes in league membership
+exports.doUpdatePlayerStatusV1_5 = function(admin, userId, leagueId, status) {
+	console.log("DoUpdatePlayerStatus v1.5: userId " + userId + " leagueId " + leagueId + " status " + status)
+
+	    // validation
+    if (status != "member" && status != "organizer" && status != "owner" && status != "none") {
+    	throw new Error("message": "Invalid status. Cannot change user to " + status, "userId": userId)
+    	return
+    }
+
+	var ref = `/leagues/${leagueId}` 
+	return admin.database().ref(ref).once('value')
+	.then(snapshot => {
+		if (snapshot.val() == null {
+    		console.log("DoUpdatePlayerStatus v1.5: league not found")
+    		throw new Error("League not found")
+		}
+        return snapshot.val();
+    }).then(league => {
+		var leagueRef = `/leaguePlayers/${leagueId}`
+		var params = {[userId]: status}
+	    console.log("DoUpdatePlayerStatus v1.5: update leaguePlayers status " + status + " + user " + userId + " league " + leagueId + " name: " + league["name"])
+		return admin.database().ref(leagueRef).update(params)
+    }).then(result => {
+	    console.log("DoUpdatePlayerStatus v1.5: update playerLeagues status " + status + " league " + leagueId + " user " + userId)
+		var leagueRef = `/playerLeagues/${userId}`
+		var params = {[leagueId]: status}
+		return admin.database().ref(leagueRef).update(params)
+	}).then(result => {
+		// result is null due to update
+		return {"result": "success", "userId": userId, "leagueId": leagueId, "status": status}
+	})
+}
+
+
 exports.getPlayersForLeague = function(req, res, exports, admin) {
 	// leaguePlayers/leagueId will return all players, with a status of {player, organizer, none}
 	const leagueId = req.body.leagueId
@@ -120,12 +155,12 @@ exports.getLeaguesForPlayer = function(req, res, exports, admin) {
 }
 
 // organizers
-exports.changeLeaguePlayerStatus = function(req, res, exports, admin) {
+exports.changeLeaguePlayerStatusV1_4 = function(req, res, exports, admin) {
 	const userId = req.body.userId
 	const leagueId = req.body.leagueId
 	const status = req.body.status
 	var ref = `/leagues/${leagueId}` 
-    console.log("ChangeLeaguePlayerStatus: user " + userId + " league " + leagueId + " status: " + status)
+    console.log("ChangeLeaguePlayerStatus v1.4: user " + userId + " league " + leagueId + " status: " + status)
     // validation
     if (status != "member" && status != "organizer" && status != "owner" && status != "none") {
     	res.send(500, {"error": "invalid status. cannot change user " + userId + " to " + status})
@@ -143,6 +178,19 @@ exports.changeLeaguePlayerStatus = function(req, res, exports, admin) {
 		return res.send(200,  {"result": "success"})
     }).catch( (err) => {
     	console.log("ChangeLeaguePlayerStatus: league " + leagueId + " error: " + err)
+    	return res.send(500, {"error": err})
+    })
+}
+
+exports.changeLeaguePlayerStatusV1_5 = function(req, res, exports, admin) {
+	const userId = req.body.userId
+	const leagueId = req.body.leagueId
+	const status = req.body.status
+    console.log("ChangeLeaguePlayerStatus v1.5: user " + userId + " league " + leagueId + " status: " + status)
+
+    return exports.doUpdatePlayerStatusV1_5(admin, userId, leagueId, status)
+	.catch( (err) => {
+    	console.log("ChangeLeaguePlayerStatus v1.5: league " + leagueId + " error: " + err)
     	return res.send(500, {"error": err})
     })
 }
