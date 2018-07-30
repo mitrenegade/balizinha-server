@@ -413,26 +413,48 @@ exports.createLeague = functions.https.onRequest((req, res) => {
     return leagueModule.createLeague(req, res, exports, admin);
 });
 
+// this isn't used in any publicly deployed app. can delete
 exports.joinLeague = functions.https.onRequest((req, res) => {
     return leagueModule.joinLeague(req, res, exports, admin)
 });
 
+/**
+ * params: userId: String, leagueId: String, isJoin: boolean
+ * result: { result: "success", userId: String, leagueId: String, status: String },  or error
+ */
 exports.joinLeaveLeagueV1_4 = functions.https.onRequest((req, res) => {
     return leagueModule.joinLeaveLeagueV1_4(req, res, exports, admin)
 });
 
-exports.getPlayersForLeague = functions.https.onRequest((req, res) => {
+/**
+ * params: leagueId: String
+ * result: [ {playerId: status} ] status = member, organizer, owner
+ */
+ exports.getPlayersForLeague = functions.https.onRequest((req, res) => {
     return leagueModule.getPlayersForLeague(req, res, exports, admin)
 });
 
+/**
+ * params: userId: String
+ * result: [ {leagueId: status} ] status = member, organizer, owner
+ */
 exports.getLeaguesForPlayer = functions.https.onRequest((req, res) => {
     return leagueModule.getLeaguesForPlayer(req, res, exports, admin)
 });
 
+/**
+ * params: userId: String, leagueId: String, status: String = [member, organizer, owner, none]
+ * result: success or error
+ * This is used by owners and admin app to update membership status, including organizer and ownership
+ */
 exports.changeLeaguePlayerStatus = functions.https.onRequest((req, res) => {
     return leagueModule.changeLeaguePlayerStatus(req, res, exports, admin)
 })
 
+/**
+ * params: leagueId: String
+ * result: [ { event } ]
+ */
 exports.getEventsForLeague = functions.https.onRequest((req, res) => {
     return leagueModule.getEventsForLeague(req, res, exports, admin)
 });
@@ -517,3 +539,7 @@ exports.subscribeToTopic = function(token, topic) {
 exports.unsubscribeFromTopic = function(token, topic) {
     return pushModule.subscribeToTopicV1_5(token, topic, admin)
 }
+
+/* Resources
+* Versioning: https://github.com/googleapis/nodejs-datastore/tree/master/src
+* Documentation generation: https://jonathas.com/documenting-your-nodejs-api-with-apidoc/
