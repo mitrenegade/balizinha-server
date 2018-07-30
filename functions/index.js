@@ -415,12 +415,17 @@ exports.createLeague = functions.https.onRequest((req, res) => {
 
 // this isn't used in any publicly deployed app. can delete
 exports.joinLeague = functions.https.onRequest((req, res) => {
-    return leagueModule.joinLeague(req, res, exports, admin)
+    let api = req.body.apiVersion
+    if (api == "1.6") {
+        return leagueModule.joinLeaveLeagueV1_6(req, res, exports, admin)
+    }
+    return leagueModule.joinLeaveLeagueV1_4(req, res, exports, admin)
 });
 
 /**
  * params: userId: String, leagueId: String, isJoin: boolean
  * result: { result: "success", userId: String, leagueId: String, status: String },  or error
+ * DEPRECATED 1.6
  */
 exports.joinLeaveLeagueV1_4 = functions.https.onRequest((req, res) => {
     return leagueModule.joinLeaveLeagueV1_4(req, res, exports, admin)
@@ -449,8 +454,8 @@ exports.getLeaguesForPlayer = functions.https.onRequest((req, res) => {
  */
 exports.changeLeaguePlayerStatus = functions.https.onRequest((req, res) => {
     let api = req.body.apiVersion
-    if (api == "1.5") {
-        return leagueModule.changeLeaguePlayerStatusV1_5(req, res, exports, admin)
+    if (api == "1.6") {
+        return leagueModule.changeLeaguePlayerStatusV1_6(req, res, exports, admin)
     }
     // V1.4 is default
     return leagueModule.changeLeaguePlayerStatusV1_4(req, res, exports, admin)
