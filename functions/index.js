@@ -414,7 +414,7 @@ exports.createLeague = functions.https.onRequest((req, res) => {
 });
 
 // this isn't used in any publicly deployed app. can delete
-exports.joinLeague = functions.https.onRequest((req, res) => {
+exports.joinLeaveLeague = functions.https.onRequest((req, res) => {
     let api = req.body.apiVersion
     if (api == "1.6") {
         return leagueModule.joinLeaveLeagueV1_6(req, res, exports, admin)
