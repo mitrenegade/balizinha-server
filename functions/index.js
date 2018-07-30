@@ -557,3 +557,4 @@ exports.unsubscribeFromTopic = function(token, topic) {
 /* Resources
 * Versioning: https://github.com/googleapis/nodejs-datastore/tree/master/src
 * Documentation generation: https://jonathas.com/documenting-your-nodejs-api-with-apidoc/
+*/
