@@ -31,6 +31,7 @@ exports.joinLeaveLeagueV1_4 = function(req, res, exports, admin) {
 	const userId = req.body.userId
 	const leagueId = req.body.leagueId
 	const isJoin = req.body.isJoin
+	console.log("JoinLeaveLeague v1.4 status " + status + " userId " + userId + " leagueId " + leagueId)
 	return exports.doJoinLeaveLeagueV1_4(admin, userId, leagueId, isJoin).then(result => {
 		if (result["error"] != null) {
 			return res.send(500, result["error"])
@@ -50,11 +51,12 @@ exports.joinLeaveLeagueV1_6 = function(req, res, exports, admin) {
 	} else {
 		status = "none"
 	}
+	console.log("JoinLeaveLeague v1.6 status " + status + " userId " + userId + " leagueId " + leagueId)
 	return exports.doUpdatePlayerStatusV1_6(admin, userId, leagueId, status).then(result => {
 		console.log("JoinLeaveLeague v1.6: success " + JSON.stringify(result))
 		return res.send(200, {result: result})
 	}).catch( (err) => {
-    	console.log("ChangeLeaguePlayerStatus v1.6: league " + leagueId + " error: " + err)
+    	console.log("JoinLeaveLeague v1.6: league " + leagueId + " error: " + err)
     	return res.send(500, {"error": err})
     })
 
