@@ -414,8 +414,9 @@ exports.createLeague = functions.https.onRequest((req, res) => {
 });
 
 // this isn't used in any publicly deployed app. can delete
-exports.joinLeague = functions.https.onRequest((req, res) => {
+exports.joinLeaveLeague = functions.https.onRequest((req, res) => {
     let api = req.body.apiVersion
+    console.log("joinLeaveLeague api " + api)
     if (api == "1.6") {
         return leagueModule.joinLeaveLeagueV1_6(req, res, exports, admin)
     }
@@ -474,8 +475,8 @@ exports.doJoinLeaveLeagueV1_4 = function(admin, userId, leagueId, isJoin) {
     return leagueModule.doJoinLeaveLeagueV1_4(admin, userId, leagueId, isJoin)
 }
 
-exports.doUpdatePlayerStatusV1_5 = function(admin, userId, leagueId, status) {
-    return leagueModule.doUpdatePlayerStatusV1_5(admin, userId, leagueId, status)
+exports.doUpdatePlayerStatusV1_6 = function(admin, userId, leagueId, status) {
+    return leagueModule.doUpdatePlayerStatusV1_6(admin, userId, leagueId, status)
 }
 
 // EVENT //////////////////////////////////////////////////////////////////////////////////
@@ -557,3 +558,4 @@ exports.unsubscribeFromTopic = function(token, topic) {
 /* Resources
 * Versioning: https://github.com/googleapis/nodejs-datastore/tree/master/src
 * Documentation generation: https://jonathas.com/documenting-your-nodejs-api-with-apidoc/
+*/
