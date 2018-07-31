@@ -413,10 +413,12 @@ exports.createLeague = functions.https.onRequest((req, res) => {
     return leagueModule.createLeague(req, res, exports, admin);
 });
 
-// this isn't used in any publicly deployed app. can delete
+/**
+ * params: userId: String, leagueId: String, isJoin: boolean
+ * result: { result: "success", userId: String, leagueId: String, status: String },  or error
+ */
 exports.joinLeaveLeague = functions.https.onRequest((req, res) => {
     let api = req.body.apiVersion
-    console.log("joinLeaveLeague api " + api)
     if (api == "1.6") {
         return leagueModule.joinLeaveLeagueV1_6(req, res, exports, admin)
     }
@@ -480,10 +482,47 @@ exports.doUpdatePlayerStatusV1_6 = function(admin, userId, leagueId, status) {
 }
 
 // EVENT //////////////////////////////////////////////////////////////////////////////////
+/**
+ * params: 
+ ** required: userId, city, place: String
+ **           startTime, endTime: Int (seconds from 1970)
+ ** optional: league, name, type, state, info: String
+ **           maxPlayers: Int
+ **           paymentRequired: Bool
+ **           amount, lat, lon: Double
+ * result: [ { eventId: String } ]
+ */
+exports.createEvent = functions.https.onRequest((req, res) => {
+    let api = req.body.apiVersion
+    // if (api == "1.6") {
+    //     // TODO
+    // }
+    return eventModule.createEventV1_4(req, res, exports, admin)
+})
+
+/**
+ * params: userId: String, eventId: String, join: Bool
+ * result: [ { eventId: String } ]
+ */
+
+exports.joinOrLeaveEvent = functions.https.onRequest((req, res) => {
+    // let api = req.body.apiVersion
+    // if (api == "1.6") {
+    //     // TODO
+    // }
+    return eventModule.joinOrLeaveEventV1_5(req, res, exports, admin)
+})
+
+/**
+ * DEPRECATED 1.6
+ */
 exports.createEvent1_4 = functions.https.onRequest((req, res) => {
     return eventModule.createEventV1_4(req, res, exports, admin)
 })
 
+/**
+ * DEPRECATED v1.6
+ */
 exports.joinOrLeaveEventV1_5 = functions.https.onRequest((req, res) => {
     return eventModule.joinOrLeaveEventV1_5(req, res, exports, admin)
 })
