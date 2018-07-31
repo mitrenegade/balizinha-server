@@ -93,9 +93,20 @@ exports.joinOrLeaveEventV1_5 = function(req, res, exports, admin) {
     var join = req.body.join
 
     console.log("joinOrLeaveEvent v1.5: " + userId + " join? " + join + " " + eventId)
-    return exports.doJoinOrLeaveEventV1_4(userId, eventId, join, admin).then(result => {
-        console.log("joinOrLeaveEvent v1.5: results " + JSON.stringify(result))
+    return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
+        return snapshot.val();
+    }).then(player => {
+        if (player == null) {
+            console.log("JoinOrLeaveEvent v1.5: no player found for userId " + userId + ": must be anonymous")
+            throw new Error("Please sign up to join this game")
+        }
+        return exports.doJoinOrLeaveEventV1_4(userId, eventId, join, admin)
+    }).then(result => {
+        console.log("JoinOrLeaveEvent v1.5: results " + JSON.stringify(result))
         return res.status(200).json({"result": result, "eventId": eventId})
+    }).catch( (err) => {
+        console.log("JoinOrLeaveEvent v1.5: event " + eventId + " error: " + err)
+        return res.status(500).json({"error": err})
     })
 }
 

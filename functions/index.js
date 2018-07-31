@@ -494,9 +494,9 @@ exports.doUpdatePlayerStatusV1_6 = function(admin, userId, leagueId, status) {
  */
 exports.createEvent = functions.https.onRequest((req, res) => {
     let api = req.body.apiVersion
-    if (api == "1.6") {
-        // TODO
-    }
+    // if (api == "1.6") {
+    //     // TODO
+    // }
     return eventModule.createEventV1_4(req, res, exports, admin)
 })
 
@@ -506,10 +506,10 @@ exports.createEvent = functions.https.onRequest((req, res) => {
  */
 
 exports.joinOrLeaveEvent = functions.https.onRequest((req, res) => {
-    let api = req.body.apiVersion
-    if (api == "1.6") {
-        // TODO
-    }
+    // let api = req.body.apiVersion
+    // if (api == "1.6") {
+    //     // TODO
+    // }
     return eventModule.joinOrLeaveEventV1_5(req, res, exports, admin)
 })
 
