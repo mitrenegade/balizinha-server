@@ -106,7 +106,7 @@ exports.joinOrLeaveEventV1_5 = function(req, res, exports, admin) {
         return res.status(200).json({"result": result, "eventId": eventId})
     }).catch( (err) => {
         console.log("JoinOrLeaveEvent v1.5: event " + eventId + " error: " + err)
-        return res.status(500).json({"error": err})
+        return res.status(500).json({"error": err.message})
     })
 }
 

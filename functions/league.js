@@ -146,7 +146,7 @@ exports.getPlayersForLeague = function(req, res, exports, admin) {
 	}).then(result => {
 		return res.send(200, {"result": result})
 	}).catch( err => {
-		return res.send(500, {"error": error})
+		return res.send(500, {"error": err.message})
 	})
 
 	// TODO: result does not filter out players with value false
@@ -170,7 +170,7 @@ exports.getLeaguesForPlayer = function(req, res, exports, admin) {
 	}).then(result => {
 		return res.send(200, {"result": result})
 	}).catch( err => {
-		return res.send(500, {"error": error})
+		return res.send(500, {"error": err.message})
 	})
 
 	// TODO: result sends back leaguePlayers structure, not just the id
@@ -200,7 +200,7 @@ exports.changeLeaguePlayerStatusV1_4 = function(req, res, exports, admin) {
 		return res.send(200,  {"result": "success"})
     }).catch( (err) => {
     	console.log("ChangeLeaguePlayerStatus: league " + leagueId + " error: " + err)
-    	return res.send(500, {"error": err})
+    	return res.send(500, {"error": err.message})
     })
 }
 
@@ -215,7 +215,7 @@ exports.changeLeaguePlayerStatusV1_6 = function(req, res, exports, admin) {
 		return res.send(200, {result: result})
 	}).catch( (err) => {
     	console.log("ChangeLeaguePlayerStatus v1.6: league " + leagueId + " error: " + err)
-    	return res.send(500, {"error": err})
+    	return res.send(500, {"error": err.message})
     })
 }
 
@@ -240,7 +240,7 @@ exports.getEventsForLeague = function(req, res, exports, admin) {
 	}).then(result => {
 		return res.send(200, {"result": result})
 	}).catch( err => {
-		return res.send(500, {"error": error})
+		return res.send(500, {"error": err.message})
 	})
 	// TODO: result does not filter out players with value false
 }
