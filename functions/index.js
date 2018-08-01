@@ -3,10 +3,10 @@ const admin = require('firebase-admin');
 const logging = require('@google-cloud/logging')();
 const app = require('express')
 const moment = require('moment')
-const leagueModule = require('./league')
-const eventModule = require('./event')
+const league1_0 = require('./league1.0')
+const event1_0 = require('./event1.0')
 const actionModule = require('./action')
-const pushModule = require('./push')
+const push1_0 = require('./push1.0')
 
 admin.initializeApp(functions.config().firebase);
 
@@ -15,8 +15,8 @@ const config = functions.config().dev
 const stripe = require('stripe')(config.stripe.token)
 // 1.4 leagues
 // 1.5 event.js, league.js, action.js, push.js
-const API_VERSION = 1.6
-const BUILD_VERSION = 104 // for internal tracking
+const API_VERSION = 1.0
+const BUILD_VERSION = 105 // for internal tracking
 
 const DEFAULT_LEAGUE_ID_DEV = "1525785307-821232"
 const DEFAULT_LEAGUE_ID_PROD = "1525175000-268371"
@@ -69,7 +69,7 @@ exports.onPlayerCreate = functions.database.ref('/players/{userId}').onCreate((s
     var email = snapshot.email // snapshot only contains email
 
     const isJoin = true
-    return exports.doJoinLeaveLeagueV1_4(admin, playerId, DEFAULT_LEAGUE, isJoin)
+    return exports.doJoinLeaveLeague(admin, playerId, DEFAULT_LEAGUE, isJoin)
 })
 
 exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite((snapshot, context) => {
@@ -410,7 +410,7 @@ exports.sampleCloudFunction = functions.https.onRequest((req, res) => {
 
 // http functions
 exports.createLeague = functions.https.onRequest((req, res) => {
-    return leagueModule.createLeague(req, res, exports, admin);
+    return league1_0.createLeague(req, res, exports, admin);
 });
 
 /**
@@ -419,10 +419,9 @@ exports.createLeague = functions.https.onRequest((req, res) => {
  */
 exports.joinLeaveLeague = functions.https.onRequest((req, res) => {
     let api = req.body.apiVersion
-    if (api == "1.6") {
-        return leagueModule.joinLeaveLeagueV1_6(req, res, exports, admin)
-    }
-    return leagueModule.joinLeaveLeagueV1_4(req, res, exports, admin)
+    // if (api == "1.6") {
+    // }
+    return league1_0.joinLeaveLeague(req, res, exports, admin)
 });
 
 /**
@@ -430,8 +429,8 @@ exports.joinLeaveLeague = functions.https.onRequest((req, res) => {
  * result: { result: "success", userId: String, leagueId: String, status: String },  or error
  * DEPRECATED 1.6
  */
-exports.joinLeaveLeagueV1_4 = functions.https.onRequest((req, res) => {
-    return leagueModule.joinLeaveLeagueV1_4(req, res, exports, admin)
+exports.joinLeaveLeague = functions.https.onRequest((req, res) => {
+    return league1_0.joinLeaveLeague(req, res, exports, admin)
 });
 
 /**
@@ -439,7 +438,7 @@ exports.joinLeaveLeagueV1_4 = functions.https.onRequest((req, res) => {
  * result: [ {playerId: status} ] status = member, organizer, owner
  */
  exports.getPlayersForLeague = functions.https.onRequest((req, res) => {
-    return leagueModule.getPlayersForLeague(req, res, exports, admin)
+    return league1_0.getPlayersForLeague(req, res, exports, admin)
 });
 
 /**
@@ -447,7 +446,7 @@ exports.joinLeaveLeagueV1_4 = functions.https.onRequest((req, res) => {
  * result: [ {leagueId: status} ] status = member, organizer, owner
  */
 exports.getLeaguesForPlayer = functions.https.onRequest((req, res) => {
-    return leagueModule.getLeaguesForPlayer(req, res, exports, admin)
+    return league1_0.getLeaguesForPlayer(req, res, exports, admin)
 });
 
 /**
@@ -457,11 +456,10 @@ exports.getLeaguesForPlayer = functions.https.onRequest((req, res) => {
  */
 exports.changeLeaguePlayerStatus = functions.https.onRequest((req, res) => {
     let api = req.body.apiVersion
-    if (api == "1.6") {
-        return leagueModule.changeLeaguePlayerStatusV1_6(req, res, exports, admin)
-    }
-    // V1.4 is default
-    return leagueModule.changeLeaguePlayerStatusV1_4(req, res, exports, admin)
+    // if (api == "1.6") {
+    //     return league1_0.changeLeaguePlayerStatus(req, res, exports, admin)
+    // }
+    return league1_0.changeLeaguePlayerStatus(req, res, exports, admin)
 })
 
 /**
@@ -469,16 +467,16 @@ exports.changeLeaguePlayerStatus = functions.https.onRequest((req, res) => {
  * result: [ { event } ]
  */
 exports.getEventsForLeague = functions.https.onRequest((req, res) => {
-    return leagueModule.getEventsForLeague(req, res, exports, admin)
+    return league1_0.getEventsForLeague(req, res, exports, admin)
 });
 
 // helper functions
-exports.doJoinLeaveLeagueV1_4 = function(admin, userId, leagueId, isJoin) {
-    return leagueModule.doJoinLeaveLeagueV1_4(admin, userId, leagueId, isJoin)
+exports.doJoinLeaveLeague = function(admin, userId, leagueId, isJoin) {
+    return league1_0.doJoinLeaveLeague(admin, userId, leagueId, isJoin)
 }
 
-exports.doUpdatePlayerStatusV1_6 = function(admin, userId, leagueId, status) {
-    return leagueModule.doUpdatePlayerStatusV1_6(admin, userId, leagueId, status)
+exports.doUpdatePlayerStatus = function(admin, userId, leagueId, status) {
+    return league1_0.doUpdatePlayerStatus(admin, userId, leagueId, status)
 }
 
 // EVENT //////////////////////////////////////////////////////////////////////////////////
@@ -497,7 +495,7 @@ exports.createEvent = functions.https.onRequest((req, res) => {
     // if (api == "1.6") {
     //     // TODO
     // }
-    return eventModule.createEventV1_4(req, res, exports, admin)
+    return event1_0.createEvent(req, res, exports, admin)
 })
 
 /**
@@ -510,47 +508,34 @@ exports.joinOrLeaveEvent = functions.https.onRequest((req, res) => {
     // if (api == "1.6") {
     //     // TODO
     // }
-    return eventModule.joinOrLeaveEventV1_5(req, res, exports, admin)
+    return event1_0.joinOrLeaveEvent(req, res, exports, admin)
 })
 
-/**
- * DEPRECATED 1.6
- */
-exports.createEvent1_4 = functions.https.onRequest((req, res) => {
-    return eventModule.createEventV1_4(req, res, exports, admin)
-})
-
-/**
- * DEPRECATED v1.6
- */
-exports.joinOrLeaveEventV1_5 = functions.https.onRequest((req, res) => {
-    return eventModule.joinOrLeaveEventV1_5(req, res, exports, admin)
-})
+// helpers
+exports.doJoinOrLeaveEvent = function(userId, eventId, join, admin) {
+    return event1_0.doJoinOrLeaveEvent(userId, eventId, join, admin)
+}
 
 // database changes
 exports.onEventChange = functions.database.ref('/events/{eventId}').onWrite((snapshot, context) => {
-    return eventModule.onEventChangeV1_4(snapshot, context, exports, admin)
+    return event1_0.onEventChange(snapshot, context, exports, admin)
 })
 
 exports.onUserJoinOrLeaveEvent = functions.database.ref('/eventUsers/{eventId}/{userId}').onWrite((snapshot, context) => {
-    return eventModule.onUserJoinOrLeaveEventV1_4(snapshot, context, exports, admin)
+    return event1_0.onUserJoinOrLeaveEvent(snapshot, context, exports, admin)
 })
 
 exports.onEventDelete = functions.database.ref('/events/{eventId}').onDelete((snapshot, context) => {
-    return eventModule.onEventDeleteV1_4(snapshot, context, exports, admin)
+    return event1_0.onEventDelete(snapshot, context, exports, admin)
 })
 
 // helpers - must be defined here in order to use in module
-exports.pushForCreateEventV1_5 = function(eventId, name, place) {
-    return pushModule.pushForCreateEventV1_5(eventId, name, place, exports, admin)
+exports.pushForCreateEvent = function(eventId, name, place) {
+    return push1_0.pushForCreateEvent(eventId, name, place, exports, admin)
 }
 
-exports.pushForJoinEventV1_5 = function(eventId, name, join) {
-    return pushModule.pushForJoinEventV1_5(eventId, name, join, exports, admin)
-}
-
-exports.doJoinOrLeaveEventV1_4 = function(userId, eventId, join, admin) {
-    return eventModule.doJoinOrLeaveEventV1_4(userId, eventId, join, admin)
+exports.pushForJoinEvent = function(eventId, name, join) {
+    return push1_0.pushForJoinEvent(eventId, name, join, exports, admin)
 }
 
 // ACTION //////////////////////////////////////////////////////////////////////////////////
@@ -570,28 +555,29 @@ exports.pushForChatAction = function(actionId, eventId, userId, data) {
 
 // database changes
 exports.subscribeToOrganizerPush = functions.database.ref(`/organizers/{organizerId}`).onWrite((snapshot, context) => {
-    return pushModule.subscribeToOrganizerPushV1_5(snapshot, context, exports, admin)
+    return push1_0.subscribeToOrganizerPush(snapshot, context, exports, admin)
 })
 
 // helper functions
-exports.createOrganizerTopicForNewEventV1_5 = function(eventId, organizerId) {
-    return pushModule.createOrganizerTopicForNewEventV1_5(eventId, organizerId, exports, admin)
+exports.createOrganizerTopicForNewEvent = function(eventId, organizerId) {
+    return push1_0.createOrganizerTopicForNewEvent(eventId, organizerId, exports, admin)
 }
 
 exports.sendPushToTopic = function(title, topic, msg) {
-    return pushModule.sendPushToTopicV1_5(title, topic, msg, admin)
-}
-
-exports.sendPush = function(token, msg) {
-    return pushModule.sendPushV1_5(token, msg, exports, admin)
+    return push1_0.sendPushToTopic(title, topic, msg, admin)
 }
 
 exports.subscribeToTopic = function(token, topic) {
-    return pushModule.subscribeToTopicV1_5(token, topic, admin)
+    return push1_0.subscribeToTopic(token, topic, admin)
 }
 
 exports.unsubscribeFromTopic = function(token, topic) {
-    return pushModule.subscribeToTopicV1_5(token, topic, admin)
+    return push1_0.subscribeToTopic(token, topic, admin)
+}
+
+// test
+exports.sendPush = function(token, msg) {
+    return push1_0.sendPush(token, msg, exports, admin)
 }
 
 /* Resources

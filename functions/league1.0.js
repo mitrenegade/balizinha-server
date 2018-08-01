@@ -17,7 +17,7 @@ exports.createLeague = function(req, res, exports, admin) {
     return admin.database().ref(ref).set(params).then(() => {
     	console.log("creating league " + leagueId + " complete. calling joinLeague for player " + userId)
     	const status = "member"
-    	return exports.doUpdatePlayerStatusV1_6(admin, userId, leagueId, status)
+    	return exports.doUpdatePlayerStatus(admin, userId, leagueId, status)
     }).then(result => {
     	console.log("joinLeague result " + JSON.stringify(result) + ". loading league")
     	// can't return league as a snapshot. only return the id
@@ -27,21 +27,7 @@ exports.createLeague = function(req, res, exports, admin) {
     })
 }
 
-exports.joinLeaveLeagueV1_4 = function(req, res, exports, admin) {
-	const userId = req.body.userId
-	const leagueId = req.body.leagueId
-	const isJoin = req.body.isJoin
-	console.log("JoinLeaveLeague v1.4 status " + status + " userId " + userId + " leagueId " + leagueId)
-	return exports.doJoinLeaveLeagueV1_4(admin, userId, leagueId, isJoin).then(result => {
-		if (result["error"] != null) {
-			return res.send(500, result["error"])
-		} else {
-			return res.send(200, {result: result})
-		}
-	})
-}
-
-exports.joinLeaveLeagueV1_6 = function(req, res, exports, admin) {
+exports.joinLeaveLeague = function(req, res, exports, admin) {
 	const userId = req.body.userId
 	const leagueId = req.body.leagueId
 	const isJoin = req.body.isJoin
@@ -51,18 +37,18 @@ exports.joinLeaveLeagueV1_6 = function(req, res, exports, admin) {
 	} else {
 		status = "none"
 	}
-	console.log("JoinLeaveLeague v1.6 status " + status + " userId " + userId + " leagueId " + leagueId)
-	return exports.doUpdatePlayerStatusV1_6(admin, userId, leagueId, status).then(result => {
-		console.log("JoinLeaveLeague v1.6: success " + JSON.stringify(result))
+	console.log("JoinLeaveLeague v1.0 status " + status + " userId " + userId + " leagueId " + leagueId)
+	return exports.doUpdatePlayerStatus(admin, userId, leagueId, status).then(result => {
+		console.log("JoinLeaveLeague v1.0: success " + JSON.stringify(result))
 		return res.send(200, {result: result})
 	}).catch( (err) => {
-    	console.log("JoinLeaveLeague v1.6: league " + leagueId + " error: " + err)
+    	console.log("JoinLeaveLeague v1.0: league " + leagueId + " error: " + err)
     	return res.send(500, {"error": err})
     })
 
 }
 
-exports.doJoinLeaveLeagueV1_4 = function(admin, userId, leagueId, isJoin) {
+exports.doJoinLeaveLeague = function(admin, userId, leagueId, isJoin) {
 	// when joining a league, /leaguePlayers/leagueId gets a new attribute of [playerId:true]
 	var status = ""
 	if (isJoin) {
@@ -71,24 +57,22 @@ exports.doJoinLeaveLeagueV1_4 = function(admin, userId, leagueId, isJoin) {
 		status = "none"
 	}
 
-	console.log("DoJoinLeaveLeagueV1_4: status " + status)
-
 	var ref = `/leagues/${leagueId}` 
 	return admin.database().ref(ref).once('value')
 	.then(snapshot => {
         return snapshot.val();
     }).then(league => {	
     	if (league == null) {
-    		console.log("JoinLeaveLeague v1.4: league not found")
+    		console.log("JoinLeaveLeague v1.0: league not found")
     		throw new Error("League not found")
     	} else {
     		var leagueRef = `/leaguePlayers/${leagueId}`
     		var params = {[userId]: status}
-		    console.log("JoinLeaveLeague v1.4: update leaguePlayers status " + status + " + user " + userId + " league " + leagueId + " name: " + league["name"])
+		    console.log("JoinLeaveLeague v1.0: update leaguePlayers status " + status + " + user " + userId + " league " + leagueId + " name: " + league["name"])
     		return admin.database().ref(leagueRef).update(params)
     	}
     }).then(result => {
-	    console.log("JoinLeaveLeague v1.4: update playerLeagues status " + status + " league " + leagueId + " user " + userId)
+	    console.log("JoinLeaveLeague v1.0: update playerLeagues status " + status + " league " + leagueId + " user " + userId)
 		var leagueRef = `/playerLeagues/${userId}`
 		var params = {[leagueId]: status}
 		return admin.database().ref(leagueRef).update(params)
@@ -96,14 +80,14 @@ exports.doJoinLeaveLeagueV1_4 = function(admin, userId, leagueId, isJoin) {
 		// result is null due to update
 		return {"result": "success", "userId": userId, "leagueId": leagueId, "status": status}
     }).catch( (err) => {
-    	console.log("JoinLeaveLeague v1.4: league " + leagueId + " error: " + err)
+    	console.log("JoinLeaveLeague v1.0: league " + leagueId + " error: " + err)
     	return {"error": err}
     })
 }
 
 // helper function for all changes in league membership
-exports.doUpdatePlayerStatusV1_6 = function(admin, userId, leagueId, status) {
-	console.log("DoUpdatePlayerStatus v1.6: userId " + userId + " leagueId " + leagueId + " status " + status)
+exports.doUpdatePlayerStatus = function(admin, userId, leagueId, status) {
+	console.log("DoUpdatePlayerStatus v1.0: userId " + userId + " leagueId " + leagueId + " status " + status)
 
 	    // validation
     if (status != "member" && status != "organizer" && status != "owner" && status != "none") {
@@ -115,17 +99,17 @@ exports.doUpdatePlayerStatusV1_6 = function(admin, userId, leagueId, status) {
 	return admin.database().ref(ref).once('value')
 	.then(snapshot => {
 		if (snapshot.val() == null) {
-    		console.log("DoUpdatePlayerStatus v1.6: league not found")
+    		console.log("DoUpdatePlayerStatus v1.0: league not found")
     		throw new Error("League not found")
 		}
         return snapshot.val()
     }).then(league => {
 		var leagueRef = `/leaguePlayers/${leagueId}`
 		var params = {[userId]: status}
-	    console.log("DoUpdatePlayerStatus v1.6: update leaguePlayers status " + status + " + user " + userId + " league " + leagueId + " name: " + league["name"])
+	    console.log("DoUpdatePlayerStatus v1.0: update leaguePlayers status " + status + " + user " + userId + " league " + leagueId + " name: " + league["name"])
 		return admin.database().ref(leagueRef).update(params)
     }).then(result => {
-	    console.log("DoUpdatePlayerStatus v1.6: update playerLeagues status " + status + " league " + leagueId + " user " + userId)
+	    console.log("DoUpdatePlayerStatus v1.0: update playerLeagues status " + status + " league " + leagueId + " user " + userId)
 		var leagueRef = `/playerLeagues/${userId}`
 		var params = {[leagueId]: status}
 		return admin.database().ref(leagueRef).update(params)
@@ -176,45 +160,17 @@ exports.getLeaguesForPlayer = function(req, res, exports, admin) {
 	// TODO: result sends back leaguePlayers structure, not just the id
 }
 
-// organizers
-exports.changeLeaguePlayerStatusV1_4 = function(req, res, exports, admin) {
+exports.changeLeaguePlayerStatus = function(req, res, exports, admin) {
 	const userId = req.body.userId
 	const leagueId = req.body.leagueId
 	const status = req.body.status
-	var ref = `/leagues/${leagueId}` 
-    console.log("ChangeLeaguePlayerStatus v1.4: user " + userId + " league " + leagueId + " status: " + status)
-    // validation
-    if (status != "member" && status != "organizer" && status != "owner" && status != "none") {
-    	res.send(500, {"error": "invalid status. cannot change user " + userId + " to " + status})
-    	return
-    }
+    console.log("ChangeLeaguePlayerStatus v1.0: user " + userId + " league " + leagueId + " status: " + status)
 
-	var leagueRef = `/leaguePlayers/${leagueId}/${userId}`
-		console.log("ChangeLeaguePlayerStatus: leaguePlayers/" + leagueId + " player " + userId + " status " + status)
-	return admin.database().ref(leagueRef).set(status).then(result => {
-		var playerRef = `/playerLeagues/${userId}/${leagueId}`
-		console.log("ChangeLeaguePlayerStatus: playerLeagues/" + userId + " league " + leagueId + " status " + status)
-		return admin.database().ref(playerRef).set(status)
-	}).then(result => {
-		// result is null due to update
-		return res.send(200,  {"result": "success"})
-    }).catch( (err) => {
-    	console.log("ChangeLeaguePlayerStatus: league " + leagueId + " error: " + err)
-    	return res.send(500, {"error": err.message})
-    })
-}
-
-exports.changeLeaguePlayerStatusV1_6 = function(req, res, exports, admin) {
-	const userId = req.body.userId
-	const leagueId = req.body.leagueId
-	const status = req.body.status
-    console.log("ChangeLeaguePlayerStatus v1.6: user " + userId + " league " + leagueId + " status: " + status)
-
-    return exports.doUpdatePlayerStatusV1_6(admin, userId, leagueId, status).then(result => {
-		console.log("ChangeLeaguePlayerStatus v1.6: success " + JSON.stringify(result))
+    return exports.doUpdatePlayerStatus(admin, userId, leagueId, status).then(result => {
+		console.log("ChangeLeaguePlayerStatus v1.0: success " + JSON.stringify(result))
 		return res.send(200, {result: result})
 	}).catch( (err) => {
-    	console.log("ChangeLeaguePlayerStatus v1.6: league " + leagueId + " error: " + err)
+    	console.log("ChangeLeaguePlayerStatus v1.0: league " + leagueId + " error: " + err)
     	return res.send(500, {"error": err.message})
     })
 }
