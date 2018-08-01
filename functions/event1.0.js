@@ -60,13 +60,13 @@ exports.createEvent = function(req, res, exports, admin) {
         return exports.doJoinOrLeaveEvent(userId, eventId, true, admin)
     }).then(result => {
         console.log("CreateEvent v1.0: createTopicForEvent")
-        return exports.createOrganizerTopicForNewEventV1_5(eventId, userId)
+        return exports.createOrganizerTopicForNewEvent(eventId, userId)
     }).then(result => {
         var placeName = city
         if (city == undefined) {
             placeName = place
         }
-        return exports.pushForCreateEventV1_5(eventId, name, place)
+        return exports.pushForCreateEvent(eventId, name, place)
     }).then(result => {
         return res.status(200).json({"result": result, "eventId": eventId})
     })
