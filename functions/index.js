@@ -3,7 +3,7 @@ const admin = require('firebase-admin');
 const logging = require('@google-cloud/logging')();
 const app = require('express')
 const moment = require('moment')
-const leagueModule = require('./league')
+const league1_0 = require('./league1.0')
 const event1_0 = require('./event1_0')
 const actionModule = require('./action')
 const pushModule = require('./push')
@@ -410,7 +410,7 @@ exports.sampleCloudFunction = functions.https.onRequest((req, res) => {
 
 // http functions
 exports.createLeague = functions.https.onRequest((req, res) => {
-    return leagueModule.createLeague(req, res, exports, admin);
+    return league1_0.createLeague(req, res, exports, admin);
 });
 
 /**
@@ -420,9 +420,9 @@ exports.createLeague = functions.https.onRequest((req, res) => {
 exports.joinLeaveLeague = functions.https.onRequest((req, res) => {
     let api = req.body.apiVersion
     if (api == "1.6") {
-        return leagueModule.joinLeaveLeagueV1_6(req, res, exports, admin)
+        return league1_0.joinLeaveLeagueV1_6(req, res, exports, admin)
     }
-    return leagueModule.joinLeaveLeagueV1_4(req, res, exports, admin)
+    return league1_0.joinLeaveLeagueV1_4(req, res, exports, admin)
 });
 
 /**
@@ -431,7 +431,7 @@ exports.joinLeaveLeague = functions.https.onRequest((req, res) => {
  * DEPRECATED 1.6
  */
 exports.joinLeaveLeagueV1_4 = functions.https.onRequest((req, res) => {
-    return leagueModule.joinLeaveLeagueV1_4(req, res, exports, admin)
+    return league1_0.joinLeaveLeagueV1_4(req, res, exports, admin)
 });
 
 /**
@@ -439,7 +439,7 @@ exports.joinLeaveLeagueV1_4 = functions.https.onRequest((req, res) => {
  * result: [ {playerId: status} ] status = member, organizer, owner
  */
  exports.getPlayersForLeague = functions.https.onRequest((req, res) => {
-    return leagueModule.getPlayersForLeague(req, res, exports, admin)
+    return league1_0.getPlayersForLeague(req, res, exports, admin)
 });
 
 /**
@@ -447,7 +447,7 @@ exports.joinLeaveLeagueV1_4 = functions.https.onRequest((req, res) => {
  * result: [ {leagueId: status} ] status = member, organizer, owner
  */
 exports.getLeaguesForPlayer = functions.https.onRequest((req, res) => {
-    return leagueModule.getLeaguesForPlayer(req, res, exports, admin)
+    return league1_0.getLeaguesForPlayer(req, res, exports, admin)
 });
 
 /**
@@ -458,10 +458,10 @@ exports.getLeaguesForPlayer = functions.https.onRequest((req, res) => {
 exports.changeLeaguePlayerStatus = functions.https.onRequest((req, res) => {
     let api = req.body.apiVersion
     if (api == "1.6") {
-        return leagueModule.changeLeaguePlayerStatusV1_6(req, res, exports, admin)
+        return league1_0.changeLeaguePlayerStatusV1_6(req, res, exports, admin)
     }
     // V1.4 is default
-    return leagueModule.changeLeaguePlayerStatusV1_4(req, res, exports, admin)
+    return league1_0.changeLeaguePlayerStatusV1_4(req, res, exports, admin)
 })
 
 /**
@@ -469,16 +469,16 @@ exports.changeLeaguePlayerStatus = functions.https.onRequest((req, res) => {
  * result: [ { event } ]
  */
 exports.getEventsForLeague = functions.https.onRequest((req, res) => {
-    return leagueModule.getEventsForLeague(req, res, exports, admin)
+    return league1_0.getEventsForLeague(req, res, exports, admin)
 });
 
 // helper functions
 exports.doJoinLeaveLeagueV1_4 = function(admin, userId, leagueId, isJoin) {
-    return leagueModule.doJoinLeaveLeagueV1_4(admin, userId, leagueId, isJoin)
+    return league1_0.doJoinLeaveLeagueV1_4(admin, userId, leagueId, isJoin)
 }
 
 exports.doUpdatePlayerStatusV1_6 = function(admin, userId, leagueId, status) {
-    return leagueModule.doUpdatePlayerStatusV1_6(admin, userId, leagueId, status)
+    return league1_0.doUpdatePlayerStatusV1_6(admin, userId, leagueId, status)
 }
 
 // EVENT //////////////////////////////////////////////////////////////////////////////////
