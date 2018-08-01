@@ -4,9 +4,9 @@ const logging = require('@google-cloud/logging')();
 const app = require('express')
 const moment = require('moment')
 const league1_0 = require('./league1.0')
-const event1_0 = require('./event1_0')
+const event1_0 = require('./event1.0')
 const actionModule = require('./action')
-const pushModule = require('./push')
+const push1_0 = require('./push1.0')
 
 admin.initializeApp(functions.config().firebase);
 
@@ -531,11 +531,11 @@ exports.onEventDelete = functions.database.ref('/events/{eventId}').onDelete((sn
 
 // helpers - must be defined here in order to use in module
 exports.pushForCreateEvent = function(eventId, name, place) {
-    return pushModule.pushForCreateEvent(eventId, name, place, exports, admin)
+    return push1_0.pushForCreateEvent(eventId, name, place, exports, admin)
 }
 
 exports.pushForJoinEvent = function(eventId, name, join) {
-    return pushModule.pushForJoinEvent(eventId, name, join, exports, admin)
+    return push1_0.pushForJoinEvent(eventId, name, join, exports, admin)
 }
 
 // ACTION //////////////////////////////////////////////////////////////////////////////////
@@ -555,28 +555,28 @@ exports.pushForChatAction = function(actionId, eventId, userId, data) {
 
 // database changes
 exports.subscribeToOrganizerPush = functions.database.ref(`/organizers/{organizerId}`).onWrite((snapshot, context) => {
-    return pushModule.subscribeToOrganizerPushV1_5(snapshot, context, exports, admin)
+    return push1_0.subscribeToOrganizerPushV1_5(snapshot, context, exports, admin)
 })
 
 // helper functions
 exports.createOrganizerTopicForNewEventV1_5 = function(eventId, organizerId) {
-    return pushModule.createOrganizerTopicForNewEventV1_5(eventId, organizerId, exports, admin)
+    return push1_0.createOrganizerTopicForNewEventV1_5(eventId, organizerId, exports, admin)
 }
 
 exports.sendPushToTopic = function(title, topic, msg) {
-    return pushModule.sendPushToTopicV1_5(title, topic, msg, admin)
+    return push1_0.sendPushToTopicV1_5(title, topic, msg, admin)
 }
 
 exports.sendPush = function(token, msg) {
-    return pushModule.sendPushV1_5(token, msg, exports, admin)
+    return push1_0.sendPushV1_5(token, msg, exports, admin)
 }
 
 exports.subscribeToTopic = function(token, topic) {
-    return pushModule.subscribeToTopicV1_5(token, topic, admin)
+    return push1_0.subscribeToTopicV1_5(token, topic, admin)
 }
 
 exports.unsubscribeFromTopic = function(token, topic) {
-    return pushModule.subscribeToTopicV1_5(token, topic, admin)
+    return push1_0.subscribeToTopicV1_5(token, topic, admin)
 }
 
 /* Resources
