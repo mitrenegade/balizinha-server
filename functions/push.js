@@ -95,8 +95,8 @@ exports.unsubscribeFromTopicV1_5 = function(token, topic, admin) {
     );
 }
 
-exports.pushForCreateEventV1_5 = function(eventId, name, place, exports, admin) {
-    console.log("CreateEvent v1.5 sending push")
+exports.pushForCreateEvent = function(eventId, name, place, exports, admin) {
+    console.log("CreateEvent v1.0 sending push")
     var title = "New event available"
     var topic = "general"
     var msg = "A new event, " + name + ", is available in " + place
@@ -104,7 +104,7 @@ exports.pushForCreateEventV1_5 = function(eventId, name, place, exports, admin) 
     return exports.sendPushToTopic(title, topic, msg) // TODO: this gets called twice
 }
 
-exports.pushForJoinEventV1_5 = function(eventId, name, join, exports, admin) {
+exports.pushForJoinEvent = function(eventId, name, join, exports, admin) {
 	var joinedString = "joined"
 	if (!join) {
 		joinedString = "left"

@@ -15,8 +15,8 @@ const config = functions.config().dev
 const stripe = require('stripe')(config.stripe.token)
 // 1.4 leagues
 // 1.5 event.js, league.js, action.js, push.js
-const API_VERSION = 1.6
-const BUILD_VERSION = 104 // for internal tracking
+const API_VERSION = 1.0
+const BUILD_VERSION = 105 // for internal tracking
 
 const DEFAULT_LEAGUE_ID_DEV = "1525785307-821232"
 const DEFAULT_LEAGUE_ID_PROD = "1525175000-268371"
@@ -532,12 +532,12 @@ exports.onEventDelete = functions.database.ref('/events/{eventId}').onDelete((sn
 })
 
 // helpers - must be defined here in order to use in module
-exports.pushForCreateEventV1_5 = function(eventId, name, place) {
-    return pushModule.pushForCreateEventV1_5(eventId, name, place, exports, admin)
+exports.pushForCreateEvent = function(eventId, name, place) {
+    return pushModule.pushForCreateEvent(eventId, name, place, exports, admin)
 }
 
-exports.pushForJoinEventV1_5 = function(eventId, name, join) {
-    return pushModule.pushForJoinEventV1_5(eventId, name, join, exports, admin)
+exports.pushForJoinEvent = function(eventId, name, join) {
+    return pushModule.pushForJoinEvent(eventId, name, join, exports, admin)
 }
 
 // ACTION //////////////////////////////////////////////////////////////////////////////////

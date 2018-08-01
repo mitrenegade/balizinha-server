@@ -51,15 +51,15 @@ exports.createEvent = function(req, res, exports, admin) {
     return admin.database().ref(ref).set(params)
     .then(result => {
         // create action
-        console.log("CreateEvent v1.4 createAction event " + eventId + " organizer " + userId)
+        console.log("CreateEvent v1.0 createAction event " + eventId + " organizer " + userId)
         var type = "createEvent"
         return exports.createAction(type, userId, eventId, null)
     }).then(result => {
         // join event
-        console.log("CreateEvent v1.4 success for event " + eventId + " with result " + JSON.stringify(result))
-        return exports.doJoinOrLeaveEventV1_4(userId, eventId, true, admin)
+        console.log("CreateEvent v1.0 success for event " + eventId + " with result " + JSON.stringify(result))
+        return exports.doJoinOrLeaveEvent(userId, eventId, true, admin)
     }).then(result => {
-        console.log("CreateEvent v1.4: createTopicForEvent")
+        console.log("CreateEvent v1.0: createTopicForEvent")
         return exports.createOrganizerTopicForNewEventV1_5(eventId, userId)
     }).then(result => {
         var placeName = city
@@ -78,7 +78,6 @@ exports.createEvent = function(req, res, exports, admin) {
 
 // helper function
 exports.doJoinOrLeaveEvent = function(userId, eventId, join, admin) {
-    console.log("joinOrLeaveEvent v1.4: " + userId + " join? " + join + " " + eventId)
     var params = { [userId] : join }
     return admin.database().ref(`/eventUsers/${eventId}`).update(params).then(results => {
         var params2 = { [eventId] : join }
@@ -92,31 +91,31 @@ exports.joinOrLeaveEvent = function(req, res, exports, admin) {
     var eventId = req.body.eventId
     var join = req.body.join
 
-    console.log("joinOrLeaveEvent v1.5: " + userId + " join? " + join + " " + eventId)
+    console.log("JoinOrLeaveEvent v1.0: " + userId + " join? " + join + " " + eventId)
     return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
         return snapshot.val();
     }).then(player => {
         if (player == null) {
-            console.log("JoinOrLeaveEvent v1.5: no player found for userId " + userId + ": must be anonymous")
+            console.log("JoinOrLeaveEvent v1.0: no player found for userId " + userId + ": must be anonymous")
             throw new Error("Please sign up to join this game")
         }
-        return exports.doJoinOrLeaveEventV1_4(userId, eventId, join, admin)
+        return exports.doJoinOrLeaveEvent(userId, eventId, join, admin)
     }).then(result => {
-        console.log("JoinOrLeaveEvent v1.5: results " + JSON.stringify(result))
+        console.log("JoinOrLeaveEvent v1.0: results " + JSON.stringify(result))
         return res.status(200).json({"result": result, "eventId": eventId})
     }).catch( (err) => {
-        console.log("JoinOrLeaveEvent v1.5: event " + eventId + " error: " + err)
+        console.log("JoinOrLeaveEvent v1.0: event " + eventId + " error: " + err)
         return res.status(500).json({"error": err.message})
     })
 }
 
 // event creation/change
-exports.onEventChangeV1_4 = function(snapshot, context, exports, admin) {
+exports.onEventChange = function(snapshot, context, exports, admin) {
     var eventId = context.params.eventId
     var data = snapshot.after.val()
     var old = snapshot.before
 
-    console.log("onEventChange v1.4: event " + eventId + " data " + JSON.stringify(data))
+    console.log("onEventChange v1.0: event " + eventId + " data " + JSON.stringify(data))
 
     if (!old.exists()) {
         console.log("event created: " + eventId + " state: " + JSON.stringify(data))
@@ -142,7 +141,7 @@ exports.onEventChangeV1_4 = function(snapshot, context, exports, admin) {
 }
 
 // join/leave event
-exports.onUserJoinOrLeaveEventV1_4 = function(snapshot, context, exports, admin) {
+exports.onUserJoinOrLeaveEvent = function(snapshot, context, exports, admin) {
     const eventId = context.params.eventId
     const userId = context.params.userId
     var data = snapshot.after.val()
@@ -184,7 +183,7 @@ exports.onUserJoinOrLeaveEventV1_4 = function(snapshot, context, exports, admin)
         if (data == false) {
             join = false
         }
-        exports.pushForJoinEventV1_5(eventId, name, join)
+        exports.pushForJoinEvent(eventId, name, join)
     }).then( result => { 
         var type = "joinEvent"
         if (data == false) {
@@ -194,12 +193,12 @@ exports.onUserJoinOrLeaveEventV1_4 = function(snapshot, context, exports, admin)
     })
 }
 
-exports.onEventDeleteV1_4 = function(snapshot, context, exports, admin) {
+exports.onEventDelete = function(snapshot, context, exports, admin) {
     var eventId = context.params.eventId
     var data = snapshot.after.val()
     var old = snapshot.before
 
-    console.log("Event delete v1.4: id " + eventId + " snapsht before " + JSON.stringify(old) + " after " + JSON.stringify(data))
+    console.log("Event delete v1.0: id " + eventId + " snapsht before " + JSON.stringify(old) + " after " + JSON.stringify(data))
     // do nothing
     // should we delete all actionIds?
     // should we delete all leagueEvents?
