@@ -69,7 +69,7 @@ exports.onPlayerCreate = functions.database.ref('/players/{userId}').onCreate((s
     var email = snapshot.email // snapshot only contains email
 
     const isJoin = true
-    return exports.doJoinLeaveLeagueV1_4(admin, playerId, DEFAULT_LEAGUE, isJoin)
+    return exports.doJoinLeaveLeague(admin, playerId, DEFAULT_LEAGUE, isJoin)
 })
 
 exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite((snapshot, context) => {
@@ -419,10 +419,9 @@ exports.createLeague = functions.https.onRequest((req, res) => {
  */
 exports.joinLeaveLeague = functions.https.onRequest((req, res) => {
     let api = req.body.apiVersion
-    if (api == "1.6") {
-        return league1_0.joinLeaveLeagueV1_6(req, res, exports, admin)
-    }
-    return league1_0.joinLeaveLeagueV1_4(req, res, exports, admin)
+    // if (api == "1.6") {
+    // }
+    return league1_0.joinLeaveLeague(req, res, exports, admin)
 });
 
 /**
@@ -430,8 +429,8 @@ exports.joinLeaveLeague = functions.https.onRequest((req, res) => {
  * result: { result: "success", userId: String, leagueId: String, status: String },  or error
  * DEPRECATED 1.6
  */
-exports.joinLeaveLeagueV1_4 = functions.https.onRequest((req, res) => {
-    return league1_0.joinLeaveLeagueV1_4(req, res, exports, admin)
+exports.joinLeaveLeague = functions.https.onRequest((req, res) => {
+    return league1_0.joinLeaveLeague(req, res, exports, admin)
 });
 
 /**
@@ -457,11 +456,10 @@ exports.getLeaguesForPlayer = functions.https.onRequest((req, res) => {
  */
 exports.changeLeaguePlayerStatus = functions.https.onRequest((req, res) => {
     let api = req.body.apiVersion
-    if (api == "1.6") {
-        return league1_0.changeLeaguePlayerStatusV1_6(req, res, exports, admin)
-    }
-    // V1.4 is default
-    return league1_0.changeLeaguePlayerStatusV1_4(req, res, exports, admin)
+    // if (api == "1.6") {
+    //     return league1_0.changeLeaguePlayerStatus(req, res, exports, admin)
+    // }
+    return league1_0.changeLeaguePlayerStatus(req, res, exports, admin)
 })
 
 /**
@@ -473,12 +471,12 @@ exports.getEventsForLeague = functions.https.onRequest((req, res) => {
 });
 
 // helper functions
-exports.doJoinLeaveLeagueV1_4 = function(admin, userId, leagueId, isJoin) {
-    return league1_0.doJoinLeaveLeagueV1_4(admin, userId, leagueId, isJoin)
+exports.doJoinLeaveLeague = function(admin, userId, leagueId, isJoin) {
+    return league1_0.doJoinLeaveLeague(admin, userId, leagueId, isJoin)
 }
 
-exports.doUpdatePlayerStatusV1_6 = function(admin, userId, leagueId, status) {
-    return league1_0.doUpdatePlayerStatusV1_6(admin, userId, leagueId, status)
+exports.doUpdatePlayerStatus = function(admin, userId, leagueId, status) {
+    return league1_0.doUpdatePlayerStatus(admin, userId, leagueId, status)
 }
 
 // EVENT //////////////////////////////////////////////////////////////////////////////////
