@@ -555,28 +555,29 @@ exports.pushForChatAction = function(actionId, eventId, userId, data) {
 
 // database changes
 exports.subscribeToOrganizerPush = functions.database.ref(`/organizers/{organizerId}`).onWrite((snapshot, context) => {
-    return push1_0.subscribeToOrganizerPushV1_5(snapshot, context, exports, admin)
+    return push1_0.subscribeToOrganizerPush(snapshot, context, exports, admin)
 })
 
 // helper functions
-exports.createOrganizerTopicForNewEventV1_5 = function(eventId, organizerId) {
-    return push1_0.createOrganizerTopicForNewEventV1_5(eventId, organizerId, exports, admin)
+exports.createOrganizerTopicForNewEvent = function(eventId, organizerId) {
+    return push1_0.createOrganizerTopicForNewEvent(eventId, organizerId, exports, admin)
 }
 
 exports.sendPushToTopic = function(title, topic, msg) {
-    return push1_0.sendPushToTopicV1_5(title, topic, msg, admin)
-}
-
-exports.sendPush = function(token, msg) {
-    return push1_0.sendPushV1_5(token, msg, exports, admin)
+    return push1_0.sendPushToTopic(title, topic, msg, admin)
 }
 
 exports.subscribeToTopic = function(token, topic) {
-    return push1_0.subscribeToTopicV1_5(token, topic, admin)
+    return push1_0.subscribeToTopic(token, topic, admin)
 }
 
 exports.unsubscribeFromTopic = function(token, topic) {
-    return push1_0.subscribeToTopicV1_5(token, topic, admin)
+    return push1_0.subscribeToTopic(token, topic, admin)
+}
+
+// test
+exports.sendPush = function(token, msg) {
+    return push1_0.sendPush(token, msg, exports, admin)
 }
 
 /* Resources
