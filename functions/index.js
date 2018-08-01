@@ -4,7 +4,7 @@ const logging = require('@google-cloud/logging')();
 const app = require('express')
 const moment = require('moment')
 const leagueModule = require('./league')
-const eventModule = require('./event')
+const event1_0 = require('./event1_0')
 const actionModule = require('./action')
 const pushModule = require('./push')
 
@@ -497,7 +497,7 @@ exports.createEvent = functions.https.onRequest((req, res) => {
     // if (api == "1.6") {
     //     // TODO
     // }
-    return eventModule.createEventV1_4(req, res, exports, admin)
+    return event1_0.createEvent(req, res, exports, admin)
 })
 
 /**
@@ -510,34 +510,25 @@ exports.joinOrLeaveEvent = functions.https.onRequest((req, res) => {
     // if (api == "1.6") {
     //     // TODO
     // }
-    return eventModule.joinOrLeaveEventV1_5(req, res, exports, admin)
+    return event1_0.joinOrLeaveEvent(req, res, exports, admin)
 })
 
-/**
- * DEPRECATED 1.6
- */
-exports.createEvent1_4 = functions.https.onRequest((req, res) => {
-    return eventModule.createEventV1_4(req, res, exports, admin)
-})
-
-/**
- * DEPRECATED v1.6
- */
-exports.joinOrLeaveEventV1_5 = functions.https.onRequest((req, res) => {
-    return eventModule.joinOrLeaveEventV1_5(req, res, exports, admin)
-})
+// helpers
+exports.doJoinOrLeaveEvent = function(userId, eventId, join, admin) {
+    return event1_0.doJoinOrLeaveEvent(userId, eventId, join, admin)
+}
 
 // database changes
 exports.onEventChange = functions.database.ref('/events/{eventId}').onWrite((snapshot, context) => {
-    return eventModule.onEventChangeV1_4(snapshot, context, exports, admin)
+    return event1_0.onEventChange(snapshot, context, exports, admin)
 })
 
 exports.onUserJoinOrLeaveEvent = functions.database.ref('/eventUsers/{eventId}/{userId}').onWrite((snapshot, context) => {
-    return eventModule.onUserJoinOrLeaveEventV1_4(snapshot, context, exports, admin)
+    return event1_0.onUserJoinOrLeaveEvent(snapshot, context, exports, admin)
 })
 
 exports.onEventDelete = functions.database.ref('/events/{eventId}').onDelete((snapshot, context) => {
-    return eventModule.onEventDeleteV1_4(snapshot, context, exports, admin)
+    return event1_0.onEventDelete(snapshot, context, exports, admin)
 })
 
 // helpers - must be defined here in order to use in module
@@ -547,10 +538,6 @@ exports.pushForCreateEventV1_5 = function(eventId, name, place) {
 
 exports.pushForJoinEventV1_5 = function(eventId, name, join) {
     return pushModule.pushForJoinEventV1_5(eventId, name, join, exports, admin)
-}
-
-exports.doJoinOrLeaveEventV1_4 = function(userId, eventId, join, admin) {
-    return eventModule.doJoinOrLeaveEventV1_4(userId, eventId, join, admin)
 }
 
 // ACTION //////////////////////////////////////////////////////////////////////////////////

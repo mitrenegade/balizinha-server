@@ -1,4 +1,4 @@
-exports.createEventV1_4 = function(req, res, exports, admin) {
+exports.createEvent = function(req, res, exports, admin) {
     const userId = req.body.userId
     if (userId == undefined) { res.status(500).json({"error": "A valid user is required to create event"}); return }
 
@@ -77,7 +77,7 @@ exports.createEventV1_4 = function(req, res, exports, admin) {
 }
 
 // helper function
-exports.doJoinOrLeaveEventV1_4 = function(userId, eventId, join, admin) {
+exports.doJoinOrLeaveEvent = function(userId, eventId, join, admin) {
     console.log("joinOrLeaveEvent v1.4: " + userId + " join? " + join + " " + eventId)
     var params = { [userId] : join }
     return admin.database().ref(`/eventUsers/${eventId}`).update(params).then(results => {
@@ -87,7 +87,7 @@ exports.doJoinOrLeaveEventV1_4 = function(userId, eventId, join, admin) {
 }
 
 // cloud function
-exports.joinOrLeaveEventV1_5 = function(req, res, exports, admin) {
+exports.joinOrLeaveEvent = function(req, res, exports, admin) {
     var userId = req.body.userId
     var eventId = req.body.eventId
     var join = req.body.join
