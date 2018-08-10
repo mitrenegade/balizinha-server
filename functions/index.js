@@ -12,7 +12,7 @@ const stripe1_0 = require('./stripe1.0')
 admin.initializeApp(functions.config().firebase);
 
 // TO TOGGLE BETWEEN DEV AND PROD: change this to .dev or .prod for functions:config variables to be correct
-const config = functions.config().prod
+const config = functions.config().dev
 const stripe = require('stripe')(config.stripe.token)
 // 1.4 leagues
 // 1.5 event.js, league.js, action.js, push.js
@@ -21,7 +21,7 @@ const BUILD_VERSION = 105 // for internal tracking
 
 const DEFAULT_LEAGUE_ID_DEV = "1525785307-821232"
 const DEFAULT_LEAGUE_ID_PROD = "1525175000-268371"
-const DEFAULT_LEAGUE = DEFAULT_LEAGUE_ID_PROD // change this when switching to prod
+const DEFAULT_LEAGUE = DEFAULT_LEAGUE_ID_DEV // change this when switching to prod
 
 exports.onCreateUser = functions.auth.user().onCreate(user => {
     console.log("onCreateUser v1.4 complete with user " + JSON.stringify(user))
@@ -155,7 +155,7 @@ exports.sampleCloudFunction = functions.https.onRequest((req, res) => {
 
 // STRIPE //////////////////////////////////////////////////////////////////////////////////
 exports.ephemeralKeys = functions.https.onRequest((req, res) => {
-    return stripe1_0.ephemeralKeys(req, res)
+    return stripe1_0.ephemeralKeys(req, res, stripe)
 });
 
 exports.validateStripeCustomer = functions.https.onRequest( (req, res) => {
@@ -166,21 +166,21 @@ exports.savePaymentInfo = functions.https.onRequest( (req, res) => {
     return stripe1_0.savePaymentInfo(req, res, admin)
 })
 
-exports.createStripeChargeV1_4 = functions.database.ref(`/charges/events/{eventId}/{chargeId}`).onWrite((snapshot, context) => {
-    return stripe1_0.createStripeChargeV1_4(snapshot, context, exports, admin)
+exports.createStripeCharge = functions.database.ref(`/charges/events/{eventId}/{chargeId}`).onWrite((snapshot, context) => {
+    return stripe1_0.createStripeCharge(snapshot, context, stripe, exports, admin)
 })
 
 exports.refundCharge = functions.https.onRequest( (req, res) => {
-    return stripe1_0.refundCharge(req, res, exports, admin)
+    return stripe1_0.refundCharge(req, res, stripe, exports, admin)
 })
 
 exports.createStripeSubscription = functions.database.ref(`/charges/organizers/{organizerId}/{chargeId}`).onWrite((snapshot, context) => {
-    return stripe1_0.createStripeSubscription(snapshot, context, admin) {
+    return stripe1_0.createStripeSubscription(snapshot, context, stripe, exports, admin)
 })
 
 
 // helper functions
-exports.createStripeCustomer = function(admin, email, uid) {
+exports.createStripeCustomer = function(email, uid) {
     return stripe1_0.createStripeCustomer(admin, stripe, email, uid)
 }
 
