@@ -183,7 +183,7 @@ exports.createStripeSubscription = functions.database.ref(`/charges/organizers/{
  */
 exports.holdPayment = functions.https.onRequest((req, res) => {
     let api = req.body.apiVersion
-    if (api == "1.1") {
+    if (api >= 1.1) {
         return stripe1_1.holdPayment(req, res, stripe, exports, admin)
     }
 })
@@ -195,7 +195,7 @@ exports.holdPayment = functions.https.onRequest((req, res) => {
  */
 exports.capturePayment = functions.https.onRequest((req, res) => {
     let api = req.body.apiVersion
-    if (api == "1.1") {
+    if (api >= 1.1) {
         return stripe1_1.capturePayment(req, res, stripe, exports, admin)
     }
 })
@@ -207,8 +207,6 @@ exports.onCreateCharge = functions.database.ref(`/charges/events/{eventId}/{char
     if (val["id"] == undefined) {
         console.log("onCreateCharge: charge initiated by client app; need to create stripe charge")
         return stripe1_0.createStripeCharge(snapshot, context, stripe, exports, admin)
-    } else {
-        console.log("onCreateCharge: stripe charge created already")
     }
 })
 
