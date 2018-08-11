@@ -181,20 +181,33 @@ exports.createStripeSubscription = functions.database.ref(`/charges/organizers/{
  * params: userId: String, eventId: String
  * result: { result: success, chargeId: String, status: completed, captured: bool },  or { error: String }
  */
-exports.submitPayment = functions.https.onRequest((req, res) => {
+exports.holdPayment = functions.https.onRequest((req, res) => {
     let api = req.body.apiVersion
     if (api == "1.1") {
-        return stripe1_1.submitPayment(req, res, stripe, exports, admin)
+        return stripe1_1.holdPayment(req, res, stripe, exports, admin)
+    }
+})
+
+/**
+ * Allows user to capture a payment. This should only be used by the admin app or have organizer validation
+ * params: userId: String, eventId: String, chargeId: String
+ * result: { result: success, chargeId: String, status: completed, captured: bool },  or { error: String }
+ */
+exports.capturePayment = functions.https.onRequest((req, res) => {
+    let api = req.body.apiVersion
+    if (api == "1.1") {
+        return stripe1_1.capturePayment(req, res, stripe, exports, admin)
     }
 })
 
 // database listeners
-exports.onCreateCharge = functions.database.ref(`/charges/events/{eventId}/{chargeId}`).onWrite((snapshot, context) => {
-    if (snapshot.val()["status"] == undefined) {
+exports.onCreateCharge = functions.database.ref(`/charges/events/{eventId}/{chargeId}`).onCreate((snapshot, context) => {
+    console.log("onCreateCharge: snapshot => " + JSON.stringify(snapshot))
+    if (snapshot.id == undefined) {
         console.log("onCreateCharge: need to create stripe charge")
         return stripe1_0.createStripeCharge(snapshot, context, stripe, exports, admin)
     } else {
-        return console.log("onCreateCharge: charge created elsewhere")
+        return console.log("onCreateCharge: charge created already")
     }
 })
 
