@@ -41,18 +41,21 @@ exports.submitPayment = function(req, res, stripe, exports, admin) {
         // If the result is successful, write it back to the database
         console.log("Stripe 1.1: createStripeCharge success with response " + JSON.stringify(response))
         // const ref = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
-        // return ref.update(response)
-        return res.status(200).json(response)
+        const chargeRef = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
+        return chargeRef.set(response).then(result => {
+            return res.status(200).json({"result": "success", "chargeId":chargeId, "status": response["status"], "captured": response["captured"]})
+        })
     }, error => {
         // We want to capture errors and render them in a user-friendly way, while
         // still logging an exception with Stackdriver
         console.log("Stripe 1.1: createStripeCharge error " + JSON.stringify(error))
         const ref = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
-        return res.status(500).json("TODO")
-//        return ref.child('error').set(error.message)
-    // }).then(result => {
-    //     var type = "payForEvent"
-    //     return exports.createAction(type, userId, eventId, null)
+        return ref.child('error').set(error.message).then(result => {
+            return res.status(500).json({"error": JSON.stringify(error)})
+        })
+    }).then(result => {
+        var type = "holdPaymentForEvent"
+        return exports.createAction(type, userId, eventId, null)
     })
 }
 

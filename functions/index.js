@@ -179,7 +179,7 @@ exports.createStripeSubscription = functions.database.ref(`/charges/organizers/{
 /**
  * Allows user to join a game and create a payment hold
  * params: userId: String, eventId: String
- * result: { },  or error
+ * result: { result: success, chargeId: String, status: completed, captured: bool },  or { error: String }
  */
 exports.submitPayment = functions.https.onRequest((req, res) => {
     let api = req.body.apiVersion
@@ -190,7 +190,12 @@ exports.submitPayment = functions.https.onRequest((req, res) => {
 
 // database listeners
 exports.onCreateCharge = functions.database.ref(`/charges/events/{eventId}/{chargeId}`).onWrite((snapshot, context) => {
-    return stripe1_0.createStripeCharge(snapshot, context, stripe, exports, admin)
+    if (snapshot.val()["status"] == undefined) {
+        console.log("onCreateCharge: need to create stripe charge")
+        return stripe1_0.createStripeCharge(snapshot, context, stripe, exports, admin)
+    } else {
+        return console.log("onCreateCharge: charge created elsewhere")
+    }
 })
 
 // helper functions
