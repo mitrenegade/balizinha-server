@@ -8,6 +8,7 @@ const event1_0 = require('./event1.0')
 const action1_0 = require('./action1.0')
 const push1_0 = require('./push1.0')
 const stripe1_0 = require('./stripe1.0')
+const stripe1_1 = require('./stripe1.1')
 
 admin.initializeApp(functions.config().firebase);
 
@@ -154,6 +155,7 @@ exports.sampleCloudFunction = functions.https.onRequest((req, res) => {
 })
 
 // STRIPE //////////////////////////////////////////////////////////////////////////////////
+// http functions
 exports.ephemeralKeys = functions.https.onRequest((req, res) => {
     return stripe1_0.ephemeralKeys(req, res, stripe)
 });
@@ -166,10 +168,6 @@ exports.savePaymentInfo = functions.https.onRequest( (req, res) => {
     return stripe1_0.savePaymentInfo(req, res, admin)
 })
 
-exports.createStripeCharge = functions.database.ref(`/charges/events/{eventId}/{chargeId}`).onWrite((snapshot, context) => {
-    return stripe1_0.createStripeCharge(snapshot, context, stripe, exports, admin)
-})
-
 exports.refundCharge = functions.https.onRequest( (req, res) => {
     return stripe1_0.refundCharge(req, res, stripe, exports, admin)
 })
@@ -178,6 +176,22 @@ exports.createStripeSubscription = functions.database.ref(`/charges/organizers/{
     return stripe1_0.createStripeSubscription(snapshot, context, stripe, exports, admin)
 })
 
+/**
+ * Allows user to join a game and create a payment hold
+ * params: userId: String, eventId: String
+ * result: { },  or error
+ */
+exports.submitPayment = functions.https.onRequest((req, res) => {
+    let api = req.body.apiVersion
+    if (api == "1.1") {
+        return stripe1_1.submitPayment(req, res, stripe, exports, admin)
+    }
+})
+
+// database listeners
+exports.onCreateCharge = functions.database.ref(`/charges/events/{eventId}/{chargeId}`).onWrite((snapshot, context) => {
+    return stripe1_0.createStripeCharge(snapshot, context, stripe, exports, admin)
+})
 
 // helper functions
 exports.createStripeCustomer = function(email, uid) {
