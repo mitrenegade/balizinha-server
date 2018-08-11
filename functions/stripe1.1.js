@@ -61,13 +61,34 @@ exports.capturePayment = function(req, res, stripe, exports, admin) {
     const userId = req.body.userId
     const eventId = req.body.eventId
     const chargeId = req.body.chargeId
+    const isAdmin = req.body.isAdmin
 
     // TODO: validate that the user is the organizer of the event
     console.log("Stripe 1.1: capturePayment chargeId " + chargeId + " eventId " + eventId)
-
-    const chargeRef = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)    
-    return admin.database().ref(chargeRef).once('value').then(snapshot => {
-        return snapshot.val();
+    const eventRef = admin.database().ref(`/events/${eventId}`)
+    return admin.database().ref(eventRef).once('value').then(snapshot => {
+        if (snapshot.val() == undefined) {
+            throw new Error("Could not find event to capture") // this should not happen
+        }
+        return snapshot.val()
+    }).then(eventDict => {
+        if (eventDict["organizer"] == userId || eventDict["owner"] == userId || isAdmin == true) {
+            var initiatedBy = "unknown"
+            if (eventDict["organizer"] == userId) {
+                initiatedBy = "organizer " + userId
+            } else if (eventDict["owner"] == userId) {
+                initiatedBy = "organizer " + userId
+            } else if (isAdmin) {
+                initiatedBy = "admin " + userId
+            }
+            console.log("Stripe 1.1: capturePayment initiated by " + initiatedBy)
+            const chargeRef = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)    
+            return admin.database().ref(chargeRef).once('value').then(snapshot => {
+                return snapshot.val()
+            })
+        } else {
+            throw new Error("You are not allowed to capture this payment")
+        }
     }).then(charge => {
         if (charge["captured"] != false) {
             throw new Error("This payment cannot be captured because it has has already been completed")
