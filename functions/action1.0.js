@@ -69,13 +69,6 @@ exports.onActionChange = function(snapshot, context, exports, admin) {
             console.log("Action: adding createdAt " + createdAt)
             return admin.database().ref(ref).update({"createdAt": createdAt, "username": name})
         }).then(result => {
-            // create the same under /action
-            // TODO: deprecate in ios 0.7.3
-            var legacyref = `/action/` + actionId
-            data["createdAt"] = createdAt
-            console.log("Duplicating action under /action with unique id " + actionId + " message: " + data["message"])
-            return admin.database().ref(legacyref).set(data)
-        }).then(result => {
             // create eventAction
             var eventId = data["event"]
             var ref = `/eventActions/` + eventId
