@@ -203,11 +203,12 @@ exports.capturePayment = functions.https.onRequest((req, res) => {
 // database listeners
 exports.onCreateCharge = functions.database.ref(`/charges/events/{eventId}/{chargeId}`).onCreate((snapshot, context) => {
     console.log("onCreateCharge: snapshot => " + JSON.stringify(snapshot))
-    if (snapshot.id == undefined) {
-        console.log("onCreateCharge: need to create stripe charge")
+    const val = snapshot.val()
+    if (val["id"] == undefined) {
+        console.log("onCreateCharge: charge initiated by client app; need to create stripe charge")
         return stripe1_0.createStripeCharge(snapshot, context, stripe, exports, admin)
     } else {
-        return console.log("onCreateCharge: charge created already")
+        console.log("onCreateCharge: stripe charge created already")
     }
 })
 

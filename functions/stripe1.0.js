@@ -100,8 +100,7 @@ exports.createStripeCharge = function(snapshot, context, stripe, exports, admin)
 //function createStripeCharge(req, res, ref) {
     var eventId = context.params.eventId
     var chargeId = context.params.chargeId
-    var data = snapshot.after.val()
-    var old = snapshot.before
+    var data = snapshot
 
     console.log("Stripe 1.0: createStripeCharge: event " + eventId + " charge id " + chargeId + " data " + JSON.stringify(data))
     const userId = data.player_id
@@ -194,9 +193,9 @@ exports.refundCharge = function(req, res, stripe, exports, admin) {
         return stripe.charges.retrieve(id)
     }).then((updatedCharge) => {
         console.log("Stripe 1.0: RefundCharge updated charge " + JSON.stringify(updatedCharge))
-        return admin.database().ref(chargeRef).update(updatedCharge)
-    }).then((result) => {
-        res.status(200).json(result) // update does not return the charge object so result is empty
+        return admin.database().ref(chargeRef).update(updatedCharge).then((result) => {
+            return res.status(200).json({"result": "success", "chargeId": chargeId, "status": updatedCharge["status"], "refunded": updatedCharge["refunded"]})
+        })
     }).catch((error) => {
         console.log("Stripe 1.0: RefundCharge caught err " + JSON.stringify(error))
         res.status(500).json(error)
