@@ -152,11 +152,11 @@ exports.onUserJoinOrLeaveEvent = function(snapshot, context, exports, admin) {
 
     if (!old.exists()) {
         eventUserCreated = true;
-        console.log("onUserJoinOrLeaveEvent: created user " + userId + " for event " + eventId + ": " + JSON.stringify(data))
+        console.log("OnUserJoinOrLeaveEvent v1.0: created user " + userId + " for event " + eventId + ": " + JSON.stringify(data))
     }
     if (!eventUserCreated) {
         eventUserChanged = true;
-        console.log("onUserJoinOrLeaveEvent: updated user " + userId + " for event " + eventId + ": " + JSON.stringify(data))
+        console.log("OnUserJoinOrLeaveEvent v1.0: updated user " + userId + " for event " + eventId + ": " + JSON.stringify(data))
     }
 
     return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
