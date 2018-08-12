@@ -100,10 +100,10 @@ exports.createStripeCharge = function(snapshot, context, stripe, exports, admin)
 //function createStripeCharge(req, res, ref) {
     var eventId = context.params.eventId
     var chargeId = context.params.chargeId
-    var data = snapshot
+    var data = snapshot.val()
 
-    console.log("Stripe 1.0: createStripeCharge: event " + eventId + " charge id " + chargeId + " data " + JSON.stringify(data))
-    const userId = data.player_id
+    const userId = data["player_id"]
+    console.log("Stripe 1.0: createStripeCharge: user " + userId + " event " + eventId + " charge id " + chargeId + " data " + JSON.stringify(data))
     // This onWrite will trigger whenever anything is written to the path, so
     // noop if the charge was deleted, errored out, or the Stripe API returned a result (id exists) 
     if (data == undefined || data.id || data.error) {
