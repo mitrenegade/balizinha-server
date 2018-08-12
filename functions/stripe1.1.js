@@ -39,6 +39,7 @@ exports.holdPayment = function(req, res, stripe, exports, admin) {
         // If the result is successful, write it back to the database
         console.log("Stripe 1.1: holdPayment success with response " + JSON.stringify(response))
         // const ref = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
+        response["player_id"] = userId
         const chargeRef = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
         return chargeRef.set(response).then(result => {
             return res.status(200).json({"result": "success", "chargeId":chargeId, "status": response["status"], "captured": response["captured"]})
