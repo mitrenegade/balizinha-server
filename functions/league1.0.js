@@ -200,3 +200,5 @@ exports.getEventsForLeague = function(req, res, exports, admin) {
 	})
 	// TODO: result does not filter out players with value false
 }
+
+// get league stats

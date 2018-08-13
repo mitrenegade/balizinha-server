@@ -220,6 +220,23 @@ exports.createStripeCustomer = function(email, uid) {
 // LEAGUE //////////////////////////////////////////////////////////////////////////////////
 // Pass database to child functions so they have access to it
 
+
+/**
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 // http functions
 exports.createLeague = functions.https.onRequest((req, res) => {
     return league1_0.createLeague(req, res, exports, admin);
@@ -282,6 +299,12 @@ exports.getEventsForLeague = functions.https.onRequest((req, res) => {
     return league1_0.getEventsForLeague(req, res, exports, admin)
 });
 
+// database changes
+// If the number of likes gets deleted, recount the number of likes
+exports.recountEvents = functions.database.ref('/leagues/{leagueId}/eventCount').onDelete((snapshot) => {
+    return event1_0.recountEvents(snapshot, admin)
+});
+
 // helper functions
 exports.doJoinLeaveLeague = function(admin, userId, leagueId, isJoin) {
     return league1_0.doJoinLeaveLeague(admin, userId, leagueId, isJoin)
@@ -324,11 +347,12 @@ exports.joinOrLeaveEvent = functions.https.onRequest((req, res) => {
 })
 
 // helpers
-exports.doJoinOrLeaveEvent = function(userId, eventId, join, admin) {
-    return event1_0.doJoinOrLeaveEvent(userId, eventId, join, admin)
-}
 
 // database changes
+exports.onEventCreate = functions.database.ref('/events/{eventId}').onCreate((snapshot, context) => {
+    return event1_0.onEventCreate(snapshot, context, exports, admin)
+})
+
 exports.onEventChange = functions.database.ref('/events/{eventId}').onWrite((snapshot, context) => {
     return event1_0.onEventChange(snapshot, context, exports, admin)
 })
@@ -338,8 +362,10 @@ exports.onUserJoinOrLeaveEvent = functions.database.ref('/eventUsers/{eventId}/{
 })
 
 exports.onEventDelete = functions.database.ref('/events/{eventId}').onDelete((snapshot, context) => {
+    // deletion of events doesn't happen from the app
     return event1_0.onEventDelete(snapshot, context, exports, admin)
 })
+
 
 // helpers - must be defined here in order to use in module
 exports.pushForCreateEvent = function(eventId, name, place) {
