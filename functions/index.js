@@ -254,15 +254,6 @@ exports.joinLeaveLeague = functions.https.onRequest((req, res) => {
 });
 
 /**
- * params: userId: String, leagueId: String, isJoin: boolean
- * result: { result: "success", userId: String, leagueId: String, status: String },  or error
- * DEPRECATED 1.6
- */
-exports.joinLeaveLeague = functions.https.onRequest((req, res) => {
-    return league1_0.joinLeaveLeague(req, res, exports, admin)
-});
-
-/**
  * params: leagueId: String
  * result: [ {playerId: status} ] status = member, organizer, owner
  */

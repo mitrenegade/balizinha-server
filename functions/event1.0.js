@@ -140,8 +140,6 @@ exports.onEventChange = function(snapshot, context, exports, admin) {
         console.log("event change: " + eventId)
         return snapshot
     }
-
-
 }
 
 exports.onEventCreate = function(snapshot, context, exports, admin) {
@@ -149,47 +147,6 @@ exports.onEventCreate = function(snapshot, context, exports, admin) {
     return countEvents(snapshot, admin)
 } 
 
-countEvents = function(snapshot, admin) {
-    const parent = snapshot.ref.parent
-    const leagueId = snapshot.val().league
-    const countRef = admin.database().ref(`/leagues/${leagueId}/eventCount`)
-
-    let increment = 1
-
-    // Return the promise from countRef.transaction() so our function
-    // waits for this async event to complete before it exits.
-    return countRef.transaction((current) => {
-        console.log("Event v1.0 countEvents for league " + leagueId + ": current " + current)
-        return (current || 0) + increment;
-    }).then((value) => {
-        return console.log('Event v1.0: counter updated to ' + value);
-    })
-}
-
-exports.recountEvents = function(snapshot, admin) {
-    const countRef = snapshot.ref;
-    const leagueRef = countRef.parent
-
-    var leagueId = leagueRef.key
-    console.log("Event v1.0 recountEvents for league " + leagueId)
-    return admin.database().ref(`/events`).orderByChild('league').equalTo(leagueId).once('value')
-    .then(leagueEventsSnapshot => {
-        console.log("Event v1.0 recountEvents resulted in " + leagueEventsSnapshot.numChildren() + " events")
-        var active = 0
-        leagueEventsSnapshot.forEach(child => {
-            console.log("event id " + child.key + " active " + child.val().active)
-            if (child.val().active != false) {
-                active = active + 1
-            }
-        })
-        console.log("Event v1.0 recount results: " + active)
-        return countRef.transaction((current) => {
-            return active;
-        }).then((value) => {
-            return console.log('Event v1.0: counter recounted to ' + value);
-        })
-    })
-}
 
 // join/leave event
 exports.onUserJoinOrLeaveEvent = function(snapshot, context, exports, admin) {
@@ -254,4 +211,48 @@ exports.onEventDelete = function(snapshot, context, exports, admin) {
     // should we delete all actionIds?
     // should we delete all leagueEvents?
     // should we delete all playerEvents?
+}
+
+// counters
+
+countEvents = function(snapshot, admin) {
+    const parent = snapshot.ref.parent
+    const leagueId = snapshot.val().league
+    const countRef = admin.database().ref(`/leagues/${leagueId}/eventCount`)
+
+    let increment = 1
+
+    // Return the promise from countRef.transaction() so our function
+    // waits for this async event to complete before it exits.
+    return countRef.transaction((current) => {
+        console.log("Event v1.0 countEvents for league " + leagueId + ": current " + current)
+        return (current || 0) + increment;
+    }).then((value) => {
+        return console.log('Event v1.0: counter updated to ' + value);
+    })
+}
+
+exports.recountEvents = function(snapshot, admin) {
+    const countRef = snapshot.ref;
+    const leagueRef = countRef.parent
+
+    var leagueId = leagueRef.key
+    console.log("Event v1.0 recountEvents for league " + leagueId)
+    return admin.database().ref(`/events`).orderByChild('league').equalTo(leagueId).once('value')
+    .then(leagueEventsSnapshot => {
+        console.log("Event v1.0 recountEvents resulted in " + leagueEventsSnapshot.numChildren() + " events")
+        var active = 0
+        leagueEventsSnapshot.forEach(child => {
+            console.log("event id " + child.key + " active " + child.val().active)
+            if (child.val().active != false) {
+                active = active + 1
+            }
+        })
+        console.log("Event v1.0 recount results: " + active)
+        return countRef.transaction((current) => {
+            return active;
+        }).then((value) => {
+            return console.log('Event v1.0: counter recounted to ' + value);
+        })
+    })
 }
