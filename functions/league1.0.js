@@ -204,7 +204,7 @@ exports.getLeagueStats = function(req, res, exports, admin) {
 	var players = 0
 	var events = 0
 	var leagueInfo = {}
-	var ref = admin.database().ref(`/league/${leagueId}`).once('value').then(snapshot => {
+	var ref = admin.database().ref(`/leagues/${leagueId}`).once('value').then(snapshot => {
 		if (!snapshot.exists()) {
 			return res.send(500, {"error": "League not found"})
 		}
