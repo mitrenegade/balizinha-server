@@ -57,7 +57,7 @@ exports.createEvent = function(req, res, exports, admin) {
     }).then(result => {
         // join event
         console.log("CreateEvent v1.0 success for event " + eventId + " with result " + JSON.stringify(result))
-        return exports.doJoinOrLeaveEvent(userId, eventId, true, admin)
+        return doJoinOrLeaveEvent(userId, eventId, true, admin)
     }).then(result => {
         console.log("CreateEvent v1.0: createTopicForEvent")
         return exports.createOrganizerTopicForNewEvent(eventId, userId)
@@ -77,7 +77,7 @@ exports.createEvent = function(req, res, exports, admin) {
 }
 
 // helper function
-exports.doJoinOrLeaveEvent = function(userId, eventId, join, admin) {
+doJoinOrLeaveEvent = function(userId, eventId, join, admin) {
     var params = { [userId] : join }
     return admin.database().ref(`/eventUsers/${eventId}`).update(params).then(results => {
         var params2 = { [eventId] : join }
@@ -93,13 +93,11 @@ exports.joinOrLeaveEvent = function(req, res, exports, admin) {
 
     console.log("JoinOrLeaveEvent v1.0: " + userId + " join? " + join + " " + eventId)
     return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
-        return snapshot.val();
-    }).then(player => {
-        if (player == null) {
+        if (!snapshot.exists()) {
             console.log("JoinOrLeaveEvent v1.0: no player found for userId " + userId + ": must be anonymous")
             throw new Error("Please sign up to join this game")
         }
-        return exports.doJoinOrLeaveEvent(userId, eventId, join, admin)
+        return doJoinOrLeaveEvent(userId, eventId, join, admin)
     }).then(result => {
         console.log("JoinOrLeaveEvent v1.0: results " + JSON.stringify(result))
         return res.status(200).json({"result": result, "eventId": eventId})
@@ -133,12 +131,20 @@ exports.onEventChange = function(snapshot, context, exports, admin) {
 
         // send push
         var msg = "An event you're going to, " + name + ", has been cancelled."
-        return exports.sendPushToTopic(title, topic, msg)
+        return exports.sendPushToTopic(title, topic, msg).then(result => {
+            return countEvents(snapshot, admin)
+        })
     } else {
         console.log("event change: " + eventId)
         return snapshot
     }
 }
+
+exports.onEventCreate = function(snapshot, context, exports, admin) {
+    console.log("Event v1.0: onEventCreate")
+    return countEvents(snapshot, admin)
+} 
+
 
 // join/leave event
 exports.onUserJoinOrLeaveEvent = function(snapshot, context, exports, admin) {
@@ -203,4 +209,46 @@ exports.onEventDelete = function(snapshot, context, exports, admin) {
     // should we delete all actionIds?
     // should we delete all leagueEvents?
     // should we delete all playerEvents?
+}
+
+// counters
+
+countEvents = function(snapshot, admin) {
+    const parent = snapshot.ref.parent
+    const leagueId = snapshot.val().league
+    const countRef = admin.database().ref(`/leagues/${leagueId}/eventCount`)
+
+    let increment = 1
+
+    // Return the promise from countRef.transaction() so our function
+    // waits for this async event to complete before it exits.
+    return countRef.transaction((current) => {
+        console.log("Event v1.0 countEvents for league " + leagueId + ": current " + current)
+        return (current || 0) + increment;
+    }).then((value) => {
+        return console.log('Event v1.0: counter updated to ' + JSON.stringify(value))
+    })
+}
+
+exports.recountEvents = function(snapshot, admin) {
+    const countRef = snapshot.ref;
+    const leagueRef = countRef.parent
+
+    var leagueId = leagueRef.key
+    console.log("Event v1.0 recountEvents for league " + leagueId)
+    return admin.database().ref(`/events`).orderByChild('league').equalTo(leagueId).once('value')
+    .then(leagueEventsSnapshot => {
+        var active = 0
+        leagueEventsSnapshot.forEach(child => {
+            if (child.val().active != false) {
+                active = active + 1
+            }
+        })
+        console.log("Event v1.0 recountEvents resulted in " + leagueEventsSnapshot.numChildren() + " events, " + active + " active")
+        return countRef.transaction((current) => {
+            return active;
+        }).then((value) => {
+            return console.log('Event v1.0: counter recounted to ' + value);
+        })
+    })
 }
