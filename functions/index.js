@@ -299,9 +299,14 @@ exports.getLeagueStats = functions.https.onRequest((req, res) => {
 })
 
 // database changes
-// If the number of likes gets deleted, recount the number of likes
+// If the number of events gets deleted, recount the number of events. currently counting all undeleted events including past
 exports.recountEvents = functions.database.ref('/leagues/{leagueId}/eventCount').onDelete((snapshot) => {
     return event1_0.recountEvents(snapshot, admin)
+});
+
+// If the number of players gets deleted, recount the number of active players
+exports.recountPlayers = functions.database.ref('/leagues/{leagueId}/playerCount').onDelete((snapshot) => {
+    return league1_0.recountPlayers(snapshot, admin)
 });
 
 // helper functions

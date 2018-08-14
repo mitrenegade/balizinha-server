@@ -238,15 +238,13 @@ exports.recountEvents = function(snapshot, admin) {
     console.log("Event v1.0 recountEvents for league " + leagueId)
     return admin.database().ref(`/events`).orderByChild('league').equalTo(leagueId).once('value')
     .then(leagueEventsSnapshot => {
-        console.log("Event v1.0 recountEvents resulted in " + leagueEventsSnapshot.numChildren() + " events")
         var active = 0
         leagueEventsSnapshot.forEach(child => {
-            console.log("event id " + child.key + " active " + child.val().active)
             if (child.val().active != false) {
                 active = active + 1
             }
         })
-        console.log("Event v1.0 recount results: " + active)
+        console.log("Event v1.0 recountEvents resulted in " + leagueEventsSnapshot.numChildren() + " events, " + active + " active")
         return countRef.transaction((current) => {
             return active;
         }).then((value) => {

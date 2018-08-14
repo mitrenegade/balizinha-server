@@ -100,6 +100,31 @@ countLeaguePlayers = function(leagueId, status, admin) {
     })
 }
 
+exports.recountPlayers = function(snapshot, admin) {
+    const countRef = snapshot.ref;
+    const leagueRef = countRef.parent
+
+    var leagueId = leagueRef.key
+    console.log("League v1.0 recountPlayers for league " + leagueId)
+    return admin.database().ref(`/leaguePlayers/${leagueId}`).once('value')
+    .then(snapshot => {
+        var members = 0
+        snapshot.forEach(child => {
+        	const status = child.val()
+            console.log("player id " + child.key + " status " + status)
+            if (status == "member" || status == "organizer" || status == "owner") {
+                members = members + 1
+            }
+        })
+        console.log("League v1.0 recountPlayers resulted in " + snapshot.numChildren() + " players, " + members + " members")
+        return countRef.transaction((current) => {
+            return members;
+        }).then((value) => {
+            return console.log('League v1.0: counter recounted to ' + JSON.stringify(value));
+        })
+    })
+}
+
 exports.getPlayersForLeague = function(req, res, exports, admin) {
 	// leaguePlayers/leagueId will return all players, with a status of {player, organizer, none}
 	const leagueId = req.body.leagueId
