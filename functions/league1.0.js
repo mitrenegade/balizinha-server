@@ -40,7 +40,7 @@ exports.joinLeaveLeague = function(req, res, exports, admin) {
 	console.log("JoinLeaveLeague v1.0 status " + status + " userId " + userId + " leagueId " + leagueId)
 	return exports.doUpdatePlayerStatus(admin, userId, leagueId, status).then(result => {
 		console.log("JoinLeaveLeague v1.0: success " + JSON.stringify(result))
-		return res.send(200, {result: result})
+		return res.send(200, result)
 	}).catch( (err) => {
     	console.log("JoinLeaveLeague v1.0: league " + leagueId + " error: " + err)
     	return res.send(500, {"error": err})
@@ -65,8 +65,8 @@ exports.doUpdatePlayerStatus = function(admin, userId, leagueId, status) {
 		}
 		var leagueRef = `/leaguePlayers/${leagueId}`
 		var params = {[userId]: status}
-	    console.log("League v1.0 DoUpdatePlayerStatus v1.0: update leaguePlayers status " + status + " + user " + userId + " league " + leagueId + " name: " + league["name"])
-		return admin.database().ref(leagueRef).update(params).then({
+	    console.log("League v1.0 DoUpdatePlayerStatus v1.0: update leaguePlayers status " + status + " + user " + userId + " league " + leagueId)
+		return admin.database().ref(leagueRef).update(params).then(result => {
 			return countLeaguePlayers(leagueId, status)
 		})
     }).then(result => {
