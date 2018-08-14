@@ -59,18 +59,18 @@ exports.doUpdatePlayerStatus = function(admin, userId, leagueId, status) {
 
 	var ref = `/leagues/${leagueId}` 
 	return admin.database().ref(ref).once('value').then(snapshot => {
-		if (snapshot.val() == null) {
-    		console.log("League v1.0 DoUpdatePlayerStatus v1.0: league not found")
+		if (!snapshot.exists()) {
+    		console.log("League v1.0 DoUpdatePlayerStatus: league not found")
     		throw new Error("League not found")
 		}
 		var leagueRef = `/leaguePlayers/${leagueId}`
 		var params = {[userId]: status}
-	    console.log("League v1.0 DoUpdatePlayerStatus v1.0: update leaguePlayers status " + status + " + user " + userId + " league " + leagueId)
-		return admin.database().ref(leagueRef).update(params).then(result => {
-			return countLeaguePlayers(leagueId, status)
-		})
+	    console.log("League v1.0 DoUpdatePlayerStatus: update leaguePlayers status " + status + " + user " + userId + " league " + leagueId)
+		return admin.database().ref(leagueRef).update(params)
     }).then(result => {
-	    console.log("League v1.0 DoUpdatePlayerStatus v1.0: update playerLeagues status " + status + " league " + leagueId + " user " + userId)
+		return countLeaguePlayers(leagueId, status, admin)
+	}).then(result => {
+	    console.log("League v1.0 DoUpdatePlayerStatus: update playerLeagues status " + status + " league " + leagueId + " user " + userId)
 		var leagueRef = `/playerLeagues/${userId}`
 		var params = {[leagueId]: status}
 		return admin.database().ref(leagueRef).update(params)
@@ -80,7 +80,7 @@ exports.doUpdatePlayerStatus = function(admin, userId, leagueId, status) {
 	})
 }
 
-countLeaguePlayers = function(leagueId, status) {
+countLeaguePlayers = function(leagueId, status, admin) {
 	var leagueRef = admin.database().ref(`/leagues/${leagueId}`)
     const countRef = leagueRef.child("playerCount")
     var increment = 0
@@ -96,7 +96,7 @@ countLeaguePlayers = function(leagueId, status) {
         console.log("League v1.0 countLeaguePlayers for league " + leagueId + ": current " + current)
         return (current || 0) + increment;
     }).then((value) => {
-        return console.log('Event v1.0: counter updated to ' + value);
+        return console.log('League v1.0: counter updated to ' + JSON.stringify(value));
     })
 }
 

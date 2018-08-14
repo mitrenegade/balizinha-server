@@ -93,9 +93,7 @@ exports.joinOrLeaveEvent = function(req, res, exports, admin) {
 
     console.log("JoinOrLeaveEvent v1.0: " + userId + " join? " + join + " " + eventId)
     return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
-        return snapshot.val();
-    }).then(player => {
-        if (player == null) {
+        if (!snapshot.exists()) {
             console.log("JoinOrLeaveEvent v1.0: no player found for userId " + userId + ": must be anonymous")
             throw new Error("Please sign up to join this game")
         }
@@ -228,7 +226,7 @@ countEvents = function(snapshot, admin) {
         console.log("Event v1.0 countEvents for league " + leagueId + ": current " + current)
         return (current || 0) + increment;
     }).then((value) => {
-        return console.log('Event v1.0: counter updated to ' + value);
+        return console.log('Event v1.0: counter updated to ' + JSON.stringify(value))
     })
 }
 
