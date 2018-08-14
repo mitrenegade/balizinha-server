@@ -111,7 +111,6 @@ exports.recountPlayers = function(snapshot, admin) {
         var members = 0
         snapshot.forEach(child => {
         	const status = child.val()
-            console.log("player id " + child.key + " status " + status)
             if (status == "member" || status == "organizer" || status == "owner") {
                 members = members + 1
             }
@@ -207,20 +206,31 @@ exports.getEventsForLeague = function(req, res, exports, admin) {
 }
 
 // get league stats
+// this function isn't necessary if the league has been downloaded on the client. This may become useful if there are other 
+// stats that need to be calculated and were not actively counted
+// currently, /league/id contains counts for players and events
 exports.getLeagueStats = function(req, res, exports, admin) {
 	const leagueId = req.body.leagueId
 	var players = 0
 	var events = 0
 	var leagueInfo = {}
-	var ref = admin.database().ref(`/leaguePlayers`).child(leagueId).orderByValue().equalTo("member").once('value').then(snapshot => {
-		console.log("getLeagueStats v1.0: members " + JSON.stringify(snapshot))
-		players = players + snapshot.numChildren()
-		return admin.database().ref(`/leagues/${leagueId}/eventCount`).once('value')
-	}).then(snapshot => {
-		console.log("getLeagueStats v1.0: eventCount " + JSON.stringify(snapshot))
-		if (snapshot != undefined) {
-			events = snapshot.val()
+	var ref = admin.database().ref(`/league/${leagueId}`).once('value').then(snapshot => {
+		if (!snapshot.exists()) {
+			req.send(500, {"error": "League not found"})
 		}
-		res.send(200, {"players": players, "events": events})
+		const league = snapshot.val()
+		const stats = {"players": league["playerCount"], "events": league["eventCount"]}
+		req.send(200, stats)
 	})
+	// var ref = admin.database().ref(`/leaguePlayers`).child(leagueId).orderByValue().equalTo("member").once('value').then(snapshot => {
+	// 	console.log("getLeagueStats v1.0: members " + JSON.stringify(snapshot))
+	// 	players = players + snapshot.numChildren()
+	// 	return admin.database().ref(`/leagues/${leagueId}/eventCount`).once('value')
+	// }).then(snapshot => {
+	// 	console.log("getLeagueStats v1.0: eventCount " + JSON.stringify(snapshot))
+	// 	if (snapshot != undefined) {
+	// 		events = snapshot.val()
+	// 	}
+	// 	res.send(200, {"players": players, "events": events})
+	// })
 }
