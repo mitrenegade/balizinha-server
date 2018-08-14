@@ -71,7 +71,7 @@ exports.onPlayerCreate = functions.database.ref('/players/{userId}').onCreate((s
     var email = snapshot.email // snapshot only contains email
 
     const isJoin = true
-    return exports.doJoinLeaveLeague(admin, playerId, DEFAULT_LEAGUE, isJoin)
+    return exports.doUpdatePlayerStatus(admin, playerId, DEFAULT_LEAGUE, isJoin)
 })
 
 exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite((snapshot, context) => {
@@ -305,10 +305,6 @@ exports.recountEvents = functions.database.ref('/leagues/{leagueId}/eventCount')
 });
 
 // helper functions
-exports.doJoinLeaveLeague = function(admin, userId, leagueId, isJoin) {
-    return league1_0.doJoinLeaveLeague(admin, userId, leagueId, isJoin)
-}
-
 exports.doUpdatePlayerStatus = function(admin, userId, leagueId, status) {
     return league1_0.doUpdatePlayerStatus(admin, userId, leagueId, status)
 }
