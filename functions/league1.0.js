@@ -181,15 +181,6 @@ exports.changeLeaguePlayerStatus = function(req, res, exports, admin) {
 
 exports.getEventsForLeague = function(req, res, exports, admin) {
 	const leagueId = req.body.leagueId
-	// var leagueRef = `/leaguePlayers/${leagueId}`
-	// console.log("getPlayersForLeague " + leagueId + " using ref " + admin.database().ref(leagueRef))
-	// return admin.database().ref(leagueRef).once('value').then(snapshot => {
-	// 	return snapshot.val()
-	// }).then(result => {
-	// 	res.send(200, {"result": result})
-	// }).catch( err => {
-	// 	res.send(500, {"error": error})
-	// })
 
 	// find all leagueId where playerId = true
 	var ref = admin.database().ref("events")
@@ -202,7 +193,6 @@ exports.getEventsForLeague = function(req, res, exports, admin) {
 	}).catch( err => {
 		return res.send(500, {"error": err.message})
 	})
-	// TODO: result does not filter out players with value false
 }
 
 // get league stats
@@ -216,11 +206,11 @@ exports.getLeagueStats = function(req, res, exports, admin) {
 	var leagueInfo = {}
 	var ref = admin.database().ref(`/league/${leagueId}`).once('value').then(snapshot => {
 		if (!snapshot.exists()) {
-			req.send(500, {"error": "League not found"})
+			return res.send(500, {"error": "League not found"})
 		}
 		const league = snapshot.val()
 		const stats = {"players": league["playerCount"], "events": league["eventCount"]}
-		req.send(200, stats)
+		return res.send(200, stats)
 	})
 	// var ref = admin.database().ref(`/leaguePlayers`).child(leagueId).orderByValue().equalTo("member").once('value').then(snapshot => {
 	// 	console.log("getLeagueStats v1.0: members " + JSON.stringify(snapshot))
