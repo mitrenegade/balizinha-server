@@ -202,3 +202,20 @@ exports.getEventsForLeague = function(req, res, exports, admin) {
 }
 
 // get league stats
+exports.getLeagueStats = function(req, res, exports, admin) {
+	const leagueId = req.body.leagueId
+	var players = 0
+	var events = 0
+	var leagueInfo = {}
+	var ref = admin.database().ref(`/leaguePlayers`).child(leagueId).orderByValue().equalTo("member").once('value').then(snapshot => {
+		console.log("getLeagueStats v1.0: members " + JSON.stringify(snapshot))
+		players = players + snapshot.numChildren()
+		return admin.database().ref(`/leagues/${leagueId}/eventCount`).once('value')
+	}).then(snapshot => {
+		console.log("getLeagueStats v1.0: eventCount " + JSON.stringify(snapshot))
+		if (snapshot != undefined) {
+			events = snapshot.val()
+		}
+		res.send(200, {"players": players, "events": events})
+	})
+}

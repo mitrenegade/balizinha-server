@@ -290,6 +290,14 @@ exports.getEventsForLeague = functions.https.onRequest((req, res) => {
     return league1_0.getEventsForLeague(req, res, exports, admin)
 });
 
+/**
+ * params: leagueId: String
+ * result: [ { players: Int, events: Int }]
+ */
+exports.getLeagueStats = functions.https.onRequest((req, res) => {
+    return league1_0.getLeagueStats(req, res, exports, admin)
+})
+
 // database changes
 // If the number of likes gets deleted, recount the number of likes
 exports.recountEvents = functions.database.ref('/leagues/{leagueId}/eventCount').onDelete((snapshot) => {
