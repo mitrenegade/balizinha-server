@@ -81,6 +81,8 @@ exports.doUpdatePlayerStatus = function(admin, userId, leagueId, status) {
 }
 
 countLeaguePlayers = function(leagueId, status, admin) {
+	// TODO: consider old status. if we have change of membership type, this shouldn't change count
+	// TODO: if an entry gets deleted, this need to be counted as well
 	var leagueRef = admin.database().ref(`/leagues/${leagueId}`)
     const countRef = leagueRef.child("playerCount")
     var increment = 0
