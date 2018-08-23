@@ -1,5 +1,5 @@
 // actions
-exports.createAction = function(type, userId, eventId, message, exports, admin) {
+exports.createAction = function(type, userId, eventId, message, defaultMessage, exports, admin) {
     console.log("createAction type: " + type + " event id: " + eventId + " message: " + message)
     // NOTE: ref url is actions. iOS < v0.7.1 uses /action
 
@@ -12,6 +12,9 @@ exports.createAction = function(type, userId, eventId, message, exports, admin) 
     params["message"] = message
     var createdAt = exports.secondsSince1970()
     params["createdAt"] = createdAt
+    if (defaultMessage != undefined) {
+        params["defaultMessage"] = defaultMessage
+    }
 
     return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
         return snapshot.val();
