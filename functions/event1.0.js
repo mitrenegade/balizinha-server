@@ -31,6 +31,8 @@ exports.createEvent = function(req, res, exports, admin) {
     const lat = req.body.lat
     const lon = req.body.lon
 
+    console.log("lat " + lat + " lon " + lon)
+
     var params = {"league": league, "name": name, "type": type, "city": city, "place": place, "startTime": startTime, "endTime": endTime, "maxPlayers": maxPlayers}
     var createdAt = exports.secondsSince1970()
     params["createdAt"] = createdAt
@@ -90,6 +92,8 @@ exports.joinOrLeaveEvent = function(req, res, exports, admin) {
     var userId = req.body.userId
     var eventId = req.body.eventId
     var join = req.body.join
+    var addedByOrganizer = req.body.addedByOrganizer
+    var removedByOrganizer = req.body.removedByOrganizer
 
     console.log("JoinOrLeaveEvent v1.0: " + userId + " join? " + join + " " + eventId)
     return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
@@ -100,7 +104,17 @@ exports.joinOrLeaveEvent = function(req, res, exports, admin) {
         return doJoinOrLeaveEvent(userId, eventId, join, admin)
     }).then(result => {
         console.log("JoinOrLeaveEvent v1.0: results " + JSON.stringify(result))
-        return res.status(200).json({"result": result, "eventId": eventId})
+        if (addedByOrganizer) {
+            return exports.createAction("addedToEvent", userId, eventId, null, "A player was added to this game").then(result => {
+                return res.status(200).json({"result": result, "eventId": eventId})
+            })
+        } else if (removedByOrganizer) {
+            return exports.createAction("removedFromEvent", userId, eventId, null, "A player was removed from this game").then(result => {
+                return res.status(200).json({"result": result, "eventId": eventId})
+            })
+        } else {
+            return res.status(200).json({"result": result, "eventId": eventId})
+        }
     }).catch( (err) => {
         console.log("JoinOrLeaveEvent v1.0: event " + eventId + " error: " + err)
         return res.status(500).json({"error": err.message})
