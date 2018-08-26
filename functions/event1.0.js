@@ -31,6 +31,8 @@ exports.createEvent = function(req, res, exports, admin) {
     const lat = req.body.lat
     const lon = req.body.lon
 
+    console.log("lat " + lat + " lon " + lon)
+
     var params = {"league": league, "name": name, "type": type, "city": city, "place": place, "startTime": startTime, "endTime": endTime, "maxPlayers": maxPlayers}
     var createdAt = exports.secondsSince1970()
     params["createdAt"] = createdAt
