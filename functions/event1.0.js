@@ -170,6 +170,8 @@ exports.onUserJoinOrLeaveEvent = function(snapshot, context, exports, admin) {
     var eventUserChanged = false;
     var eventUserCreated = false;
 
+    var name = undefined
+
     if (!old.exists()) {
         eventUserCreated = true;
         console.log("OnUserJoinOrLeaveEvent v1.0: created user " + userId + " for event " + eventId + ": " + JSON.stringify(data))
@@ -191,14 +193,16 @@ exports.onUserJoinOrLeaveEvent = function(snapshot, context, exports, admin) {
         var token = player["fcmToken"]
         var eventTopic = "event" + eventId
         if (token && token.length > 0) {
+            console.log("Event v1.0: onUserJoinOrLeaveEvent user " + name + " " + joinedString + " topic " + eventTopic + " with token " + token)
             if (data == true) {
-                exports.subscribeToTopic(token, eventTopic)
+                return exports.subscribeToTopic(token, eventTopic)
             } else {
-                exports.unsubscribeFromTopic(token, eventTopic)
+                return exports.unsubscribeFromTopic(token, eventTopic)
             }
+        } else {
+            return console.log("Event v1.0: onUserJoinOrLeaveEvent user " + name + " " + joinedString + " topic " + eventTopic + " with no token!")
         }
-        return name
-    }).then(name => {
+    }).then(result => {
         var join = true
         if (data == false) {
             join = false
