@@ -254,12 +254,12 @@ exports.getEventsAvailableToUser = function(req, res, exports, admin) {
         snapshot.forEach(child => {
             const leagueId = child.key
             const league = child.val()
-            console.log("League: " + JSON.stringify(league) + " private " + league.isPrivate)
+            //console.log("League: " + JSON.stringify(league) + " private " + league.isPrivate)
             if (league.isPrivate == true) {
                 privateLeagues.push(leagueId)
             }
         })
-        console.log("All private leagues: " + JSON.stringify(privateLeagues))
+        //console.log("All private leagues: " + JSON.stringify(privateLeagues))
 
         // load all events that are public
         let publicEventsRef = admin.database().ref(`/events`).orderByChild('leagueIsPrivate').equalTo(false)
@@ -269,12 +269,12 @@ exports.getEventsAvailableToUser = function(req, res, exports, admin) {
     }).then(publicEvents => {
         // publicEvents is a dictionary of {eventId: event}
         // load all leagueIds for a player
-        console.log("Event 1.0: getEventsAvailableToUser public events " + Object.keys(publicEvents).length)
+        console.log("Event 1.0: getEventsAvailableToUser " + userId + " public events " + Object.keys(publicEvents).length)
         var userPrivateLeagues = []
         return admin.database().ref(`/playerLeagues/${userId}`).once('value').then(snapshot => {
             if (!snapshot.exists()) {
                 console.log("userPrivateLeagues: playerLeagues does not exist")
-                return eventAccumulator
+                return {}
             } else {
                 snapshot.forEach(child => {
                     const leagueId = child.key
@@ -284,10 +284,10 @@ exports.getEventsAvailableToUser = function(req, res, exports, admin) {
                     }
                 })
             }
-            console.log("Event 1.0: userPrivateLeagues: " + JSON.stringify(userPrivateLeagues))
+            //console.log("Event 1.0: userPrivateLeagues: " + JSON.stringify(userPrivateLeagues))
             return eventsForLeagues(userPrivateLeagues, admin, {})
         }).then(privateEvents => {
-            console.log("Event 1.0: getEventsAvailableToUser private events " + Object.keys(privateEvents).length)
+            console.log("Event 1.0: getEventsAvailableToUser " + userId + " private events " + Object.keys(privateEvents).length)
             var allEvents = Object.assign({}, publicEvents, privateEvents)
             res.status(200).json({"results": allEvents})
         })
@@ -300,7 +300,7 @@ exports.getEventsAvailableToUser = function(req, res, exports, admin) {
 eventsForLeagues = function(leagueIds, admin, eventAccumulator) {
     return new Promise(function(resolve, reject) {
         if (leagueIds.length == 0) {
-            console.log("EventsForLeagues: no more leagueIds. Returning " + JSON.stringify(eventAccumulator))
+            //console.log("EventsForLeagues: no more leagueIds. Returning " + JSON.stringify(eventAccumulator))
             resolve(eventAccumulator)
         }
         var leagueId = leagueIds[0]
@@ -308,7 +308,7 @@ eventsForLeagues = function(leagueIds, admin, eventAccumulator) {
         return admin.database().ref(`/events`).orderByChild('league').equalTo(leagueId).once('value').then(snapshot => {
             if (snapshot.exists()) {
                 var accumulatedEvents = Object.assign({}, eventAccumulator, snapshot.val())
-                console.log("EventsForLeagues: leagueId " + leagueId + " accumulator " + JSON.stringify(eventAccumulator) + " new elements " + snapshot.numChildren() + " leagues left: " + remainingLeagues.count + " new accumulatedEvents " + JSON.stringify(accumulatedEvents))
+                //console.log("EventsForLeagues: leagueId " + leagueId + " accumulator " + JSON.stringify(eventAccumulator) + " new elements " + snapshot.numChildren() + " leagues left: " + remainingLeagues.count + " new accumulatedEvents " + JSON.stringify(accumulatedEvents))
                 return eventsForLeagues(remainingLeagues, admin, accumulatedEvents).then(results => {
                     resolve(results)
                 })
@@ -333,7 +333,7 @@ countEvents = function(snapshot, admin) {
     // Return the promise from countRef.transaction() so our function
     // waits for this async event to complete before it exits.
     return countRef.transaction((current) => {
-        console.log("Event v1.0 countEvents for league " + leagueId + ": current " + current)
+        //console.log("Event v1.0 countEvents for league " + leagueId + ": current " + current)
         return (current || 0) + increment;
     }).then((value) => {
         return console.log('Event v1.0: counter updated to ' + JSON.stringify(value))
