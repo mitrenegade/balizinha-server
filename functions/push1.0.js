@@ -41,7 +41,7 @@ exports.createOrganizerTopicForNewEvent = function(eventId, organizerId, exports
 exports.sendPushToTopic = function(title, topic, msg, admin) {
     var topicString = "/topics/" + topic
     // topicString = topicString.replace(/-/g , '_');
-    console.log("Push v1.0: send push to topic " + topicString)
+    console.log("Push v1.0: send push to topic " + topicString + " message: " + msg)
     var payload = {
         notification: {
             title: title,
