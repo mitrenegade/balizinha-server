@@ -48,7 +48,7 @@ exports.createEvent = function(req, res, exports, admin) {
     if (lon) { params["lon"] = lon }
 
     let eventId = exports.createUniqueId()
-    let leagueRef = `/league/${league}`
+    let leagueRef = `/leagues/${league}`
     return admin.database().ref(leagueRef).once('value').then(snapshot => {
         if (!snapshot.exists()) {
             params["leagueIsPrivate"] = false
@@ -248,11 +248,14 @@ exports.getEventsAvailableToUser = function(req, res, exports, admin) {
     // TODO: set this in an array /leaguePrivacy
     admin.database().ref(`/leagues`).once('value').then(snapshot => {
         snapshot.forEach(child => {
+            const leagueId = child.key
             const league = child.val()
+            console.log("League: " + JSON.stringify(league) + " private " + league.isPrivate)
             if (league.isPrivate == true) {
-                privateLeagues.push(league.id)
+                privateLeagues.push(leagueId)
             }
         })
+        console.log("All private leagues: " + JSON.stringify(privateLeagues))
 
         // load all events that are public
         let publicEventsRef = admin.database().ref(`/events`).orderByChild('leagueIsPrivate').equalTo(false)
@@ -260,42 +263,57 @@ exports.getEventsAvailableToUser = function(req, res, exports, admin) {
             return snapshot.val()
         })
     }).then(publicEvents => {
+        // publicEvents is a dictionary of {eventId: event}
         // load all leagueIds for a player
+        console.log("Event 1.0: getEventsAvailableToUser public events " + Object.keys(publicEvents).length)
         var userPrivateLeagues = []
-        var eventAccumulator = []
         return admin.database().ref(`/playerLeagues/${userId}`).once('value').then(snapshot => {
             if (!snapshot.exists()) {
-                return eventForLeagues(userPrivateLeagues, eventAccumulator, admin)
+                console.log("userPrivateLeagues: playerLeagues does not exist")
+                return eventAccumulator
             } else {
                 snapshot.forEach(child => {
-                    const leagueId = child.val()
-                    if (privateLeagues.includes(leagueId)) {
+                    const leagueId = child.key
+                    const membership = child.val()
+                    if (membership != "none" && privateLeagues.includes(leagueId)) {
                         userPrivateLeagues.push(leagueId)
                     }
                 })
             }
-            return eventForLeagues(userPrivateLeagues, eventAccumulator, admin)
+            console.log("Event 1.0: userPrivateLeagues: " + JSON.stringify(userPrivateLeagues))
+            return eventsForLeagues(userPrivateLeagues, admin, {})
         }).then(privateEvents => {
-            publicEvents.concat(privateEvents)
-            res.status(200).json({"results": publicEvents})
+            console.log("Event 1.0: getEventsAvailableToUser private events " + Object.keys(privateEvents).length)
+            var allEvents = Object.assign({}, publicEvents, privateEvents)
+            res.status(200).json({"results": allEvents})
         })
     }).catch(err => {
+        console.log("Event 1.0: getEventsAvailableToUser error " + JSON.stringify(err))
         res.status(500).json({"error": err.message})
     })
 }
 
-eventsForLeagues = function(leagueIds, eventAccumulator, admin) {
-    if (leagueIds.length == 0) {
-        return eventAccumulator
-    }
-    let leagueId = leagueIds[0]
-    let remainingLeagues = leagueIds.slice(1, leagueIds.length)
-    admin.database().ref(`/events`).orderByChild('league').equalTo(leagueId).once('value').then(snapshot => {
-        if (snapshot.val() != undefined) {
-            console.log("EventsForLeagues: leagueId " + leagueId + " accumulator " + eventAccumulator.length + " new elements " + snapshot.val().length + " leagues left: " + remainingLeagues.count)
-            eventAccumulator.concat(snapshot.val())
+eventsForLeagues = function(leagueIds, admin, eventAccumulator) {
+    return new Promise(function(resolve, reject) {
+        if (leagueIds.length == 0) {
+            console.log("EventsForLeagues: no more leagueIds. Returning " + JSON.stringify(eventAccumulator))
+            resolve(eventAccumulator)
         }
-        return eventsForLeagues(remainingLeagues, eventAccumulator, admin)
+        var leagueId = leagueIds[0]
+        var remainingLeagues = leagueIds.slice(1, leagueIds.length)
+        return admin.database().ref(`/events`).orderByChild('league').equalTo(leagueId).once('value').then(snapshot => {
+            if (snapshot.exists()) {
+                var accumulatedEvents = Object.assign({}, eventAccumulator, snapshot.val())
+                console.log("EventsForLeagues: leagueId " + leagueId + " accumulator " + JSON.stringify(eventAccumulator) + " new elements " + snapshot.numChildren() + " leagues left: " + remainingLeagues.count + " new accumulatedEvents " + JSON.stringify(accumulatedEvents))
+                return eventsForLeagues(remainingLeagues, admin, accumulatedEvents).then(results => {
+                    resolve(results)
+                })
+            } else {
+                return eventsForLeagues(remainingLeagues, admin, eventAccumulator).then(results => {
+                    resolve(results)
+                })
+            }
+        })
     })
 }
 

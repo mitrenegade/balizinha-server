@@ -346,10 +346,15 @@ exports.joinOrLeaveEvent = functions.https.onRequest((req, res) => {
     return event1_0.joinOrLeaveEvent(req, res, exports, admin)
 })
 
-// helpers
+/**
+ * params: userId: String
+ * result: [ events ]
+ */
 exports.getEventsAvailableToUser = functions.https.onRequest((req, res) => {
-    return event1_0.getEVentsAVailableToUser(req, res, exports, admin)
+    return event1_0.getEventsAvailableToUser(req, res, exports, admin)
 })
+
+// helpers
 
 // database changes
 exports.onEventCreate = functions.database.ref('/events/{eventId}').onCreate((snapshot, context) => {
