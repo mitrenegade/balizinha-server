@@ -14,16 +14,16 @@ const adminUtils1_0 = require('./adminUtils1.0')
 admin.initializeApp(functions.config().firebase);
 
 // TO TOGGLE BETWEEN DEV AND PROD: change this to .dev or .prod for functions:config variables to be correct
-const config = functions.config().dev
+const config = functions.config().prod
 const stripe = require('stripe')(config.stripe.token)
 // 1.4 leagues
 // 1.5 event.js, league.js, action.js, push.js
 const API_VERSION = 1.0
-const BUILD_VERSION = 108 // for internal tracking
+const BUILD_VERSION = 109 // for internal tracking
 
 const DEFAULT_LEAGUE_ID_DEV = "1525785307-821232"
 const DEFAULT_LEAGUE_ID_PROD = "1525175000-268371"
-const DEFAULT_LEAGUE = DEFAULT_LEAGUE_ID_DEV // change this when switching to prod
+const DEFAULT_LEAGUE = DEFAULT_LEAGUE_ID_PROD // change this when switching to prod
 
 exports.onCreateUser = functions.auth.user().onCreate(user => {
     console.log("onCreateUser v1.4 complete with user " + JSON.stringify(user))
