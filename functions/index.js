@@ -9,6 +9,7 @@ const action1_0 = require('./action1.0')
 const push1_0 = require('./push1.0')
 const stripe1_0 = require('./stripe1.0')
 const stripe1_1 = require('./stripe1.1')
+const adminUtils1_0 = require('./adminUtils1.0')
 
 admin.initializeApp(functions.config().firebase);
 
@@ -18,7 +19,7 @@ const stripe = require('stripe')(config.stripe.token)
 // 1.4 leagues
 // 1.5 event.js, league.js, action.js, push.js
 const API_VERSION = 1.0
-const BUILD_VERSION = 108 // for internal tracking
+const BUILD_VERSION = 109 // for internal tracking
 
 const DEFAULT_LEAGUE_ID_DEV = "1525785307-821232"
 const DEFAULT_LEAGUE_ID_PROD = "1525175000-268371"
@@ -425,6 +426,16 @@ exports.unsubscribeFromTopic = function(token, topic) {
 exports.sendPush = function(token, msg) {
     return push1_0.sendPush(token, msg, exports, admin)
 }
+
+// UTILS - used by Admin app //////////////////////////////////////////////////////////////////////////////////
+/**
+ * params: userId: String
+ * result: [ events ]
+ */
+exports.updateEventLeagueIsPrivate = functions.https.onRequest((req, res) => {
+    return adminUtils1_0.updateEventLeagueIsPrivate(req, res, exports, admin)
+})
+
 
 /* Resources
 * Versioning: https://github.com/googleapis/nodejs-datastore/tree/master/src
