@@ -9,7 +9,7 @@ const action1_0 = require('./action1.0')
 const push1_0 = require('./push1.0')
 const stripe1_0 = require('./stripe1.0')
 const stripe1_1 = require('./stripe1.1')
-const utils1_0 = require('./utils1.0')
+const adminUtils1_0 = require('./adminUtils1.0')
 
 admin.initializeApp(functions.config().firebase);
 
@@ -432,8 +432,8 @@ exports.sendPush = function(token, msg) {
  * params: userId: String
  * result: [ events ]
  */
-exports.updateEventParameters = functions.https.onRequest((req, res) => {
-    return adminUtils1_0.updateEventParameters(req, res, exports, admin)
+exports.updateEventLeagueIsPrivate = functions.https.onRequest((req, res) => {
+    return adminUtils1_0.updateEventLeagueIsPrivate(req, res, exports, admin)
 })
 
 
