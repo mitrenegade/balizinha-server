@@ -436,6 +436,9 @@ exports.updateEventLeagueIsPrivate = functions.https.onRequest((req, res) => {
     return adminUtils1_0.updateEventLeagueIsPrivate(req, res, exports, admin)
 })
 
+exports.recountLeagueStats = functions.https.onRequest((req, res) => {
+    return adminUtils1_0.recountLeagueStats(req, res, exports, admin)
+})
 
 /* Resources
 * Versioning: https://github.com/googleapis/nodejs-datastore/tree/master/src
