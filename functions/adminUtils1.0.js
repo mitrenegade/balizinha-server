@@ -5,7 +5,7 @@
 exports.updateEventLeagueIsPrivate = function(req, res, exports, admin) {
     // find all leagues' private status
     var leagueIsPrivate = {}
-    admin.database().ref(`/leagues`).once('value').then(snapshot => {
+    return admin.database().ref(`/leagues`).once('value').then(snapshot => {
         snapshot.forEach(child => {
             const leagueId = child.key
             const league = child.val()
@@ -42,6 +42,24 @@ exports.updateEventLeagueIsPrivate = function(req, res, exports, admin) {
     })
 }
 
-//exports.recountLeagueStats = function(req, res, exports, admin) {
+exports.recountLeagueStats = function(req, res, exports, admin) {
     // delete playerCount and eventCount to force a recount for all leagues
-//}
+    return admin.database().ref(`/leagues`).once('value').then(snapshot => {
+        var promises = []
+        snapshot.forEach(child => {
+            if (child.exists()) {
+                const leagueId = child.val().id
+                var params = { "playerCount" : null, "eventCount": null }
+                var promiseRef = admin.database().ref(`/leagues/${leagueId}`).update(params)
+                promises.push(promiseRef)
+            }
+        })
+        Promise.all(promises).then(result => {
+            console.log("RecountLeagueStats: updated " + promises.length + " leagues")
+            res.status(200).json({"result": {"count": promises.length}})
+        }).catch(err => {
+            console.log("RecountLeagueStats: error " + JSON.stringify(err))
+            res.status(500).json({"error": err})
+        })
+    })
+}

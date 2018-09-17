@@ -245,12 +245,8 @@ exports.getEventsAvailableToUser = function(req, res, exports, admin) {
     // first, request all events where leagueIsPrivate = false
     // then, for each league belonging to the user that is private, request all events where leagueId = league.id
     var privateLeagues = []
-    // array of promises to return all queries together
-    const promises = []
-
     // get all leagues and store which ones are private
-    // TODO: set this in an array /leaguePrivacy
-    admin.database().ref(`/leagues`).once('value').then(snapshot => {
+    return admin.database().ref(`/leagues`).once('value').then(snapshot => {
         snapshot.forEach(child => {
             const leagueId = child.key
             const league = child.val()
