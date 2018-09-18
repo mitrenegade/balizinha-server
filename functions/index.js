@@ -440,6 +440,10 @@ exports.recountLeagueStats = functions.https.onRequest((req, res) => {
     return adminUtils1_0.recountLeagueStats(req, res, exports, admin)
 })
 
+exports.cleanupAnonymousAuth = functions.https.onRequest((req, res) => {
+    return adminUtils1_0.cleanupAnonymousAuth(req, res, exports, admin)
+})
+
 /* Resources
 * Versioning: https://github.com/googleapis/nodejs-datastore/tree/master/src
 * Documentation generation: https://jonathas.com/documenting-your-nodejs-api-with-apidoc/
