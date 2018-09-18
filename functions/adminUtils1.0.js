@@ -1,5 +1,3 @@
-const dateFormat = require('dateformat');
-
 /*
  updateEventLeagueIsPrivate
  - fixes various missing parameters such as leagueIsPrivate
@@ -72,7 +70,6 @@ exports.cleanupAnonymousAuth = function(req, res, exports, admin) {
     // only delete auth that is X days old
     // https://firebase.google.com/docs/auth/admin/manage-users#delete_a_user
     // https://firebase.google.com/docs/reference/admin/node/admin.auth.Auth#listUsers
-    // dateFormat: https://www.npmjs.com/package/dateformat
     var promises = []
     var resultJSON = {}
     admin.auth().listUsers().then(function(listUsersResult) {
@@ -85,10 +82,18 @@ exports.cleanupAnonymousAuth = function(req, res, exports, admin) {
             const timediff = Math.abs(now.getTime() - signinDate.getTime())
 //            console.log("User " + uid + " timestamp " + timestamp + " date " + signinDate.getTime() + "timediff " + timediff)
             if (timediff > 24 * 3600 * 30 * 6 * 1000) { // 6 months in milliseconds
-                resultJSON[uid] = userDict//Object.assign(resultJSON, userRecord.toJSON())
+                var promise = admin.database().ref(`/players/${uid}`).once('value').then(snapshot => {
+                    if (!snapshot.exists()) {
+                        resultJSON[uid] = userDict//Object.assign(resultJSON, userRecord.toJSON())
+                    }
+                    return snapshot
+                })
+                promises.push(promise)
             }
         });
-        return res.status(200).json(resultJSON)
+        Promise.all(promises).then(result => {
+            return res.status(200).json(resultJSON)
+        })
     }).catch(function(err) {
         console.log("Error listing users:", err);
         return res.status(500).json({"error": err.message})
