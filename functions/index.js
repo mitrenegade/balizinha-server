@@ -440,6 +440,17 @@ exports.recountLeagueStats = functions.https.onRequest((req, res) => {
     return adminUtils1_0.recountLeagueStats(req, res, exports, admin)
 })
 
+/**
+ * result: [uid: "exists" or "deleted" = true, userInfo ]
+ */
+const runtimeOpts = {
+    // https://firebase.google.com/docs/functions/manage-functions
+    timeoutSeconds: 120
+}
+exports.cleanupAnonymousAuth = functions.runWith(runtimeOpts).https.onRequest((req, res) => {
+    return adminUtils1_0.cleanupAnonymousAuth(req, res, exports, admin)
+})
+
 /* Resources
 * Versioning: https://github.com/googleapis/nodejs-datastore/tree/master/src
 * Documentation generation: https://jonathas.com/documenting-your-nodejs-api-with-apidoc/

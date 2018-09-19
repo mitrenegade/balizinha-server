@@ -59,7 +59,79 @@ exports.recountLeagueStats = function(req, res, exports, admin) {
             res.status(200).json({"result": {"count": promises.length}})
         }).catch(err => {
             console.log("RecountLeagueStats: error " + JSON.stringify(err))
-            res.status(500).json({"error": err})
+            res.status(500).json({"error": err.message})
         })
     })
+}
+
+exports.cleanupAnonymousAuth = function(req, res, exports, admin) {
+    // cleans up anonymous auth accounts that are created whenever a user sees signup screen
+    // only delete auth that is X days old
+    // https://firebase.google.com/docs/auth/admin/manage-users#delete_a_user
+    // https://firebase.google.com/docs/reference/admin/node/admin.auth.Auth#listUsers
+    // promise handling rejections http://adampaxton.com/handling-multiple-javascript-promises-even-if-some-fail/
+    var promises = []
+    return admin.auth().listUsers().then(function(listUsersResult) {
+        var now = new Date();
+        listUsersResult.users.forEach(function(userRecord) {
+            var userDict = userRecord.toJSON()
+            const uid = userDict.uid
+            const timestamp = userDict.metadata.lastSignInTime // format is: Wed, 21 Mar 2018 13:18:10 GMT
+            const signinDate = new Date(timestamp)
+            const timediff = Math.abs(now.getTime() - signinDate.getTime())
+            // console.log("User " + uid + " timestamp " + timestamp + " date " + signinDate.getTime() + "timediff " + timediff)
+            // only delete anonymous users whose last login is 6 months or older
+            if (timediff > 24 * 3600 * 30 * 1 * 1000) { // 6 months in milliseconds
+                var promise = 
+                    admin.database().ref(`/players/${uid}`).once('value').then(snapshot => {
+                        if (snapshot.exists()) {
+                            // make sure nothing happens 
+//                            resultJSON[uid] = "exists"
+                            console.log("cleanupAnonymousAuth uid: " + uid + " exists ")
+                            return {[uid]: "exists"}
+                        } else {
+                            return admin.auth().deleteUser(uid).then(function() {
+                                userDict.deleted = true
+                                //resultJSON[uid] = userDict//Object.assign(resultJSON, userRecord.toJSON())
+                                console.log("cleanupAnonymousAuth uid: " + uid + " deleted ")
+                                return {[uid]: userDict}
+                            }).catch(function(error) {
+                                if (error.code == 400 && error.message == "QUOTA_EXCEEDED") {
+                                    userDict.deleted = false
+                                    userDict.error = JSON.stringify(error)
+                                    //resultJSON[uid] = userDict//Object.assign(resultJSON, userRecord.toJSON())
+                                    console.log("cleanupAnonymousAuth: received QUOTA_EXCEEDED on user " + uid)
+                                    return {[uid]: userDict}
+                                } else {
+                                    return {[uid]: error}
+                                }
+                            })
+                        }
+                    })
+                promises.push(promise)
+            }
+        });
+        var resultJSON = {}
+        Promise.all(promises).then(result => {
+            result.forEach(function(dict) {
+                var key = Object.keys(dict)[0]
+                var val = dict[key]
+                resultJSON[key] = val
+            })            
+            // result is an array of {uid: stuff}. this must be converted to a dictionary to be returned as a JSON
+            console.log("cleanupAnonymousAuth: promises complete with result " + JSON.stringify(resultJSON))
+            return res.status(200).json(resultJSON)
+        })
+    }).catch(function(err) {
+        console.log("cleanupAnonymousAuth Error listing users:", err);
+        return res.status(500).json({"error": err.message})
+    });
+}
+
+deleteUser = function(uid) {
+    admin.auth().deleteUser(uid).then(function() {
+        return console.log("Successfully deleted user");
+    }).catch(function(error) {
+        return console.log("Error deleting user:", error);
+    });
 }
