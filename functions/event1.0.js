@@ -382,7 +382,7 @@ createDynamicLink = function(exports, eventId) {
     var payload = {
       "dynamicLinkInfo": {
         "dynamicLinkDomain": domain,
-        "dynamicLinkName": "Shared event"
+        "dynamicLinkName": "Shared event",
         "link": "https://www.pannaleagues.com/",
         "androidInfo": {
           "androidPackageName": "io.renderapps.balizinha"
