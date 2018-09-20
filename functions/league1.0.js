@@ -23,7 +23,7 @@ exports.createLeague = function(req, res, exports, admin) {
     	// can't return league as a snapshot. only return the id
 	    res.send(200, {'league': leagueId})
     }).catch(err => {
-    	res.send(500, {'error': err})
+    	res.send(500, {'error': err.message})
     })
 }
 

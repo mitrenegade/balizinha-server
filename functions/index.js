@@ -10,6 +10,7 @@ const push1_0 = require('./push1.0')
 const stripe1_0 = require('./stripe1.0')
 const stripe1_1 = require('./stripe1.1')
 const adminUtils1_0 = require('./adminUtils1.0')
+const feedback1_0 = require('./feedback1.0')
 
 admin.initializeApp(functions.config().firebase);
 
@@ -426,6 +427,15 @@ exports.unsubscribeFromTopic = function(token, topic) {
 exports.sendPush = function(token, msg) {
     return push1_0.sendPush(token, msg, exports, admin)
 }
+
+// Feedback //////////////////////////////////////////////////////////////////////////////////
+/**
+ * params: userId: String, subject: String, details: String, email: String
+ * result: [ result: feedback ]
+ */
+exports.submitFeedback = functions.https.onRequest((req, res) => {
+    return feedback1_0.submitFeedback(req, res, exports, admin)
+})
 
 // UTILS - used by Admin app //////////////////////////////////////////////////////////////////////////////////
 /**
