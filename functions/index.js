@@ -25,6 +25,9 @@ const BUILD_VERSION = 110 // for internal tracking
 var DEFAULT_LEAGUE = config.panna.default_league
 
 // CONSTANT Utils //////////////////////////////////////////////////////////////////////////////////
+exports.isDev = function() {
+    return config.panna.environment == "dev"
+}
 exports.getAPIKey = function() {
     return config.firebase.api_key
 }

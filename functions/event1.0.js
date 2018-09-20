@@ -1,3 +1,5 @@
+var rp = require('request-promise-native')
+
 exports.createEvent = function(req, res, exports, admin) {
     const userId = req.body.userId
     if (userId == undefined) { res.status(500).json({"error": "A valid user is required to create event"}); return }
@@ -161,8 +163,15 @@ exports.onEventChange = function(snapshot, context, exports, admin) {
 }
 
 exports.onEventCreate = function(snapshot, context, exports, admin) {
-    console.log("Event v1.0: onEventCreate")
-    return countEvents(snapshot, admin)
+    const eventId = context.params.eventId
+    const userId = context.params.userId
+    var data = snapshot.after.val()
+
+    // count events
+    return countEvents(snapshot, admin).then(() => {
+        return createDynamicLink(exports, eventId)
+    })
+    // create a dynamic link for the event
 } 
 
 
@@ -330,9 +339,8 @@ countEvents = function(snapshot, admin) {
     // waits for this async event to complete before it exits.
     return countRef.transaction((current) => {
         //console.log("Event v1.0 countEvents for league " + leagueId + ": current " + current)
-        return (current || 0) + increment;
-    }).then((value) => {
-        return console.log('Event v1.0: counter updated to ' + JSON.stringify(value))
+        let value = (current || 0) + increment;
+        console.log('Event v1.0: counter updated to ' + JSON.stringify(value))
     })
 }
 
@@ -356,5 +364,43 @@ exports.recountEvents = function(snapshot, admin) {
         }).then((value) => {
             return console.log('Event v1.0: counter recounted to ' + value);
         })
+    })
+}
+
+// dynamic links https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=a
+// https://github.com/request/request-promise-native
+// https://www.npmjs.com/package/request-promise
+createDynamicLink = function(exports, eventId) {
+    const apiKey = exports.getAPIKey()
+    const url = "https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=" + apiKey
+    var domain
+    if (exports.isDev()) {
+        domain = "pannadev.page.link"
+    } else {
+        domain = "pannaleagues.page.link"
+    }
+    var payload = {
+      "dynamicLinkInfo": {
+        "dynamicLinkDomain": domain,
+        "dynamicLinkName": "Shared event"
+        "link": "https://www.pannaleagues.com/",
+        "androidInfo": {
+          "androidPackageName": "io.renderapps.balizinha"
+        },
+        "iosInfo": {
+          "iosBundleId": "io.renderapps.balizinha"
+        }
+      }
+    }
+    var options = {
+        method: 'POST',
+        uri: url,
+        body: payload,
+        json: true // Automatically stringifies the body to JSON
+    };
+    rp(options).then(function(results){
+        console.log("Dynamic link created: " + JSON.stringify(results))
+    }).catch(function(err) {
+        console.log("Dynamic link creation failed: " + err.message)
     })
 }
