@@ -165,11 +165,13 @@ exports.onEventChange = function(snapshot, context, exports, admin) {
 exports.onEventCreate = function(snapshot, context, exports, admin) {
     const eventId = context.params.eventId
     const userId = context.params.userId
-    var data = snapshot.after.val()
+    var data = snapshot.val()
 
     // count events
     return countEvents(snapshot, admin).then(() => {
-        return createDynamicLink(exports, eventId)
+        return createDynamicLink(exports, admin, eventId)
+    }).catch(err => {
+        console.log("onEventCreate: error " + JSON.stringify(err))
     })
     // create a dynamic link for the event
 } 
@@ -370,7 +372,9 @@ exports.recountEvents = function(snapshot, admin) {
 // dynamic links https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=a
 // https://github.com/request/request-promise-native
 // https://www.npmjs.com/package/request-promise
-createDynamicLink = function(exports, eventId) {
+// payload format: https://firebase.google.com/docs/reference/dynamic-links/link-shortener
+// use dynamicLinkDomain instead https://stackoverflow.com/questions/51308933/firebase-dynamic-link-internal-error-when-creating-using-curl
+createDynamicLink = function(exports, admin, eventId) {
     const apiKey = exports.getAPIKey()
     const url = "https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=" + apiKey
     var domain
@@ -379,19 +383,31 @@ createDynamicLink = function(exports, eventId) {
     } else {
         domain = "pannaleagues.page.link"
     }
+    const link = "https://pannaleagues.com/?type=events&id=" + eventId
+    const iosBundleId = "io.renderapps.balizinha"
+    const iosAppStoreId = "1198807198"
+    const androidPackageName = "io.renderapps.balizinha"
     var payload = {
-      "dynamicLinkInfo": {
-        "dynamicLinkDomain": domain,
-        "dynamicLinkName": "Shared event",
-        "link": "https://www.pannaleagues.com/",
-        "androidInfo": {
-          "androidPackageName": "io.renderapps.balizinha"
+        // "longDynamicLink": "https://pannadev.page.link/?link=https://pannaleagues.com/&apn=io.renderapps.balizinha&ibi=io.renderapps.balizinha",
+        "dynamicLinkInfo": {
+            "dynamicLinkDomain": domain,
+            "link": link,
+            "androidInfo": {
+                "androidPackageName": androidPackageName
+            },
+            "iosInfo": {
+                "iosBundleId": iosBundleId,
+                "iosAppStoreId": iosAppStoreId
+            },
+            // "navigationInfo": {
+            //     "enableForcedRedirect": true
+            // }
         },
-        "iosInfo": {
-          "iosBundleId": "io.renderapps.balizinha"
+        "suffix": {
+            "option": "SHORT"
         }
-      }
     }
+    console.log("createDynamicLink: domain " + domain + " payload " + JSON.stringify(payload) + " url " + url)
     var options = {
         method: 'POST',
         uri: url,
@@ -400,7 +416,12 @@ createDynamicLink = function(exports, eventId) {
     };
     rp(options).then(function(results){
         console.log("Dynamic link created: " + JSON.stringify(results))
+        if (results.shortLink != undefined) {
+            console.log("Short link " + results.shortLink)
+            // TODO: write event link
+            return admin.database().ref(`/events/${eventId}`).update({"shareLink": results.shortLink})
+        }
     }).catch(function(err) {
-        console.log("Dynamic link creation failed: " + err.message)
+        console.log("Dynamic link creation failed: " + JSON.stringify(err))
     })
 }
