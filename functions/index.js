@@ -15,16 +15,22 @@ const feedback1_0 = require('./feedback1.0')
 admin.initializeApp(functions.config().firebase);
 
 // TO TOGGLE BETWEEN DEV AND PROD: change this to .dev or .prod for functions:config variables to be correct
-const config = functions.config().prod
+const config = functions.config().dev
 const stripe = require('stripe')(config.stripe.token)
 // 1.4 leagues
 // 1.5 event.js, league.js, action.js, push.js
 const API_VERSION = 1.0
 const BUILD_VERSION = 110 // for internal tracking
 
-const DEFAULT_LEAGUE_ID_DEV = "1525785307-821232"
-const DEFAULT_LEAGUE_ID_PROD = "1525175000-268371"
-const DEFAULT_LEAGUE = DEFAULT_LEAGUE_ID_PROD // change this when switching to prod
+var DEFAULT_LEAGUE = config.panna.default_league
+
+// CONSTANT Utils //////////////////////////////////////////////////////////////////////////////////
+exports.isDev = function() {
+    return config.panna.environment == "dev"
+}
+exports.getAPIKey = function() {
+    return config.firebase.api_key
+}
 
 exports.onCreateUser = functions.auth.user().onCreate(user => {
     console.log("onCreateUser v1.4 complete with user " + JSON.stringify(user))
@@ -357,6 +363,9 @@ exports.getEventsAvailableToUser = functions.https.onRequest((req, res) => {
 })
 
 // helpers
+exports.createDynamicLink = function(type, id) {
+    return event1_0.createDynamicLink(exports, admin, type, id)
+}
 
 // database changes
 exports.onEventCreate = functions.database.ref('/events/{eventId}').onCreate((snapshot, context) => {
@@ -459,6 +468,14 @@ const runtimeOpts = {
 }
 exports.cleanupAnonymousAuth = functions.runWith(runtimeOpts).https.onRequest((req, res) => {
     return adminUtils1_0.cleanupAnonymousAuth(req, res, exports, admin)
+})
+
+/**
+ * params: type = [events, leagues], id = string
+ * result: {shortLink: url}
+ */
+exports.generateShareLink = functions.https.onRequest((req, res) => {
+    return adminUtils1_0.generateShareLink(req, res, exports, admin)
 })
 
 /* Resources

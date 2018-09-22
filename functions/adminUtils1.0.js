@@ -135,3 +135,16 @@ deleteUser = function(uid) {
         return console.log("Error deleting user:", error);
     });
 }
+
+exports.generateShareLink = function(req, res, exports, admin) {
+    let type = req.body.type
+    let id = req.body.id
+    return exports.createDynamicLink(type, id).then(result => {
+        console.log("Admin: generateShareLink: for " + type + " id " + id + " result " + result)
+        res.status(200).json({"shareLink": result})
+    }).catch(err => {
+        console.log("Admin: generateShareLink resulted in error " + err.message)
+        res.status(500).json(err.message)
+    })
+}
+
