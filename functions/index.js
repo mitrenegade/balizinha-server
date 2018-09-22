@@ -363,6 +363,9 @@ exports.getEventsAvailableToUser = functions.https.onRequest((req, res) => {
 })
 
 // helpers
+exports.createDynamicLink = function(type, id) {
+    return event1_0.createDynamicLink(exports, admin, type, id)
+}
 
 // database changes
 exports.onEventCreate = functions.database.ref('/events/{eventId}').onCreate((snapshot, context) => {
@@ -465,6 +468,22 @@ const runtimeOpts = {
 }
 exports.cleanupAnonymousAuth = functions.runWith(runtimeOpts).https.onRequest((req, res) => {
     return adminUtils1_0.cleanupAnonymousAuth(req, res, exports, admin)
+})
+
+/**
+ * params: id: String
+ * result: shortLink: [url]
+ */
+exports.generateLeagueLink = functions.https.onRequest((req, res) => {
+    var type = "leagues"
+    var id = req.body.id
+    return exports.createDynamicLink(type, id)
+})
+
+exports.generateEventLink = functions.https.onRequest((req, res) => {
+    var type = "events"
+    var id = req.body.id
+    return exports.createDynamicLink(type, id)
 })
 
 /* Resources

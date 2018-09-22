@@ -168,8 +168,9 @@ exports.onEventCreate = function(snapshot, context, exports, admin) {
     var data = snapshot.val()
 
     // count events
+    const type = "events"
     return countEvents(snapshot, admin).then(() => {
-        return createDynamicLink(exports, admin, eventId)
+        return exports.createDynamicLink(type, eventId)
     }).catch(err => {
         console.log("onEventCreate: error " + JSON.stringify(err))
     })
@@ -374,7 +375,7 @@ exports.recountEvents = function(snapshot, admin) {
 // https://www.npmjs.com/package/request-promise
 // payload format: https://firebase.google.com/docs/reference/dynamic-links/link-shortener
 // use dynamicLinkDomain instead https://stackoverflow.com/questions/51308933/firebase-dynamic-link-internal-error-when-creating-using-curl
-createDynamicLink = function(exports, admin, eventId) {
+exports.createDynamicLink = function(exports, admin, type, id) {
     const apiKey = exports.getAPIKey()
     const url = "https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=" + apiKey
     var domain
@@ -383,7 +384,7 @@ createDynamicLink = function(exports, admin, eventId) {
     } else {
         domain = "pannaleagues.page.link"
     }
-    const link = "https://pannaleagues.com/?type=events&id=" + eventId
+    const link = "https://pannaleagues.com/?type=" + type + "&id=" + id
     const iosBundleId = "io.renderapps.balizinha"
     const iosAppStoreId = "1198807198"
     const androidPackageName = "io.renderapps.balizinha"
@@ -418,8 +419,11 @@ createDynamicLink = function(exports, admin, eventId) {
         console.log("Dynamic link created: " + JSON.stringify(results))
         if (results.shortLink != undefined) {
             console.log("Short link " + results.shortLink)
-            // TODO: write event link
-            return admin.database().ref(`/events/${eventId}`).update({"shareLink": results.shortLink})
+            // write shared link to relevant objects
+            if (type == "events" || type == "leagues") {
+                return admin.database().ref(`/${type}/${id}`).update({"shareLink": results.shortLink})
+            }
+            return
         }
     }).catch(function(err) {
         console.log("Dynamic link creation failed: " + JSON.stringify(err))
