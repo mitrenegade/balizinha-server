@@ -415,17 +415,26 @@ exports.createDynamicLink = function(exports, admin, type, id) {
         body: payload,
         json: true // Automatically stringifies the body to JSON
     };
-    rp(options).then(function(results){
+    return rp(options).then(function(results){
         console.log("Dynamic link created: " + JSON.stringify(results))
         if (results.shortLink != undefined) {
-            console.log("Short link " + results.shortLink)
+            const shortLink = results.shortLink
             // write shared link to relevant objects
             if (type == "events" || type == "leagues") {
-                return admin.database().ref(`/${type}/${id}`).update({"shareLink": results.shortLink})
+                return admin.database().ref(`/${type}/${id}`).update({"shareLink": shortLink}).then(results => {
+                    console.log("Short link " + shortLink + " for " + type + " " + id)
+                    return new Promise(function(resolve, reject) {
+                        resolve(shortLink)
+                    })
+                })
+            } else {
+                console.log("why are we here 2 " + type)
             }
-            return
+        } else {
+            console.log("why are we here 1 " + results.shortLink)
         }
     }).catch(function(err) {
         console.log("Dynamic link creation failed: " + JSON.stringify(err))
+        return err
     })
 }

@@ -471,19 +471,11 @@ exports.cleanupAnonymousAuth = functions.runWith(runtimeOpts).https.onRequest((r
 })
 
 /**
- * params: id: String
- * result: shortLink: [url]
+ * params: type = [events, leagues], id = string
+ * result: {shortLink: url}
  */
-exports.generateLeagueLink = functions.https.onRequest((req, res) => {
-    var type = "leagues"
-    var id = req.body.id
-    return exports.createDynamicLink(type, id)
-})
-
-exports.generateEventLink = functions.https.onRequest((req, res) => {
-    var type = "events"
-    var id = req.body.id
-    return exports.createDynamicLink(type, id)
+exports.generateShareLink = functions.https.onRequest((req, res) => {
+    return adminUtils1_0.generateShareLink(req, res, exports, admin)
 })
 
 /* Resources
