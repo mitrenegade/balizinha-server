@@ -15,14 +15,12 @@ const feedback1_0 = require('./feedback1.0')
 admin.initializeApp(functions.config().firebase);
 
 // TO TOGGLE BETWEEN DEV AND PROD: change this to .dev or .prod for functions:config variables to be correct
-const config = functions.config().prod
+const config = functions.config().dev
 const stripe = require('stripe')(config.stripe.token)
 // 1.4 leagues
 // 1.5 event.js, league.js, action.js, push.js
 const API_VERSION = 1.0
 const BUILD_VERSION = 111 // for internal tracking
-
-var DEFAULT_LEAGUE = config.panna.default_league
 
 // CONSTANT Utils //////////////////////////////////////////////////////////////////////////////////
 exports.isDev = function() {
@@ -30,6 +28,9 @@ exports.isDev = function() {
 }
 exports.getAPIKey = function() {
     return config.firebase.api_key
+}
+exports.defaultLeague = function() {
+    return config.panna.default_league
 }
 
 exports.onCreateUser = functions.auth.user().onCreate(user => {
@@ -79,7 +80,7 @@ exports.onPlayerCreate = functions.database.ref('/players/{userId}').onCreate((s
     var email = snapshot.email // snapshot only contains email
 
     const isJoin = true
-    return exports.doUpdatePlayerStatus(admin, playerId, DEFAULT_LEAGUE, isJoin)
+    return exports.doUpdatePlayerStatus(admin, playerId, exports.defaultLeague(), isJoin)
 })
 
 exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite((snapshot, context) => {
