@@ -27,6 +27,13 @@ exports.createLeague = function(req, res, exports, admin) {
     })
 }
 
+exports.onLeagueCreate = function(snapshot, context, exports, admin) {
+	const id = context.params.leagueId
+	const type = "leagues"
+
+    return exports.createDynamicLink(type, id)
+}
+
 exports.joinLeaveLeague = function(req, res, exports, admin) {
 	const userId = req.body.userId
 	const leagueId = req.body.leagueId
