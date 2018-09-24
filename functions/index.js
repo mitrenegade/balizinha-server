@@ -79,8 +79,8 @@ exports.onPlayerCreate = functions.database.ref('/players/{userId}').onCreate((s
     var playerId = context.params.userId
     var email = snapshot.email // snapshot only contains email
 
-    const isJoin = true
-    return exports.doUpdatePlayerStatus(admin, playerId, exports.defaultLeague(), isJoin)
+    // const status = "member"
+    // return exports.doUpdatePlayerStatus(admin, playerId, exports.defaultLeague(), status)
 })
 
 exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite((snapshot, context) => {
