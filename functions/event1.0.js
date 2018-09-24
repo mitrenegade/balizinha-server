@@ -103,8 +103,47 @@ exports.joinOrLeaveEvent = function(req, res, exports, admin) {
     var addedByOrganizer = req.body.addedByOrganizer
     var removedByOrganizer = req.body.removedByOrganizer
 
+    var leagueId = undefined
+
     console.log("JoinOrLeaveEvent v1.0: " + userId + " join? " + join + " " + eventId)
-    return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
+    return admin.database().ref(`/events/${eventId}`).once('value')
+    .then(snapshot => { //////////// Find event's league and add event to default league if necessary
+        if (!snapshot.exists()) {
+            // event doesn't exist
+            console.log("JoinOrLeaveEvent: could not find event " + eventId)
+            throw new Error("Could not join event; event not found")
+        }
+        leagueId = snapshot.val().league
+        if (leagueId == undefined || leagueId.length == 0) {
+            // if event doesn't have a league, add it to the default. This should be removed after 1.0.8
+            leagueId = exports.defaultLeague()
+            let params = {"league": leagueId}
+            console.log("JoinOrLeaveEvent: event " + eventId + " must be added to default league " + leagueId)
+            return admin.database().ref(`/events/${eventId}`).update(params).then(() => {
+                // find if league contains that player
+                return admin.database().ref(`/leaguePlayers/${leagueId}/${userId}`).once('value')
+            })
+        } else {
+            // find if league contains that player
+            console.log("JoinOrLeaveEvent: checking player's league status for " + leagueId)
+            return admin.database().ref(`/leaguePlayers/${leagueId}/${userId}`).once('value')
+        }
+    }).then(snapshot => { //////////// Find league's players and add player to league if necessary
+        if (!snapshot.exists() || (snapshot.val() != "member" && snapshot.val() != "organizer")) {
+            // player is not part of the same league
+            // for backwards compatibility - add user to league. for games that are paid, the app process
+            // payment first (as of 1.0.5) so the user should not be rejected after payment
+            console.log("JoinOrLeaveEvent: adding user " + userId + " to league " + leagueId + " on joining event")
+            const status = "member"
+            return exports.doUpdatePlayerStatus(admin, userId, leagueId, status).then(() => {
+                // load player
+                return admin.database().ref(`/players/${userId}`).once('value')
+            })
+        } else {
+            // load player
+            return admin.database().ref(`/players/${userId}`).once('value')
+        }
+    }).then(snapshot => { /////////// Load player and join event; filters for anonymous players
         if (!snapshot.exists()) {
             console.log("JoinOrLeaveEvent v1.0: no player found for userId " + userId + ": must be anonymous")
             throw new Error("Please sign up to join this game")
