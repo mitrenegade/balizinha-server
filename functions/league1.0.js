@@ -27,6 +27,27 @@ exports.createLeague = function(req, res, exports, admin) {
     })
 }
 
+exports.onLeagueCreate = function(snapshot, context, exports, admin) {
+	const id = context.params.leagueId
+	const type = "leagues"
+    var data = snapshot.val()
+    var name = data.name
+    if (name == undefined) {
+    	name = "Panna Social Leagues"
+    }
+    var info = data.info
+    if (info == undefined) {
+    	info = "Join a league on Panna and play pickup."
+    }
+    var meta = {    
+        "socialTitle": name,
+        "socialDescription": info
+//        "socialImageLink": "" // no image for now
+    }
+
+    return exports.createDynamicLink(type, id, meta)
+}
+
 exports.joinLeaveLeague = function(req, res, exports, admin) {
 	const userId = req.body.userId
 	const leagueId = req.body.leagueId

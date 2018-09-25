@@ -1,5 +1,3 @@
-var rp = require('request-promise-native')
-
 exports.createEvent = function(req, res, exports, admin) {
     const userId = req.body.userId
     if (userId == undefined) { res.status(500).json({"error": "A valid user is required to create event"}); return }
@@ -205,11 +203,26 @@ exports.onEventCreate = function(snapshot, context, exports, admin) {
     const eventId = context.params.eventId
     const userId = context.params.userId
     var data = snapshot.val()
+    console.log("onEventCreate: " + data.name + " info: " + data.info)
+    console.log("onEventCreate: JSON " + JSON.stringify(data))
+    var name = data.name
+    if (name == undefined) {
+        name = "Panna Social Leagues"
+    }
+    var info = data.info
+    if (info == undefined) {
+        info = "Join an event on Panna and play pickup."
+    }
 
     // count events
     const type = "events"
     return countEvents(snapshot, admin).then(() => {
-        return exports.createDynamicLink(type, eventId)
+        var meta = {    
+            "socialTitle": name,
+            "socialDescription": info
+            // for now, no socialImage
+        }
+        return exports.createDynamicLink(type, eventId, meta)
     }).catch(err => {
         console.log("onEventCreate: error " + JSON.stringify(err))
     })
@@ -409,71 +422,3 @@ exports.recountEvents = function(snapshot, admin) {
     })
 }
 
-// dynamic links https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=a
-// https://github.com/request/request-promise-native
-// https://www.npmjs.com/package/request-promise
-// payload format: https://firebase.google.com/docs/reference/dynamic-links/link-shortener
-// use dynamicLinkDomain instead https://stackoverflow.com/questions/51308933/firebase-dynamic-link-internal-error-when-creating-using-curl
-exports.createDynamicLink = function(exports, admin, type, id) {
-    const apiKey = exports.getAPIKey()
-    const url = "https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=" + apiKey
-    var domain
-    if (exports.isDev()) {
-        domain = "pannadev.page.link"
-    } else {
-        domain = "pannaleagues.page.link"
-    }
-    const link = "https://pannaleagues.com/?type=" + type + "&id=" + id
-    const iosBundleId = "io.renderapps.balizinha"
-    const iosAppStoreId = "1198807198"
-    const androidPackageName = "io.renderapps.balizinha"
-    var payload = {
-        // "longDynamicLink": "https://pannadev.page.link/?link=https://pannaleagues.com/&apn=io.renderapps.balizinha&ibi=io.renderapps.balizinha",
-        "dynamicLinkInfo": {
-            "dynamicLinkDomain": domain,
-            "link": link,
-            "androidInfo": {
-                "androidPackageName": androidPackageName
-            },
-            "iosInfo": {
-                "iosBundleId": iosBundleId,
-                "iosAppStoreId": iosAppStoreId
-            },
-            // "navigationInfo": {
-            //     "enableForcedRedirect": true
-            // }
-        },
-        "suffix": {
-            "option": "SHORT"
-        }
-    }
-    console.log("createDynamicLink: domain " + domain + " payload " + JSON.stringify(payload) + " url " + url)
-    var options = {
-        method: 'POST',
-        uri: url,
-        body: payload,
-        json: true // Automatically stringifies the body to JSON
-    };
-    return rp(options).then(function(results){
-        console.log("Dynamic link created: " + JSON.stringify(results))
-        if (results.shortLink != undefined) {
-            const shortLink = results.shortLink
-            // write shared link to relevant objects
-            if (type == "events" || type == "leagues") {
-                return admin.database().ref(`/${type}/${id}`).update({"shareLink": shortLink}).then(results => {
-                    console.log("Short link " + shortLink + " for " + type + " " + id)
-                    return new Promise(function(resolve, reject) {
-                        resolve(shortLink)
-                    })
-                })
-            } else {
-                console.log("why are we here 2 " + type)
-            }
-        } else {
-            console.log("why are we here 1 " + results.shortLink)
-        }
-    }).catch(function(err) {
-        console.log("Dynamic link creation failed: " + JSON.stringify(err))
-        return err
-    })
-}

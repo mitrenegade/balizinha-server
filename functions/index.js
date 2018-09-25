@@ -11,6 +11,7 @@ const stripe1_0 = require('./stripe1.0')
 const stripe1_1 = require('./stripe1.1')
 const adminUtils1_0 = require('./adminUtils1.0')
 const feedback1_0 = require('./feedback1.0')
+const share1_0 = require('./share1.0')
 
 admin.initializeApp(functions.config().firebase);
 
@@ -308,6 +309,10 @@ exports.getLeagueStats = functions.https.onRequest((req, res) => {
 })
 
 // database changes
+exports.onLeagueCreate = functions.database.ref('/leagues/{leagueId}').onCreate((snapshot, context) => {
+    return league1_0.onLeagueCreate(snapshot, context, exports, admin)
+})
+
 // If the number of events gets deleted, recount the number of events. currently counting all undeleted events including past
 exports.recountEvents = functions.database.ref('/leagues/{leagueId}/eventCount').onDelete((snapshot) => {
     return event1_0.recountEvents(snapshot, admin)
@@ -362,11 +367,6 @@ exports.joinOrLeaveEvent = functions.https.onRequest((req, res) => {
 exports.getEventsAvailableToUser = functions.https.onRequest((req, res) => {
     return event1_0.getEventsAvailableToUser(req, res, exports, admin)
 })
-
-// helpers
-exports.createDynamicLink = function(type, id) {
-    return event1_0.createDynamicLink(exports, admin, type, id)
-}
 
 // database changes
 exports.onEventCreate = functions.database.ref('/events/{eventId}').onCreate((snapshot, context) => {
@@ -446,6 +446,16 @@ exports.sendPush = function(token, msg) {
 exports.submitFeedback = functions.https.onRequest((req, res) => {
     return feedback1_0.submitFeedback(req, res, exports, admin)
 })
+
+// Share //////////////////////////////////////////////////////////////////////////////////
+/**
+ * params: type: String = "leagues", "events"
+ * id: String
+ * result: [  ]
+ */
+exports.createDynamicLink = function(type, id, metadata) {
+    return share1_0.createDynamicLink(exports, admin, type, id, metadata)
+}
 
 // UTILS - used by Admin app //////////////////////////////////////////////////////////////////////////////////
 /**
