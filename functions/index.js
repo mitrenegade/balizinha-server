@@ -453,8 +453,8 @@ exports.submitFeedback = functions.https.onRequest((req, res) => {
  * id: String
  * result: [  ]
  */
-exports.createDynamicLink = function(type, id) {
-    return share1_0.createDynamicLink(exports, admin, type, id)
+exports.createDynamicLink = function(type, id, metadata) {
+    return share1_0.createDynamicLink(exports, admin, type, id, metadata)
 }
 
 // UTILS - used by Admin app //////////////////////////////////////////////////////////////////////////////////

@@ -5,7 +5,7 @@ var rp = require('request-promise-native')
 // https://www.npmjs.com/package/request-promise
 // payload format: https://firebase.google.com/docs/reference/dynamic-links/link-shortener
 // use dynamicLinkDomain instead https://stackoverflow.com/questions/51308933/firebase-dynamic-link-internal-error-when-creating-using-curl
-exports.createDynamicLink = function(exports, admin, type, id) {
+exports.createDynamicLink = function(exports, admin, type, id, socialMetaTagInfo) {
     const apiKey = exports.getAPIKey()
     const url = "https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=" + apiKey
     var domain
@@ -18,22 +18,22 @@ exports.createDynamicLink = function(exports, admin, type, id) {
     const iosBundleId = "io.renderapps.balizinha"
     const iosAppStoreId = "1198807198"
     const androidPackageName = "io.renderapps.balizinha"
-    var payload = {
-        // "longDynamicLink": "https://pannadev.page.link/?link=https://pannaleagues.com/&apn=io.renderapps.balizinha&ibi=io.renderapps.balizinha",
-        "dynamicLinkInfo": {
-            "dynamicLinkDomain": domain,
-            "link": link,
-            "androidInfo": {
-                "androidPackageName": androidPackageName
-            },
-            "iosInfo": {
-                "iosBundleId": iosBundleId,
-                "iosAppStoreId": iosAppStoreId
-            },
-            // "navigationInfo": {
-            //     "enableForcedRedirect": true
-            // }
+    var dynamicLinkInfo = {
+        "dynamicLinkDomain": domain,
+        "link": link,
+        "androidInfo": {
+            "androidPackageName": androidPackageName
         },
+        "iosInfo": {
+            "iosBundleId": iosBundleId,
+            "iosAppStoreId": iosAppStoreId
+        }
+    }
+    if (socialMetaTagInfo != undefined) {
+        dynamicLinkInfo["socialMetaTagInfo"] = socialMetaTagInfo
+    }
+    var payload = {
+        "dynamicLinkInfo": dynamicLinkInfo,
         "suffix": {
             "option": "SHORT"
         }

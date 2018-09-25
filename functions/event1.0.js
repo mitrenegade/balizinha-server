@@ -203,11 +203,26 @@ exports.onEventCreate = function(snapshot, context, exports, admin) {
     const eventId = context.params.eventId
     const userId = context.params.userId
     var data = snapshot.val()
+    console.log("onEventCreate: " + data.name + " info: " + data.info)
+    console.log("onEventCreate: JSON " + JSON.stringify(data))
+    var name = data.name
+    if (name == undefined) {
+        name = "Panna Social Leagues"
+    }
+    var info = data.info
+    if (info == undefined) {
+        info = "Join an event on Panna and play pickup."
+    }
 
     // count events
     const type = "events"
     return countEvents(snapshot, admin).then(() => {
-        return exports.createDynamicLink(type, eventId)
+        var meta = {    
+            "socialTitle": name,
+            "socialDescription": info
+            // for now, no socialImage
+        }
+        return exports.createDynamicLink(type, eventId, meta)
     }).catch(err => {
         console.log("onEventCreate: error " + JSON.stringify(err))
     })

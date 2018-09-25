@@ -139,7 +139,20 @@ deleteUser = function(uid) {
 exports.generateShareLink = function(req, res, exports, admin) {
     let type = req.body.type
     let id = req.body.id
-    return exports.createDynamicLink(type, id).then(result => {
+    var meta = {"socialTitle":"Panna Social Leagues"} // default meta
+    let socialTitle = req.body.socialTitle
+    let socialDescription = req.body.socialDescription
+    let socialImageLink = req.body.socialImageLink
+    if (socialTitle != undefined) {
+        meta["socialTitle"] = socialTitle
+    }
+    if (socialDescription != undefined) {
+        meta["socialDescription"] = socialDescription
+    }
+    if (socialImageLink != undefined) {
+        meta["socialImageLink"] = socialImageLink
+    }
+    return exports.createDynamicLink(type, id, meta).then(result => {
         console.log("Admin: generateShareLink: for " + type + " id " + id + " result " + result)
         res.status(200).json({"shareLink": result})
     }).catch(err => {
