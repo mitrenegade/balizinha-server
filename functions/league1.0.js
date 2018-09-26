@@ -126,25 +126,32 @@ countLeaguePlayers = function(leagueId, status, admin) {
 exports.recountPlayers = function(snapshot, admin) {
     const countRef = snapshot.ref;
     const leagueRef = countRef.parent
+	var leagueId = leagueRef.key
 
-    var leagueId = leagueRef.key
-    console.log("League v1.0 recountPlayers for league " + leagueId)
-    return admin.database().ref(`/leaguePlayers/${leagueId}`).once('value')
-    .then(snapshot => {
-        var members = 0
-        snapshot.forEach(child => {
-        	const status = child.val()
-            if (status == "member" || status == "organizer" || status == "owner") {
-                members = members + 1
-            }
-        })
-        console.log("League v1.0 recountPlayers resulted in " + snapshot.numChildren() + " players, " + members + " members")
-        return countRef.transaction((current) => {
-            return members;
-        }).then((value) => {
-            return console.log('League v1.0: counter recounted to ' + JSON.stringify(value));
-        })
-    })
+    return leagueRef.once('value').then(snapshot => {
+        if (!snapshot.exists()) {
+        	console.log("RecountPlayers: league " + leagueId + " no longer exists")
+            return // do not recount if league was deleted
+        }
+
+	    console.log("League v1.0 recountPlayers for league " + leagueId)
+	    return admin.database().ref(`/leaguePlayers/${leagueId}`).once('value')
+	    .then(snapshot => {
+	        var members = 0
+	        snapshot.forEach(child => {
+	        	const status = child.val()
+	            if (status == "member" || status == "organizer" || status == "owner") {
+	                members = members + 1
+	            }
+	        })
+	        console.log("League v1.0 recountPlayers resulted in " + snapshot.numChildren() + " players, " + members + " members")
+	        return countRef.transaction((current) => {
+	            return members;
+	        }).then((value) => {
+	            return console.log('League v1.0: counter recounted to ' + value);
+	        })
+	    })
+	})
 }
 
 exports.getPlayersForLeague = function(req, res, exports, admin) {

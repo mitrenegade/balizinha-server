@@ -16,7 +16,7 @@ const share1_0 = require('./share1.0')
 admin.initializeApp(functions.config().firebase);
 
 // TO TOGGLE BETWEEN DEV AND PROD: change this to .dev or .prod for functions:config variables to be correct
-const config = functions.config().prod
+const config = functions.config().dev
 const stripe = require('stripe')(config.stripe.token)
 // 1.4 leagues
 // 1.5 event.js, league.js, action.js, push.js
@@ -315,17 +315,13 @@ exports.onLeagueCreate = functions.database.ref('/leagues/{leagueId}').onCreate(
 
 // If the number of events gets deleted, recount the number of events. currently counting all undeleted events including past
 exports.recountEvents = functions.database.ref('/leagues/{leagueId}/eventCount').onDelete((snapshot) => {
-    if (snapshot.parent.exists) {
-        // only recount events if league was not deleted
-        return event1_0.recountEvents(snapshot, admin)
-    }
+    // only recount events if league was not deleted
+    return event1_0.recountEvents(snapshot, admin)
 });
 
 // If the number of players gets deleted, recount the number of active players
 exports.recountPlayers = functions.database.ref('/leagues/{leagueId}/playerCount').onDelete((snapshot) => {
-    if (snapshot.parent.exists) {
-        return league1_0.recountPlayers(snapshot, admin)
-    }
+    return league1_0.recountPlayers(snapshot, admin)
 });
 
 // helper functions

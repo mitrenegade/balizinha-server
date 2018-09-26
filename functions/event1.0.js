@@ -419,23 +419,31 @@ countEvents = function(snapshot, admin) {
 exports.recountEvents = function(snapshot, admin) {
     const countRef = snapshot.ref;
     const leagueRef = countRef.parent
-
     var leagueId = leagueRef.key
-    console.log("Event v1.0 recountEvents for league " + leagueId)
-    return admin.database().ref(`/events`).orderByChild('league').equalTo(leagueId).once('value')
-    .then(leagueEventsSnapshot => {
-        var active = 0
-        leagueEventsSnapshot.forEach(child => {
-            if (child.val().active != false) {
-                active = active + 1
-            }
-        })
-        console.log("Event v1.0 recountEvents resulted in " + leagueEventsSnapshot.numChildren() + " events, " + active + " active")
-        return countRef.transaction((current) => {
-            return active;
-        }).then((value) => {
-            return console.log('Event v1.0: counter recounted to ' + value);
-        })
+
+    return leagueRef.once('value').then(snapshot => {
+        if (!snapshot.exists()) {
+            console.log("RecountEvents: league " + leagueId + " no longer exists")
+            return // do not recount if league was deleted
+        }
+        var leagueId = leagueRef.key
+        console.log("Event v1.0 recountEvents for league " + leagueId)
+        return admin.database().ref(`/events`).orderByChild('league').equalTo(leagueId).once('value')
+        .then(leagueEventsSnapshot => {
+            var active = 0
+            leagueEventsSnapshot.forEach(child => {
+                if (child.val().active != false) {
+                    active = active + 1
+                }
+            })
+            console.log("Event v1.0 recountEvents resulted in " + leagueEventsSnapshot.numChildren() + " events, " + active + " active")
+            return countRef.transaction((current) => {
+                return active;
+            }).then((value) => {
+                return console.log('Event v1.0: counter recounted to ' + JSON.stringify(value));
+            })
+        })            
     })
+
 }
 
