@@ -16,12 +16,12 @@ const share1_0 = require('./share1.0')
 admin.initializeApp(functions.config().firebase);
 
 // TO TOGGLE BETWEEN DEV AND PROD: change this to .dev or .prod for functions:config variables to be correct
-const config = functions.config().dev
+const config = functions.config().prod
 const stripe = require('stripe')(config.stripe.token)
 // 1.4 leagues
 // 1.5 event.js, league.js, action.js, push.js
 const API_VERSION = 1.0
-const BUILD_VERSION = 111 // for internal tracking
+const BUILD_VERSION = 112 // for internal tracking
 
 // CONSTANT Utils //////////////////////////////////////////////////////////////////////////////////
 exports.isDev = function() {
