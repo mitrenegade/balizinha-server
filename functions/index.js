@@ -315,12 +315,17 @@ exports.onLeagueCreate = functions.database.ref('/leagues/{leagueId}').onCreate(
 
 // If the number of events gets deleted, recount the number of events. currently counting all undeleted events including past
 exports.recountEvents = functions.database.ref('/leagues/{leagueId}/eventCount').onDelete((snapshot) => {
-    return event1_0.recountEvents(snapshot, admin)
+    if (snapshot.parent.exists) {
+        // only recount events if league was not deleted
+        return event1_0.recountEvents(snapshot, admin)
+    }
 });
 
 // If the number of players gets deleted, recount the number of active players
 exports.recountPlayers = functions.database.ref('/leagues/{leagueId}/playerCount').onDelete((snapshot) => {
-    return league1_0.recountPlayers(snapshot, admin)
+    if (snapshot.parent.exists) {
+        return league1_0.recountPlayers(snapshot, admin)
+    }
 });
 
 // helper functions
