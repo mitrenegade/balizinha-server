@@ -143,7 +143,11 @@ exports.pushForLeagueFeedItem = function(leagueId, type, userId, message, export
         if (type == "chat") {
             actionString = " said: " + message
         } else if (type == "photo") {
-            actionString = " sent a new photo to the league"
+            var name = league.name
+            if (league.name == undefined) {
+                name = "the league"
+            }
+            actionString = " sent a new photo to " + league.name
         } else { // if an unknown action
             throw new Error("Unknown feed item type")
         }
