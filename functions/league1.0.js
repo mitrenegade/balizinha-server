@@ -61,10 +61,13 @@ exports.joinLeaveLeague = function(req, res, exports, admin) {
 	console.log("JoinLeaveLeague v1.0 status " + status + " userId " + userId + " leagueId " + leagueId)
 	return exports.doUpdatePlayerStatus(admin, userId, leagueId, status).then(result => {
 		console.log("JoinLeaveLeague v1.0: success " + JSON.stringify(result))
-		return res.send(200, result)
+		// subscribe to league
+		return exports.subscribeToLeague(leagueId, userId, isJoin)
+	}).then(() => {
+		return res.send(200, {"result": "success"})
 	}).catch( (err) => {
     	console.log("JoinLeaveLeague v1.0: league " + leagueId + " error: " + err)
-    	return res.send(500, {"error": err})
+    	return res.send(500, {"error": err.message})
     })
 }
 
@@ -95,12 +98,6 @@ exports.doUpdatePlayerStatus = function(admin, userId, leagueId, status) {
 		var leagueRef = `/playerLeagues/${userId}`
 		var params = {[leagueId]: status}
 		return admin.database().ref(leagueRef).update(params)
-	}).then(result => {
-		var isSubscribe = false
-		if (status == "member" || status == "organizer" || status == "owner") {
-			isSubscribe = true
-		}
-		return exports.doSubscribeToLeagueTopic(leagueId, userId, isSubscribe)
 	}).then(result => {
 		// result is null due to update
 		return {"result": "success", "userId": userId, "leagueId": leagueId, "status": status}
@@ -208,7 +205,9 @@ exports.changeLeaguePlayerStatus = function(req, res, exports, admin) {
 
     return exports.doUpdatePlayerStatus(admin, userId, leagueId, status).then(result => {
 		console.log("ChangeLeaguePlayerStatus v1.0: success " + JSON.stringify(result))
-		return res.send(200, {result: result})
+		return exports.subscribeToLeague(leagueId, userId, isJoin)
+	}).then(() => {
+		return res.send(200, {"result": "success"})
 	}).catch( (err) => {
     	console.log("ChangeLeaguePlayerStatus v1.0: league " + leagueId + " error: " + err)
     	return res.send(500, {"error": err.message})

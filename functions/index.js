@@ -435,8 +435,8 @@ exports.unsubscribeFromTopic = function(token, topic) {
     return push1_0.subscribeToTopic(token, topic, admin)
 }
 
-exports.doSubscribeToLeagueTopic = function(leagueId, userId, isSubscribe) {
-    return push1_0.doSubscribeToLeagueTopic(leagueId, userId, isSubscribe, exports, admin)
+exports.subscribeToLeague = function(leagueId, userId, isSubscribe) {
+    return push1_0.subscribeToLeague(leagueId, userId, isSubscribe, exports, admin)
 }
 
 exports.pushForLeagueFeedItem = function(leagueId, type, userId, message) {

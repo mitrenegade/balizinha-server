@@ -135,7 +135,9 @@ exports.joinOrLeaveEvent = function(req, res, exports, admin) {
                 console.log("JoinOrLeaveEvent: adding user " + userId + " to league " + leagueId + " on joining event")
                 const status = "member"
                 return exports.doUpdatePlayerStatus(admin, userId, leagueId, status).then(() => {
-                    // load player
+                    return exports.subscribeToLeague(leagueId, userId, true)
+                }).then(() => {
+                    // return player
                     return admin.database().ref(`/players/${userId}`).once('value')
                 })
             } else {

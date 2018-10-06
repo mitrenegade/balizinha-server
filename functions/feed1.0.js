@@ -7,7 +7,11 @@ exports.createFeedItem = function(req, res, exports, admin) {
 	let defaultMessage = req.body.defaultMessage
     console.log("createFeedItem type: " + type + " league id: " + leagueId + " event id: " + eventId + " message: " + message)
 
-    doCreateFeedItem(type, userId, leagueId, eventId, message, defaultMessage)
+    return doCreateFeedItem(type, userId, leagueId, eventId, message, defaultMessage, exports, admin).then(() => {
+    	res.status(200).json({"result": "success"})
+    }).catch(function(error) {
+    	res.status(500).json({"error": error.message})
+    })
 }
 
 doCreateFeedItem = function(type, userId, leagueId, eventId, message, defaultMessage, exports, admin) {
@@ -36,6 +40,6 @@ doCreateFeedItem = function(type, userId, leagueId, eventId, message, defaultMes
         // create feedItem with type eventChat, with actionId
         // feedItems loaded with actionId should load the action and display it
         // or, events with actionId that is actually a feedItem should load a feedItem instead
-        return exports.pushForLeagueFeedItem(leagueId, type, userId, mesage)
+        return exports.pushForLeagueFeedItem(leagueId, type, userId, message)
     })
 }
