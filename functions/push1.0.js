@@ -99,6 +99,34 @@ exports.pushForJoinEvent = function(eventId, name, join, exports, admin) {
     return exports.sendPushToTopic(title, organizerTopic, msg)
 }
 
+// leagues
+topicForLeague = function(leagueId) {
+    if (league == undefined) {
+        throw new Error("League id must be specified for topic")
+    }
+    return "league" + leagueId
+}
+
+exports.doSubscribeToLeagueTopic = function(leagueId, userId, isSubscribe, exports, admin) {
+    // subscribe a player to a topic for a league
+    return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
+        return snapshot.val();
+    }).then(player => {
+        var token = player["fcmToken"]
+        var topic = topicForLeague(leagueId)
+        if (token == undefined || token.length == 0) {
+            let message = "Subscribe to league topic: no token available"
+            return console.log(message)
+        } else if (isSubscribe) {
+            console.log("Subscribe to League topic: " + topic + " token: " + token)
+            return exports.subscribeToTopic(token, topic)
+        } else {
+            console.log("Unsubscribe to League topic: " + topic + " token: " + token)
+            return exports.unsubscribeToTopic(token, topic)
+        }
+    })
+}
+
 // test send push with explicit token
 exports.sendPush = function(token, msg, admin) {
     //var testToken = "duvn2V1qsbk:APA91bEEy7DylD9iZctBtaKz5nS9CVZxpaAdaPwhIauzQ2jw81BF-oE0nhgvN3U10mqClTue0siwDH41JZP2kLqU0CkThOoBBdFQYWOr8X_6qHIknBE-Oa195qOy8XSbJvXeQj4wQa9T"

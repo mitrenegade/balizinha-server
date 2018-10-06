@@ -96,6 +96,12 @@ exports.doUpdatePlayerStatus = function(admin, userId, leagueId, status) {
 		var params = {[leagueId]: status}
 		return admin.database().ref(leagueRef).update(params)
 	}).then(result => {
+		var isSubscribe = false
+		if (status == "member" || status == "organizer" || status == "owner") {
+			isSubscribe = true
+		}
+		return exports.doSubscribeToLeagueTopic(leagueId, userId, isSubscribe)
+	}).then(result => {
 		// result is null due to update
 		return {"result": "success", "userId": userId, "leagueId": leagueId, "status": status}
 	})
@@ -148,7 +154,7 @@ exports.recountPlayers = function(snapshot, admin) {
 	        return countRef.transaction((current) => {
 	            return members;
 	        }).then((value) => {
-	            return console.log('League v1.0: counter recounted to ' + value);
+	            return console.log('League v1.0: counter recounted to ' + JSON.stringify(value));
 	        })
 	    })
 	})

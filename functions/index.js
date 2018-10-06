@@ -12,6 +12,7 @@ const stripe1_1 = require('./stripe1.1')
 const adminUtils1_0 = require('./adminUtils1.0')
 const feedback1_0 = require('./feedback1.0')
 const share1_0 = require('./share1.0')
+const feed1_0 = require('./feed1.0')
 
 admin.initializeApp(functions.config().firebase);
 
@@ -434,6 +435,10 @@ exports.unsubscribeFromTopic = function(token, topic) {
     return push1_0.subscribeToTopic(token, topic, admin)
 }
 
+exports.doSubscribeToLeagueTopic = function(leagueId, userId, isSubscribe) {
+    return push1_0.doSubscribeToLeagueTopic(leagueId, userId, isSubscribe, exports, admin)
+}
+
 // test
 exports.sendPush = function(token, msg) {
     return push1_0.sendPush(token, msg, exports, admin)
@@ -456,6 +461,16 @@ exports.submitFeedback = functions.https.onRequest((req, res) => {
  */
 exports.createDynamicLink = function(type, id, metadata) {
     return share1_0.createDynamicLink(exports, admin, type, id, metadata)
+}
+
+// FEED //////////////////////////////////////////////////////////////////////////////////
+exports.createFeedItem = functions.https.onRequest((req, res) => {
+//exports.createFeedItem = function(type, userId, leagueId, eventId, message, defaultMessage) {
+    return feed1_0.createFeedItem(req, res, exports, admin)
+})
+
+exports.convertActionChatToFeedItem = function(type, userId, eventId, message, defaultMessage) {
+    return feed1_0.convertActionChatToFeedItem(type, userId, leagueId, eventId, message, defaultMessage, exports, admin)
 }
 
 // UTILS - used by Admin app //////////////////////////////////////////////////////////////////////////////////
