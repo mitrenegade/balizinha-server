@@ -38,14 +38,14 @@ exports.createOrganizerTopicForNewEvent = function(eventId, organizerId, exports
 }
 
 // Push
-exports.sendPushToTopic = function(title, topic, msg, admin) {
+exports.sendPushToTopic = function(title, topic, body, admin) {
     var topicString = "/topics/" + topic
     // topicString = topicString.replace(/-/g , '_');
-    console.log("Push v1.0: send push to topic " + topicString + " message: " + msg)
+    console.log("Push v1.0: send push to topic " + topicString + " title: " + title + " body: " + body)
     var payload = {
         notification: {
             title: title,
-            body: msg,
+            body: body,
             sound: 'default',
             badge: '1'
         }
@@ -97,6 +97,69 @@ exports.pushForJoinEvent = function(eventId, name, join, exports, admin) {
     var organizerTopic = "eventOrganizer" + eventId // join/leave message only for owners
     console.log("Push v1.0 for JoinEvent: user " + name + " joined event " + organizerTopic + " with message: " + msg)
     return exports.sendPushToTopic(title, organizerTopic, msg)
+}
+
+// leagues
+topicForLeague = function(leagueId) {
+    if (leagueId == undefined) {
+        throw new Error("League id must be specified for topic")
+    }
+    return "league" + leagueId
+}
+
+exports.subscribeToLeague = function(leagueId, userId, isSubscribe, exports, admin) {
+    // subscribe a player to a topic for a league
+    return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
+        return snapshot.val();
+    }).then(player => {
+        var token = player["fcmToken"]
+        var topic = topicForLeague(leagueId)
+        if (token == undefined || token.length == 0) {
+            let message = "Subscribe to league topic: no token available"
+            return console.log(message)
+        } else if (isSubscribe) {
+            console.log("Subscribe to League topic: " + topic + " token: " + token)
+            return exports.subscribeToTopic(token, topic)
+        } else {
+            console.log("Unsubscribe to League topic: " + topic + " token: " + token)
+            return exports.unsubscribeFromTopic(token, topic)
+        }
+    })
+}
+
+exports.pushForLeagueFeedItem = function(leagueId, type, userId, message, exports, admin) {
+    return admin.database().ref(`/leagues/${leagueId}`).once('value').then(snapshot => {
+        if (!snapshot.exists()) {
+            throw new Error("League doesn't exist for push")
+        }
+        let league = snapshot.val()
+        var title = "New league message received" // should probably not happen
+        if (league.name != undefined) {
+            title = "New message in " + league.name
+        }
+        let topic = topicForLeague(leagueId)
+        var body = ""
+        var actionString = ""
+        if (type == "chat") {
+            actionString = " said: " + message
+        } else if (type == "photo") {
+            actionString = " sent a new photo to the league"
+        } else { // if an unknown action
+            throw new Error("Unknown feed item type")
+        }
+        return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
+            if (!snapshot.exists() || snapshot.val().name == undefined) {
+                body = "Someone" + actionString
+            } else {
+                body = snapshot.val().name + actionString
+            }
+            console.log("Push v1.0 for LeagueFeedItem: sending push " + title + " to " + topic + " with body " + body)
+            return exports.sendPushToTopic(title, topic, body)
+        })
+    }).catch(function(error) {
+        // catches this error so that the push doesn't cause the action to fail
+        return console.log("Push v1.0: Error sending push for feed item: ", error.message);
+    })
 }
 
 // test send push with explicit token

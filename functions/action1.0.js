@@ -6,6 +6,9 @@ exports.createAction = function(type, userId, eventId, message, defaultMessage, 
     var actionId = exports.createUniqueId()
 
     var params = {}
+    if (type == "chat") {
+        exports.createFeedItem
+    }
     params["type"] = type
     params["event"] = eventId
     params["user"] = userId

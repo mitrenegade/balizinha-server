@@ -12,11 +12,12 @@ const stripe1_1 = require('./stripe1.1')
 const adminUtils1_0 = require('./adminUtils1.0')
 const feedback1_0 = require('./feedback1.0')
 const share1_0 = require('./share1.0')
+const feed1_0 = require('./feed1.0')
 
 admin.initializeApp(functions.config().firebase);
 
 // TO TOGGLE BETWEEN DEV AND PROD: change this to .dev or .prod for functions:config variables to be correct
-const config = functions.config().prod
+const config = functions.config().dev
 const stripe = require('stripe')(config.stripe.token)
 // 1.4 leagues
 // 1.5 event.js, league.js, action.js, push.js
@@ -434,6 +435,13 @@ exports.unsubscribeFromTopic = function(token, topic) {
     return push1_0.subscribeToTopic(token, topic, admin)
 }
 
+exports.subscribeToLeague = function(leagueId, userId, isSubscribe) {
+    return push1_0.subscribeToLeague(leagueId, userId, isSubscribe, exports, admin)
+}
+
+exports.pushForLeagueFeedItem = function(leagueId, type, userId, message) {
+    return push1_0.pushForLeagueFeedItem(leagueId, type, userId, message, exports, admin)
+}
 // test
 exports.sendPush = function(token, msg) {
     return push1_0.sendPush(token, msg, exports, admin)
@@ -456,6 +464,16 @@ exports.submitFeedback = functions.https.onRequest((req, res) => {
  */
 exports.createDynamicLink = function(type, id, metadata) {
     return share1_0.createDynamicLink(exports, admin, type, id, metadata)
+}
+
+// FEED //////////////////////////////////////////////////////////////////////////////////
+exports.createFeedItem = functions.https.onRequest((req, res) => {
+//exports.createFeedItem = function(type, userId, leagueId, eventId, message, defaultMessage) {
+    return feed1_0.createFeedItem(req, res, exports, admin)
+})
+
+exports.convertActionChatToFeedItem = function(type, userId, eventId, message, defaultMessage) {
+    return feed1_0.convertActionChatToFeedItem(type, userId, leagueId, eventId, message, defaultMessage, exports, admin)
 }
 
 // UTILS - used by Admin app //////////////////////////////////////////////////////////////////////////////////
