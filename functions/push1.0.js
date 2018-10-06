@@ -127,6 +127,41 @@ exports.doSubscribeToLeagueTopic = function(leagueId, userId, isSubscribe, expor
     })
 }
 
+exports.pushForLeagueFeedItem = function(leagueId, type, userId, message, exports, admin) {
+    return admin.database().ref(`/leagues/${leagueId}`).once('value').then(snapshot => {
+        if (!snapshot.exists()) {
+            throw new Error("League doesn't exist for push")
+        }
+        let league = snapshot.val()
+        var title = "New league message received" // should probably not happen
+        if (league.name != undefined) {
+            title = "New message in " + league.name
+        }
+        let topic = topicForLeague(leagueId)
+        var message = ""
+        var actionString = ""
+        if (type == "chat") {
+            actionString = " said: " + message
+        } else if (type == "photo") {
+            actionString = " sent a new photo to the league"
+        } else { // if an unknown action
+            throw new Error("Unknown feed item type")
+        }
+        return admin.database().ref(`/players/${playerId}`).once('value').then(snapshot => {
+            if (!snapshot.exists() || snapshot.val().name == undefined) {
+                message = "Someone" + actionString
+            } else {
+                message = snapshot.val().name + actionString
+            }
+            console.log("Push v1.0 for LeagueFeedItem: sending push " + title + " to " + topic + " with message " + message)
+            return exports.sendPushToTopic(title, topic, message)
+        })
+    }).catch(function(error) {
+        // catches this error so that the push doesn't cause the action to fail
+        return console.log("Push v1.0: Error sending push for feed item: ", error.message);
+    })
+}
+
 // test send push with explicit token
 exports.sendPush = function(token, msg, admin) {
     //var testToken = "duvn2V1qsbk:APA91bEEy7DylD9iZctBtaKz5nS9CVZxpaAdaPwhIauzQ2jw81BF-oE0nhgvN3U10mqClTue0siwDH41JZP2kLqU0CkThOoBBdFQYWOr8X_6qHIknBE-Oa195qOy8XSbJvXeQj4wQa9T"

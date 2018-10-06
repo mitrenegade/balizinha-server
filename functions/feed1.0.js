@@ -36,5 +36,6 @@ doCreateFeedItem = function(type, userId, leagueId, eventId, message, defaultMes
         // create feedItem with type eventChat, with actionId
         // feedItems loaded with actionId should load the action and display it
         // or, events with actionId that is actually a feedItem should load a feedItem instead
+        return exports.pushForLeagueFeedItem(leagueId, type, userId, mesage)
     })
 }
