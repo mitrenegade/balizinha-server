@@ -75,7 +75,7 @@ exports.createEvent = function(req, res, exports, admin) {
         if (city == undefined) {
             placeName = place
         }
-        return exports.pushForCreateEvent(eventId, name, place)
+        return exports.pushForCreateEvent(eventId, league, name, place)
     }).then(result => {
         return res.status(200).json({"result": result, "eventId": eventId})
     }).catch(err => {

@@ -16,6 +16,13 @@ topicForEvent = function(eventId) {
     return "event" + eventId
 }
 
+topicForEventOrganizer = function(eventId) {
+    if (eventId == undefined) {
+        throw new Error("Event id must be specified for topic")
+    }
+    return "eventOrganizer" + eventId
+}
+
 // Send Push
 exports.sendPushToTopic = function(title, topic, body, admin) {
     var topicString = "/topics/" + topic
@@ -63,6 +70,7 @@ exports.refreshSubscriptions = function(req, res, exports, admin) {
     let userId = req.body.userId
 
     // user should be subscribed to leagues and events
+    // also event organizers
     var topics = []
     return admin.database().ref(`playerLeagues/${userId}`).once('value').then(snapshot => {
         snapshot.forEach(child => {
@@ -118,7 +126,7 @@ exports.createOrganizerTopicForNewEvent = function(eventId, organizerId, exports
         return snapshot.val();
     }).then(player => {
         var token = player["fcmToken"]
-        var topic = "eventOrganizer" + eventId
+        var topic = topicForEventOrganizer(eventId)
         if (token && token.length > 0) {
             console.log("CreateOrganizerTopicForNewEvent v1.0: " + eventId + " subscribing " + organizerId + " to " + topic)
             return subscribeToTopic(token, topic)
@@ -148,12 +156,12 @@ exports.subscribeToEvent = function(eventId, userId, join, exports, admin) {
     })
 }
 
-exports.pushForCreateEvent = function(eventId, name, place, exports, admin) {
+exports.pushForCreateEvent = function(eventId, leagueId, name, place, exports, admin) {
     var title = "New event available"
-    var topic = "general"
+    let topic = topicForLeague(leagueId)
     var msg = "A new event, " + name + ", is available in " + place
     console.log("Push v1.0 for CreateEvent: sending push " + title + " to " + topic + " with msg " + msg)
-    return exports.sendPushToTopic(title, topic, msg) // TODO: this gets called twice
+    return exports.sendPushToTopic(title, topic, msg)
 }
 
 exports.pushForJoinEvent = function(eventId, name, join, exports, admin) {
@@ -163,9 +171,9 @@ exports.pushForJoinEvent = function(eventId, name, join, exports, admin) {
 	}
     var msg = name + " has " + joinedString + " your game"
     var title = "Event update"
-    var organizerTopic = "eventOrganizer" + eventId // join/leave message only for owners
+    var topic = topicForEventOrganizer(eventId) // join/leave message only for owners
     console.log("Push v1.0 for JoinEvent: user " + name + " joined event " + organizerTopic + " with message: " + msg)
-    return exports.sendPushToTopic(title, organizerTopic, msg)
+    return exports.sendPushToTopic(title, topic, msg)
 }
 
 // leagues
