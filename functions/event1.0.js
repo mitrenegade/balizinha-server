@@ -142,6 +142,7 @@ exports.joinOrLeaveEvent = function(req, res, exports, admin) {
                 })
             } else {
                 // load player
+                console.log("JoinOrLeaveEvent: player " + userId + " is already part of event's league " + leagueId)
                 return admin.database().ref(`/players/${userId}`).once('value')
             }
         }).then(snapshot => { /////////// Load player and join event; filters for anonymous players
@@ -165,7 +166,11 @@ exports.joinOrLeaveEvent = function(req, res, exports, admin) {
     }
 
     return promise.then(result => {
-        console.log("JoinOrLeaveEvent v1.0: results " + JSON.stringify(result))
+        if (join) {
+            console.log("JoinOrLeaveEvent v1.0: join results " + JSON.stringify(result))
+        } else {
+            console.log("JoinOrLeaveEvent v1.0: leave results " + JSON.stringify(result))
+        }
         if (addedByOrganizer) {
             return exports.createAction("addedToEvent", userId, eventId, null, "A player was added to this game").then(result => {
                 return res.status(200).json({"result": result, "eventId": eventId})
@@ -259,8 +264,6 @@ exports.onUserJoinOrLeaveEvent = function(snapshot, context, exports, admin) {
     var eventUserChanged = false;
     var eventUserCreated = false;
 
-    var name = undefined
-
     if (!old.exists()) {
         eventUserCreated = true;
         console.log("OnUserJoinOrLeaveEvent v1.0: created user " + userId + " for event " + eventId + ": " + JSON.stringify(data))
@@ -270,38 +273,15 @@ exports.onUserJoinOrLeaveEvent = function(snapshot, context, exports, admin) {
         console.log("OnUserJoinOrLeaveEvent v1.0: updated user " + userId + " for event " + eventId + ": " + JSON.stringify(data))
     }
 
-    return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
-        return snapshot.val();
-    }).then(player => {
-        name = player["name"]
-        var joinedString = "joined"
-        if (data == false) {
-            joinedString = "left"
-        }
-
-        var token = player["fcmToken"]
-        var eventTopic = "event" + eventId
-        if (token && token.length > 0) {
-            console.log("Event v1.0: onUserJoinOrLeaveEvent user " + name + " " + joinedString + " topic " + eventTopic + " with token " + token)
-            if (data == true) {
-                return exports.subscribeToTopic(token, eventTopic)
-            } else {
-                return exports.unsubscribeFromTopic(token, eventTopic)
-            }
-        } else {
-            return console.log("Event v1.0: onUserJoinOrLeaveEvent user " + name + " " + joinedString + " topic " + eventTopic + " with no token!")
-        }
-    }).then(result => {
-        var join = true
-        if (data == false) {
-            join = false
-        }
-        exports.pushForJoinEvent(eventId, name, join)
+    var join = true
+    var type = "joinEvent"
+    if (data == false) {
+        join = false
+        type = "leaveEvent"
+    }
+    return exports.subscribeToEvent(eventId, userId, join).then(result => {
+        return exports.pushForJoinEvent(eventId, name, join)
     }).then( result => { 
-        var type = "joinEvent"
-        if (data == false) {
-            type = "leaveEvent"
-        }
         return exports.createAction(type, userId, eventId, null)
     })
 }

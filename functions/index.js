@@ -17,7 +17,7 @@ const feed1_0 = require('./feed1.0')
 admin.initializeApp(functions.config().firebase);
 
 // TO TOGGLE BETWEEN DEV AND PROD: change this to .dev or .prod for functions:config variables to be correct
-const config = functions.config().prod
+const config = functions.config().dev
 const stripe = require('stripe')(config.stripe.token)
 // 1.4 leagues
 // 1.5 event.js, league.js, action.js, push.js
@@ -413,6 +413,10 @@ exports.pushForChatAction = function(actionId, eventId, userId, data) {
 
 // PUSH //////////////////////////////////////////////////////////////////////////////////
 
+exports.refreshSubscriptions = functions.https.onRequest((req, res) => {
+    return push1_0.refreshSubscriptions(req, res, exports, admin)
+})
+
 // database changes
 exports.subscribeToOrganizerPush = functions.database.ref(`/organizers/{organizerId}`).onWrite((snapshot, context) => {
     return push1_0.subscribeToOrganizerPush(snapshot, context, exports, admin)
@@ -427,12 +431,8 @@ exports.sendPushToTopic = function(title, topic, msg) {
     return push1_0.sendPushToTopic(title, topic, msg, admin)
 }
 
-exports.subscribeToTopic = function(token, topic) {
-    return push1_0.subscribeToTopic(token, topic, admin)
-}
-
-exports.unsubscribeFromTopic = function(token, topic) {
-    return push1_0.subscribeToTopic(token, topic, admin)
+exports.subscribeToEvent = function(eventId, userId, join) {
+    return push1_0.subscribeToEvent(eventId, userId, join, exports, admin)
 }
 
 exports.subscribeToLeague = function(leagueId, userId, isSubscribe) {
@@ -442,6 +442,7 @@ exports.subscribeToLeague = function(leagueId, userId, isSubscribe) {
 exports.pushForLeagueFeedItem = function(leagueId, type, userId, message) {
     return push1_0.pushForLeagueFeedItem(leagueId, type, userId, message, exports, admin)
 }
+
 // test
 exports.sendPush = function(token, msg) {
     return push1_0.sendPush(token, msg, exports, admin)
