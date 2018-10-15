@@ -413,6 +413,10 @@ exports.pushForChatAction = function(actionId, eventId, userId, data) {
 
 // PUSH //////////////////////////////////////////////////////////////////////////////////
 
+exports.refreshPlayerSubscriptions = functions.https.onRequest((req, res) => {
+    return push1_0.refreshPlayerSubscriptions(req, res, exports, admin)
+})
+
 // database changes
 exports.subscribeToOrganizerPush = functions.database.ref(`/organizers/{organizerId}`).onWrite((snapshot, context) => {
     return push1_0.subscribeToOrganizerPush(snapshot, context, exports, admin)
