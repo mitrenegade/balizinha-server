@@ -413,10 +413,6 @@ exports.pushForChatAction = function(actionId, eventId, userId, data) {
 
 // PUSH //////////////////////////////////////////////////////////////////////////////////
 
-exports.refreshSubscriptions = functions.https.onRequest((req, res) => {
-    return push1_0.refreshSubscriptions(req, res, exports, admin)
-})
-
 // database changes
 exports.subscribeToOrganizerPush = functions.database.ref(`/organizers/{organizerId}`).onWrite((snapshot, context) => {
     return push1_0.subscribeToOrganizerPush(snapshot, context, exports, admin)
@@ -508,6 +504,19 @@ exports.cleanupAnonymousAuth = functions.runWith(runtimeOpts).https.onRequest((r
 exports.generateShareLink = functions.https.onRequest((req, res) => {
     return adminUtils1_0.generateShareLink(req, res, exports, admin)
 })
+
+/**
+ * params: userId, topic: String
+ * enabled: Bool
+ * result: {success}
+ *
+ * Enables subscriptions for a single user by adding all leagues and events to /playerTopics
+ */
+exports.refreshAllPlayerTopics = functions.https.onRequest((req, res) => {
+    return push1_0.refreshAllPlayerTopics(req, res, exports, admin)
+})
+
+
 
 /* Resources
 * Versioning: https://github.com/googleapis/nodejs-datastore/tree/master/src
