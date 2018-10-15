@@ -282,7 +282,7 @@ exports.refreshAllPlayerTopics = function(req, res, exports, admin) {
     var topics = {}
     return admin.database().ref(`playerLeagues/${userId}`).once('value').then(snapshot => {
         snapshot.forEach(child => {
-            if (child.val().exists) {
+            if (child.exists) {
                 let leagueId = child.key
                 let status = child.val()
                 let leagueTopic = topicForLeague(leagueId)
@@ -294,21 +294,26 @@ exports.refreshAllPlayerTopics = function(req, res, exports, admin) {
             }
         })
 
-        console.log("refreshAllPlayerTopics: leagues done")    
+        console.log("refreshAllPlayerTopics: leagues done with snapshot " + JSON.stringify(snapshot))    
         return admin.database().ref(`userEvents/${userId}`).once('value').then(snapshot => {
             snapshot.forEach(child => {
-                if (child.val().exists) {
+                if (child.exists) {
                     let eventId = child.key
                     let active = child.val()
                     let eventTopic = topicForEvent(eventId)
                     topics[eventTopic] = active
                 }
             })
-            console.log("refreshAllPlayerTopics: events done")
+            return console.log("refreshAllPlayerTopics: events done with snapshot " + JSON.stringify(snapshot))    
         })
-    }).then(result => {
+    }).then(() => {
         console.log("refreshAllPlayerTopics: user " + userId + " topics " + JSON.stringify(topics))
         return admin.database().ref(`playerTopics/${userId}`).update(topics)
+    }).then(() => {
+        res.status(200).json({"success": true})
+    }).catch(err => {
+        console.log("refreshAllPlayerTopics error: " + JSON.stringify(err));
+        return res.status(500).json({"error": err.message})
     })
 }
 
