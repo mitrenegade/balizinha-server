@@ -280,6 +280,12 @@ exports.onUserJoinOrLeaveEvent = function(snapshot, context, exports, admin) {
         type = "leaveEvent"
     }
     return exports.subscribeToEvent(eventId, userId, join).then(result => {
+        return admin.database().ref(`/players/${userId}`).once('value')
+    }).then(snapshot => {
+        var name = snapshot.val().name
+        if (name == undefined) {
+            name = snapshot.val().email
+        }
         return exports.pushForJoinEvent(eventId, name, join)
     }).then( result => { 
         return exports.createAction(type, userId, eventId, null)

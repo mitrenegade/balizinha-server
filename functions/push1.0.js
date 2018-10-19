@@ -274,11 +274,7 @@ exports.sendPush = function(token, msg, admin) {
 
 // admin function, but needs some private functions here
 // Adds topics for a single user by adding all leagues and events to /playerTopics
-exports.refreshAllPlayerTopics = function(req, res, exports, admin) {
-    let userId = req.body.userId
-
-    console.log("refreshAllPlayerTopics: user " + userId)
-    // user should be subscribed to leagues and events
+doRefreshPlayerTopics = function(userId) {
     var topics = {}
     return admin.database().ref(`playerLeagues/${userId}`).once('value').then(snapshot => {
         snapshot.forEach(child => {
@@ -309,7 +305,15 @@ exports.refreshAllPlayerTopics = function(req, res, exports, admin) {
     }).then(() => {
         console.log("refreshAllPlayerTopics: user " + userId + " topics " + JSON.stringify(topics))
         return admin.database().ref(`playerTopics/${userId}`).update(topics)
-    }).then(() => {
+    })
+}
+
+exports.refreshAllPlayerTopics = function(req, res, exports, admin) {
+    let userId = req.body.userId
+
+    console.log("refreshAllPlayerTopics: user " + userId)
+    // user should be subscribed to leagues and events
+    return doRefreshPlayerTopics(userId).then(() => {
         res.status(200).json({"success": true})
     }).catch(err => {
         console.log("refreshAllPlayerTopics error: " + JSON.stringify(err));
@@ -321,47 +325,51 @@ exports.refreshPlayerSubscriptions = function(req, res, exports, admin) {
     let userId = req.body.userId
     var pushEnabled = req.body.pushEnabled
 
-    console.log("RefreshPlayerSubscriptions: user " + userId + " pushEnabled " + pushEnabled)
     var topics = {}
     return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
         let player = snapshot.val()
         let token = player["fcmToken"]
-        return token
-    }).then(token => {
+        console.log("RefreshPlayerSubscriptions: user " + userId + " pushEnabled " + pushEnabled + " for token " + token)
         // if token doesn't exist, then automatically becomes unsubscribe
         if (token == undefined) {
+            console.log("RefreshPlayerSubscriptions: player " + userId + " does not have a token")
             throw new Error("No token found, cannot subscribe or unsubscribe")
             return
         }
-        console.log("refreshPlayerSubscriptions: player has token: " + token)
         return admin.database().ref(`playerTopics/${userId}`).once('value').then(snapshot => {
-            if (!snapshot.exists) {
+            if (!snapshot.exists()) {
                 console.log("RefreshPlayerSubscriptions v1.0: no topics found for userId " + userId)
-                throw new Error("No topics found for " + userId)
-                return
-            }
-
-            var subscribed = 0
-            var unsubscribed = 0
-            snapshot.forEach(child => {
-                if (child.exists) {
+                return doRefreshPlayerTopics(userId).then(() => {
+                    return refreshPlayerSubscriptions(req, res, exports, admin)
+                })
+            } else {
+                console.log("refreshPlayerSubscriptions: player has " + snapshot.numChildren() + " topics. snapshot: " + JSON.stringify(snapshot))
+                var subscribed = 0
+                var unsubscribed = 0
+                var promises = []
+                snapshot.forEach(child => {
                     let topic = child.key
                     let active = child.val()
                     if (active) {
                         if (pushEnabled) {
                             // active means the user is part of the league or event
-                            subscribeToTopic(token, topic)
+                            var promiseRef = subscribeToTopic(token, topic)
+                            promises.push(promiseRef)                            
                             subscribed = subscribed + 1
                         } else {
-                            unsubscribeFromTopic(token, topic)
+                            var promiseRef = unsubscribeFromTopic(token, topic)                           
+                            promises.push(promiseRef)                            
                             unsubscribed = unsubscribed + 1
                         }
+                        console.log("Adding promise for topic " + topic)
                     } // else no need to enable/disable it
-                }
-            })
+                })
 
-            console.log("RefreshPlayerSubscriptions: subscribed " + subscribed + " unsubscribed " + unsubscribed)
-            return res.status(200).json({"success": true})
+                return Promise.all(promises).then(result => {
+                    console.log("RefreshPlayerSubscriptions: subscribed " + subscribed + " unsubscribed " + unsubscribed)
+                    return res.status(200).json({"success": true, "subscribed": subscribed, "unsubscribed": unsubscribed})
+                })
+            }
         })
     }).catch(err => {
         console.log("RefreshPlayerSubscriptions error: " + JSON.stringify(err));
