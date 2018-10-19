@@ -1,43 +1,29 @@
 //const axios = require('axios');
 //const functions = require('firebase-functions');
-//const admin = require('firebase-admin');
+const admin = require('firebase-admin');
 
-// https://aaronczichon.de/2017/03/13/firebase-cloud-functions/
-exports.subscribeToOrganizerPush = function(snapshot, context, exports, admin) {
-    var organizerId = context.params.organizerId
-    var val = snapshot.after.val()
-
-    return admin.database().ref(`/players/${organizerId}`).once('value').then(snapshot => {
-        return snapshot.val();
-    }).then(player => {
-        var token = player["fcmToken"]
-        var topic = "organizers"
-        if (token && token.length > 0) {
-            console.log("organizer: created " + organizerId + " subscribed to organizers")
-            return exports.subscribeToTopic(token, topic)
-        } else {
-            console.log("subscribeToOrganizerPush: logged in with id: " + organizerId + " but no token available")
-        }
-    })
+topicForLeague = function(leagueId) {
+    if (leagueId == undefined) {
+        throw new Error("League id must be specified for topic")
+    }
+    return "league" + leagueId
 }
 
-exports.createOrganizerTopicForNewEvent = function(eventId, organizerId, exports, admin) {
-    // subscribe organizer to event topic - messages about users joining and leaving
-    return admin.database().ref(`/players/${organizerId}`).once('value').then(snapshot => {
-        return snapshot.val();
-    }).then(player => {
-        var token = player["fcmToken"]
-        var topic = "eventOrganizer" + eventId
-        if (token && token.length > 0) {
-        	console.log("CreateOrganizerTopicForNewEvent v1.0: " + eventId + " subscribing " + organizerId + " to " + topic)
-            return exports.subscribeToTopic(token, topic)
-        } else {
-            return console.log("CreateOrganizerTopicForNewEvent v1.0: " + eventId + " user " + organizerId + " did not have fcm token")
-        }
-    })
+topicForEvent = function(eventId) {
+    if (eventId == undefined) {
+        throw new Error("Event id must be specified for topic")
+    }
+    return "event" + eventId
 }
 
-// Push
+topicForEventOrganizer = function(eventId) {
+    if (eventId == undefined) {
+        throw new Error("Event id must be specified for topic")
+    }
+    return "eventOrganizer" + eventId
+}
+
+// Send Push
 exports.sendPushToTopic = function(title, topic, body, admin) {
     var topicString = "/topics/" + topic
     // topicString = topicString.replace(/-/g , '_');
@@ -53,8 +39,9 @@ exports.sendPushToTopic = function(title, topic, body, admin) {
     return admin.messaging().sendToTopic(topicString, payload);
 }
 
-exports.subscribeToTopic = function(token, topic, admin) {
-    admin.messaging().subscribeToTopic(token, topic)
+// Subscription
+subscribeToTopic = function(token, topic) {
+    return admin.messaging().subscribeToTopic(token, topic)
         .then(function(response) {
         // See the MessagingTopicManagementResponse reference documentation
         // for the contents of response.
@@ -66,8 +53,8 @@ exports.subscribeToTopic = function(token, topic, admin) {
     );
 }
 
-exports.unsubscribeFromTopic = function(token, topic, admin) {
-    admin.messaging().unsubscribeFromTopic(token, topic)
+unsubscribeFromTopic = function(token, topic) {
+    return admin.messaging().unsubscribeFromTopic(token, topic)
         .then(function(response) {
         // See the MessagingTopicManagementResponse reference documentation
         // for the contents of response.
@@ -79,12 +66,120 @@ exports.unsubscribeFromTopic = function(token, topic, admin) {
     );
 }
 
-exports.pushForCreateEvent = function(eventId, name, place, exports, admin) {
+// subscription list on player
+doUpdateSubscriptionStatus = function(userId, topic, enabled) {
+    var params = {[topic]: enabled}
+    if (enabled) {
+        console.log("DoUpdateSubscriptionStatus SUBSCRIBE for user: " + userId + " topic " + topic)
+    } else {
+        console.log("DoUpdateSubscriptionStatus UNSUBSCRIBE for user: " + userId + " topic " + topic)
+    }
+    return admin.database().ref(`playerTopics/${userId}`).update(params)
+}
+
+exports.refreshSubscriptions = function(req, res, exports, admin) {
+    let userId = req.body.userId
+    let pushEnabled = req.body.enabled
+
+    // // user should be subscribed to leagues and events
+    // // also event organizers
+    // var topics = []
+    // return admin.database().ref(`playerLeagues/${userId}`).once('value').then(snapshot => {
+    //     snapshot.forEach(child => {
+    //         if (child.val().exists) {
+    //             let leagueId = child.key
+    //             let status = child.val()
+    //             if (status == "member" || status == "organizer") {
+    //                 let leagueTopic = topicForLeague(leagueId)
+    //                 topics.append(leagueTopic)
+    //             }
+    //         }
+    //     })
+    //     return admin.database().ref(`userEvents/${userId}`).once('value').then(snapshot => {
+    //         snapshot.forEach(child => {
+    //             if (child.val().exists) {
+    //                 let eventId = child.key
+    //                 let active = child.val()
+    //                 if (active == true) {
+    //                     let eventTopic = topicForEvent(eventId)
+    //                     topics.append(eventTopic)
+    //                 }
+    //             }
+    //         })
+
+    //         return console.log("refreshAllPlayerTopics: user " + userId + " topics " + JSON.stringify(topics))
+    //     })
+    // })
+}
+
+// Organizers
+// https://aaronczichon.de/2017/03/13/firebase-cloud-functions/
+exports.subscribeToOrganizerPush = function(snapshot, context, exports, admin) {
+    var organizerId = context.params.organizerId
+    var val = snapshot.after.val()
+    let topic = "organizers"
+
+    return admin.database().ref(`/players/${organizerId}`).once('value').then(snapshot => {
+        return snapshot.val();
+    }).then(player => {
+        var token = player["fcmToken"]
+        if (token && token.length > 0) {
+            console.log("organizer: created " + organizerId + " subscribed to organizers")
+            return subscribeToTopic(token, topic)
+        } else {
+            console.log("subscribeToOrganizerPush: logged in with id: " + organizerId + " but no token available")
+        }
+    }).then(result => {
+        return doUpdateSubscriptionStatus(organizerId, topic, true)
+    })
+}
+
+exports.createOrganizerTopicForNewEvent = function(eventId, organizerId, exports, admin) {
+    // subscribe organizer to event topic - messages about users joining and leaving
+    let topic = topicForEventOrganizer(eventId)
+    return admin.database().ref(`/players/${organizerId}`).once('value').then(snapshot => {
+        return snapshot.val();
+    }).then(player => {
+        var token = player["fcmToken"]
+        if (token && token.length > 0) {
+            console.log("CreateOrganizerTopicForNewEvent v1.0: " + eventId + " subscribing " + organizerId + " to " + topic)
+            return subscribeToTopic(token, topic)
+        } else {
+            return console.log("CreateOrganizerTopicForNewEvent v1.0: " + eventId + " user " + organizerId + " did not have fcm token")
+        }
+    }).then(result => {
+        return doUpdateSubscriptionStatus(organizerId, topic, true)
+    })
+}
+
+// Events
+exports.subscribeToEvent = function(eventId, userId, join, exports, admin) {
+    console.log("SubscribeToEvent: " + eventId + " user: " + userId + " joining: " + join)
+    let topic = topicForEvent(eventId)
+    return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
+        let player = snapshot.val()
+        var token = player["fcmToken"]
+        if (token == undefined || token.length == 0) {
+            let message = "Subscribe to event topic: no token available"
+            return console.log(message)
+        } else if (join) {
+            console.log("Subscribe to event topic: " + topic + " token: " + token)
+            return subscribeToTopic(token, topic)
+        } else {
+            console.log("Unsubscribe to event topic: " + topic + " token: " + token)
+            return unsubscribeFromTopic(token, topic)
+        }
+    }).then(result => {
+        return doUpdateSubscriptionStatus(userId, topic, join)
+    })
+}
+
+exports.pushForCreateEvent = function(eventId, leagueId, name, place, exports, admin) {
     var title = "New event available"
-    var topic = "general"
+    let topic = topicForLeague(leagueId)
     var msg = "A new event, " + name + ", is available in " + place
     console.log("Push v1.0 for CreateEvent: sending push " + title + " to " + topic + " with msg " + msg)
-    return exports.sendPushToTopic(title, topic, msg) // TODO: this gets called twice
+    return exports.sendPushToTopic(title, topic, msg)
 }
 
 exports.pushForJoinEvent = function(eventId, name, join, exports, admin) {
@@ -94,36 +189,31 @@ exports.pushForJoinEvent = function(eventId, name, join, exports, admin) {
 	}
     var msg = name + " has " + joinedString + " your game"
     var title = "Event update"
-    var organizerTopic = "eventOrganizer" + eventId // join/leave message only for owners
+    var topic = topicForEventOrganizer(eventId) // join/leave message only for owners
     console.log("Push v1.0 for JoinEvent: user " + name + " joined event " + organizerTopic + " with message: " + msg)
-    return exports.sendPushToTopic(title, organizerTopic, msg)
+    return exports.sendPushToTopic(title, topic, msg)
 }
 
 // leagues
-topicForLeague = function(leagueId) {
-    if (leagueId == undefined) {
-        throw new Error("League id must be specified for topic")
-    }
-    return "league" + leagueId
-}
-
 exports.subscribeToLeague = function(leagueId, userId, isSubscribe, exports, admin) {
     // subscribe a player to a topic for a league
+    console.log("SubscribeToLeague: " + leagueId + " user: " + userId + " isSubscribe: " + isSubscribe)
+    let topic = topicForLeague(leagueId)
     return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
-        return snapshot.val();
-    }).then(player => {
+        let player = snapshot.val()
         var token = player["fcmToken"]
-        var topic = topicForLeague(leagueId)
         if (token == undefined || token.length == 0) {
             let message = "Subscribe to league topic: no token available"
             return console.log(message)
         } else if (isSubscribe) {
             console.log("Subscribe to League topic: " + topic + " token: " + token)
-            return exports.subscribeToTopic(token, topic)
+            return subscribeToTopic(token, topic)
         } else {
             console.log("Unsubscribe to League topic: " + topic + " token: " + token)
-            return exports.unsubscribeFromTopic(token, topic)
+            return unsubscribeFromTopic(token, topic)
         }
+    }).then(result => {
+        return doUpdateSubscriptionStatus(userId, topic, isSubscribe)
     })
 }
 
@@ -180,5 +270,110 @@ exports.sendPush = function(token, msg, admin) {
         }
     };
     return admin.messaging().sendToDevice(tokens, payload);
+}
+
+// admin function, but needs some private functions here
+// Adds topics for a single user by adding all leagues and events to /playerTopics
+doRefreshPlayerTopics = function(userId) {
+    var topics = {}
+    return admin.database().ref(`playerLeagues/${userId}`).once('value').then(snapshot => {
+        snapshot.forEach(child => {
+            if (child.exists) {
+                let leagueId = child.key
+                let status = child.val()
+                let leagueTopic = topicForLeague(leagueId)
+                if (status == "member" || status == "organizer") {
+                    topics[leagueTopic] = true
+                } else {
+                    topics[leagueTopic] = false
+                }
+            }
+        })
+
+        console.log("refreshAllPlayerTopics: leagues done with snapshot " + JSON.stringify(snapshot))    
+        return admin.database().ref(`userEvents/${userId}`).once('value').then(snapshot => {
+            snapshot.forEach(child => {
+                if (child.exists) {
+                    let eventId = child.key
+                    let active = child.val()
+                    let eventTopic = topicForEvent(eventId)
+                    topics[eventTopic] = active
+                }
+            })
+            return console.log("refreshAllPlayerTopics: events done with snapshot " + JSON.stringify(snapshot))    
+        })
+    }).then(() => {
+        console.log("refreshAllPlayerTopics: user " + userId + " topics " + JSON.stringify(topics))
+        return admin.database().ref(`playerTopics/${userId}`).update(topics)
+    })
+}
+
+exports.refreshAllPlayerTopics = function(req, res, exports, admin) {
+    let userId = req.body.userId
+
+    console.log("refreshAllPlayerTopics: user " + userId)
+    // user should be subscribed to leagues and events
+    return doRefreshPlayerTopics(userId).then(() => {
+        res.status(200).json({"success": true})
+    }).catch(err => {
+        console.log("refreshAllPlayerTopics error: " + JSON.stringify(err));
+        return res.status(500).json({"error": err.message})
+    })
+}
+
+exports.refreshPlayerSubscriptions = function(req, res, exports, admin) {
+    let userId = req.body.userId
+    var pushEnabled = req.body.pushEnabled
+
+    var topics = {}
+    return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
+        let player = snapshot.val()
+        let token = player["fcmToken"]
+        console.log("RefreshPlayerSubscriptions: user " + userId + " pushEnabled " + pushEnabled + " for token " + token)
+        // if token doesn't exist, then automatically becomes unsubscribe
+        if (token == undefined) {
+            console.log("RefreshPlayerSubscriptions: player " + userId + " does not have a token")
+            throw new Error("No token found, cannot subscribe or unsubscribe")
+            return
+        }
+        return admin.database().ref(`playerTopics/${userId}`).once('value').then(snapshot => {
+            if (!snapshot.exists()) {
+                console.log("RefreshPlayerSubscriptions v1.0: no topics found for userId " + userId)
+                return doRefreshPlayerTopics(userId).then(() => {
+                    return refreshPlayerSubscriptions(req, res, exports, admin)
+                })
+            } else {
+                console.log("refreshPlayerSubscriptions: player has " + snapshot.numChildren() + " topics. snapshot: " + JSON.stringify(snapshot))
+                var subscribed = 0
+                var unsubscribed = 0
+                var promises = []
+                snapshot.forEach(child => {
+                    let topic = child.key
+                    let active = child.val()
+                    if (active) {
+                        if (pushEnabled) {
+                            // active means the user is part of the league or event
+                            var promiseRef = subscribeToTopic(token, topic)
+                            promises.push(promiseRef)                            
+                            subscribed = subscribed + 1
+                        } else {
+                            var promiseRef = unsubscribeFromTopic(token, topic)                           
+                            promises.push(promiseRef)                            
+                            unsubscribed = unsubscribed + 1
+                        }
+                        console.log("Adding promise for topic " + topic)
+                    } // else no need to enable/disable it
+                })
+
+                return Promise.all(promises).then(result => {
+                    console.log("RefreshPlayerSubscriptions: subscribed " + subscribed + " unsubscribed " + unsubscribed)
+                    return res.status(200).json({"success": true, "subscribed": subscribed, "unsubscribed": unsubscribed})
+                })
+            }
+        })
+    }).catch(err => {
+        console.log("RefreshPlayerSubscriptions error: " + JSON.stringify(err));
+        return res.status(500).json({"error": err.message})
+    })
 }
 
