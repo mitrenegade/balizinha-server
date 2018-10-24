@@ -2,6 +2,8 @@
 exports.createAction = function(type, userId, eventId, message, defaultMessage, exports, admin) {
     console.log("createAction type: " + type + " event id: " + eventId + " message: " + message)
     // NOTE: ref url is actions. iOS < v0.7.1 uses /action
+    // This is called for event actions such as joinEvent, leaveEvent, createEvent
+    // - does not include chats which are created through an action service call
 
     var actionId = exports.createUniqueId()
 
@@ -11,6 +13,7 @@ exports.createAction = function(type, userId, eventId, message, defaultMessage, 
     }
     params["type"] = type
     params["event"] = eventId
+    params["eventId"] = eventId // slowly transitioning to use eventId
     params["user"] = userId
     params["message"] = message
     var createdAt = exports.secondsSince1970()
@@ -35,7 +38,9 @@ exports.createAction = function(type, userId, eventId, message, defaultMessage, 
             // when initializing a dict, use [var] notation. otherwise use params[var] = val
             var params = { [actionId] : true}
             console.log("Creating eventAction for event " + eventId + " and action " + actionId + " with params " + JSON.stringify(params))
-            return admin.database().ref(ref).update(params)
+            return admin.database().ref(ref).update(params).then(() => {
+                return exports.createFeedItemForEventAction(type, userId, actionId, message, defaultMessage)
+            })
         }
     })
 }

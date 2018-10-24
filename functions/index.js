@@ -473,8 +473,8 @@ exports.createFeedItem = functions.https.onRequest((req, res) => {
     return feed1_0.createFeedItem(req, res, exports, admin)
 })
 
-exports.convertActionChatToFeedItem = function(type, userId, eventId, message, defaultMessage) {
-    return feed1_0.convertActionChatToFeedItem(type, userId, leagueId, eventId, message, defaultMessage, exports, admin)
+exports.createFeedItemForEventAction = function(type, userId, actionId, message, defaultMessage) {
+    return feed1_0.createFeedItemForEventAction(type, userId, actionId, message, defaultMessage, exports, admin)
 }
 
 exports.createFeedItemForJoinLeaveLeague = function(userId, leagueId, isJoin) {
