@@ -1,3 +1,9 @@
+// types supported by mobile client:
+// chat
+// photo
+// other
+// action
+
 exports.createFeedItem = function(req, res, exports, admin) {
 	let type = req.body.type
     let feedItemId = req.body.id
@@ -8,10 +14,48 @@ exports.createFeedItem = function(req, res, exports, admin) {
 	let defaultMessage = req.body.defaultMessage
     console.log("createFeedItem type: " + type + " league id: " + leagueId + " event id: " + eventId + " message: " + message)
 
-    return doCreateFeedItem(feedItemId, type, userId, leagueId, eventId, message, defaultMessage, exports, admin).then(() => {
+    return doCreateFeedItem(feedItemId, type, userId, leagueId, eventId, message, defaultMessage, exports, admin).then(feedItem => {
+        // create eventAction
+        // BOBBY TODO: when a chat is created under event, a feedItem should be created with a different type than message or photo
+        // create feedItem with type eventChat, with actionId
+        // feedItems loaded with actionId should load the action and display it
+        // or, events with actionId that is actually a feedItem should load a feedItem instead
+        return exports.pushForLeagueFeedItem(leagueId, type, userId, message)
+    }).then(() => {
     	res.status(200).json({"result": "success"})
     }).catch(function(error) {
     	res.status(500).json({"error": error.message})
+    })
+}
+
+exports.createFeedItemForJoinLeaveLeague = function(userId, leagueId, isJoin, exports, admin) {
+    // create a feed item when something happens in the league, ie join
+    var type = "action"
+    var name = "Someone"
+    let ref = `/players/` + userId
+    return admin.database().ref(ref).once('value').then(snapshot => {
+        if (!snapshot.exists()) {
+            return // do not create feedItem
+        }
+        console.log("createFeedItemForJoinLeaveLeague found player " + userId + ": " + JSON.stringify(snapshot.val()))
+        name = snapshot.val().name
+        let ref = `/leagues/` + leagueId
+        return admin.database().ref(ref).once('value')
+    }).then(snapshot => {
+        if (!snapshot.exists()) {
+            return
+        }
+        console.log("createFeedItemForJoinLeaveLeague found league " + leagueId + ": " + JSON.stringify(snapshot.val()))
+        let league = snapshot.val().name
+        var joinString = " joined "
+        if (!isJoin) {
+            joinString = " left "
+        }
+        let message = name + joinString + league
+        let defaultMessage = message
+        let id = exports.createUniqueId()
+        console.log("createFeedItemForJoinLeague 1.0: creating feedItem with message " + message)
+        return doCreateFeedItem(id, type, userId, leagueId, undefined, message, defaultMessage, exports, admin)
     })
 }
 
@@ -39,12 +83,5 @@ doCreateFeedItem = function(id, type, userId, leagueId, eventId, message, defaul
     }
 
     var ref = `/feedItems/` + feedItemId
-    return admin.database().ref(ref).set(params).then(feedItem => {
-        // create eventAction
-        // BOBBY TODO: when a chat is created under event, a feedItem should be created with a different type than message or photo
-        // create feedItem with type eventChat, with actionId
-        // feedItems loaded with actionId should load the action and display it
-        // or, events with actionId that is actually a feedItem should load a feedItem instead
-        return exports.pushForLeagueFeedItem(leagueId, type, userId, message)
-    })
+    return admin.database().ref(ref).set(params)
 }
