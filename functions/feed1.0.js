@@ -37,7 +37,6 @@ exports.createFeedItemForJoinLeaveLeague = function(userId, leagueId, isJoin, ex
         if (!snapshot.exists()) {
             return // do not create feedItem
         }
-        console.log("createFeedItemForJoinLeaveLeague found player " + userId + ": " + JSON.stringify(snapshot.val()))
         name = snapshot.val().name
         let ref = `/leagues/` + leagueId
         return admin.database().ref(ref).once('value')
@@ -45,7 +44,6 @@ exports.createFeedItemForJoinLeaveLeague = function(userId, leagueId, isJoin, ex
         if (!snapshot.exists()) {
             return
         }
-        console.log("createFeedItemForJoinLeaveLeague found league " + leagueId + ": " + JSON.stringify(snapshot.val()))
         let league = snapshot.val().name
         var joinString = " joined "
         if (!isJoin) {
