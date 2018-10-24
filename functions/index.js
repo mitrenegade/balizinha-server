@@ -22,7 +22,7 @@ const stripe = require('stripe')(config.stripe.token)
 // 1.4 leagues
 // 1.5 event.js, league.js, action.js, push.js
 const API_VERSION = 1.0
-const BUILD_VERSION = 114 // for internal tracking
+const BUILD_VERSION = 115 // for internal tracking
 
 // CONSTANT Utils //////////////////////////////////////////////////////////////////////////////////
 exports.isDev = function() {
@@ -473,8 +473,12 @@ exports.createFeedItem = functions.https.onRequest((req, res) => {
     return feed1_0.createFeedItem(req, res, exports, admin)
 })
 
-exports.convertActionChatToFeedItem = function(type, userId, eventId, message, defaultMessage) {
-    return feed1_0.convertActionChatToFeedItem(type, userId, leagueId, eventId, message, defaultMessage, exports, admin)
+exports.createFeedItemForEventAction = function(type, userId, actionId, message, defaultMessage) {
+    return feed1_0.createFeedItemForEventAction(type, userId, actionId, message, defaultMessage, exports, admin)
+}
+
+exports.createFeedItemForJoinLeaveLeague = function(userId, leagueId, isJoin) {
+    return feed1_0.createFeedItemForJoinLeaveLeague(userId, leagueId, isJoin, exports, admin) 
 }
 
 // UTILS - used by Admin app //////////////////////////////////////////////////////////////////////////////////

@@ -38,6 +38,7 @@ exports.createEvent = function(req, res, exports, admin) {
     params["createdAt"] = createdAt
     params["organizer"] = userId
     params["owner"] = userId // older apps used "owner" as the organizer
+    params["leagueId"] = league // older apps use "league"; new apps should use "leagueId"
 
     // optional params
     if (paymentRequired) { params["paymentRequired"] = paymentRequired }

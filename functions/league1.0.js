@@ -64,6 +64,8 @@ exports.joinLeaveLeague = function(req, res, exports, admin) {
 		// subscribe to league
 		return exports.subscribeToLeague(leagueId, userId, isJoin)
 	}).then(() => {
+		return exports.createFeedItemForJoinLeaveLeague(userId, leagueId, isJoin)
+	}).then(() => {
 		return res.send(200, {"result": "success"})
 	}).catch( (err) => {
     	console.log("JoinLeaveLeague v1.0: league " + leagueId + " error: " + err)

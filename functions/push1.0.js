@@ -190,7 +190,7 @@ exports.pushForJoinEvent = function(eventId, name, join, exports, admin) {
     var msg = name + " has " + joinedString + " your game"
     var title = "Event update"
     var topic = topicForEventOrganizer(eventId) // join/leave message only for owners
-    console.log("Push v1.0 for JoinEvent: user " + name + " joined event " + organizerTopic + " with message: " + msg)
+    console.log("Push v1.0 for JoinEvent: user " + name + " joined event " + topic + " with message: " + msg)
     return exports.sendPushToTopic(title, topic, msg)
 }
 
