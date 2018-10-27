@@ -8,13 +8,11 @@ exports.createAction = function(type, userId, eventId, message, defaultMessage, 
     var actionId = exports.createUniqueId()
 
     var params = {}
-    if (type == "chat") {
-        exports.createFeedItem
-    }
     params["type"] = type
     params["event"] = eventId
     params["eventId"] = eventId // slowly transitioning to use eventId
     params["user"] = userId
+    params["userId"] = userId // slowly transitioning to use userId
     params["message"] = message
     var createdAt = exports.secondsSince1970()
     params["createdAt"] = createdAt
@@ -42,6 +40,23 @@ exports.createAction = function(type, userId, eventId, message, defaultMessage, 
                 return exports.createFeedItemForEventAction(type, userId, actionId, message, defaultMessage)
             })
         }
+    }).then(() => {
+        return actionId
+    })
+}
+
+exports.postChat = function(req, res, exports, admin) {
+    let userId = req.body.userId
+    let eventId = req.body.eventId
+    let message = req.body.message
+
+    let type = "chat"
+
+    // this triggers side effects in createAction: createFeedItemForEventAction
+    // this also triggers side effects in onActionChange: adding player name, createdAt, and pushForChatAction
+    return exports.createAction(type, userId, eventId, message, undefined, exports, admin).then((result) => {
+        console.log("postChat: created action with id " + result)
+        res.status(200).json({"actionId": result})
     })
 }
 

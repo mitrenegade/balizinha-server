@@ -91,6 +91,8 @@ exports.createFeedItemForEventAction = function(type, userId, actionId, message,
             feedMessage = username + " joined " + eventName
         } else if (type == "leaveEvent") {
             feedMessage = username + " left " + eventName
+        } else if (type == "chat") {
+            feedMessage = username + " said: " + message
         } else {
             feedMessage = undefined
         }
