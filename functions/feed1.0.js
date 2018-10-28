@@ -31,17 +31,19 @@ exports.createFeedItemForJoinLeaveLeague = function(userId, leagueId, isJoin, ex
     // create a feed item when something happens in the league, ie join
     var type = "action"
     var name = "Someone"
-    let ref = `/players/` + userId
-    return admin.database().ref(ref).once('value').then(snapshot => {
+    console.log("createFeedItemForJoinLeaveLeague: userId " + userId + " leagueId " + leagueId)
+    return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
         if (!snapshot.exists()) {
-            return // do not create feedItem
+            console.log("createFeedItemForJoinLeaveLeague: no player found")
+            throw new Error("Invalid player")
         }
         name = snapshot.val().name
         let ref = `/leagues/` + leagueId
         return admin.database().ref(ref).once('value')
     }).then(snapshot => {
         if (!snapshot.exists()) {
-            return
+            console.log("createFeedItemForJoinLeaveLeague: no league found")
+            throw new Error("Invalid league")
         }
         let league = snapshot.val().name
         var joinString = " joined "

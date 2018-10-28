@@ -59,7 +59,13 @@ exports.joinLeaveLeague = function(req, res, exports, admin) {
 		status = "none"
 	}
 	console.log("JoinLeaveLeague v1.0 status " + status + " userId " + userId + " leagueId " + leagueId)
-	return exports.doUpdatePlayerStatus(admin, userId, leagueId, status).then(result => {
+    return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
+        if (!snapshot.exists()) {
+            console.log("createFeedItemForJoinLeaveLeague: no player found")
+            throw new Error("Invalid player")
+        }
+        return exports.doUpdatePlayerStatus(admin, userId, leagueId, status)
+    }).then(() => {
 		console.log("JoinLeaveLeague v1.0: success " + JSON.stringify(result))
 		// subscribe to league
 		return exports.subscribeToLeague(leagueId, userId, isJoin)
@@ -68,7 +74,7 @@ exports.joinLeaveLeague = function(req, res, exports, admin) {
 	}).then(() => {
 		return res.send(200, {"result": "success"})
 	}).catch( (err) => {
-    	console.log("JoinLeaveLeague v1.0: league " + leagueId + " error: " + err)
+    	console.log("JoinLeaveLeague v1.0: league " + leagueId + " error: " + JSON.stringify(err) + " message " + err.message)
     	return res.send(500, {"error": err.message})
     })
 }
@@ -211,7 +217,7 @@ exports.changeLeaguePlayerStatus = function(req, res, exports, admin) {
 	}).then(() => {
 		return res.send(200, {"result": "success"})
 	}).catch( (err) => {
-    	console.log("ChangeLeaguePlayerStatus v1.0: league " + leagueId + " error: " + err)
+    	console.log("ChangeLeaguePlayerStatus v1.0: league " + leagueId + " error: " + JSON.stringify(err))
     	return res.send(500, {"error": err.message})
     })
 }

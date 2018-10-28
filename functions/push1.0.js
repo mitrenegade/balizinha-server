@@ -200,11 +200,19 @@ exports.subscribeToLeague = function(leagueId, userId, isSubscribe, exports, adm
     console.log("SubscribeToLeague: " + leagueId + " user: " + userId + " isSubscribe: " + isSubscribe)
     let topic = topicForLeague(leagueId)
     return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
+        if (!snapshot.exists()) {
+            console.log("SubscribeToLeague: no player found")
+            throw new Error("Invalid player")
+        } else if (snapshot.val().fcmToken == undefined) {
+            console.log("Subscribe to league topic: no token available")
+            throw new Error("Could not subscribe for push notifications")
+        }
+
         let player = snapshot.val()
         var token = player["fcmToken"]
-        if (token == undefined || token.length == 0) {
-            let message = "Subscribe to league topic: no token available"
-            return console.log(message)
+        if (token.length == 0) {
+            console.log("Subscribe to league topic: no token available")
+            throw new Error("Could not subscribe for push notifications")
         } else if (isSubscribe) {
             console.log("Subscribe to League topic: " + topic + " token: " + token)
             return subscribeToTopic(token, topic)
@@ -278,7 +286,7 @@ doRefreshPlayerTopics = function(userId) {
     var topics = {}
     return admin.database().ref(`playerLeagues/${userId}`).once('value').then(snapshot => {
         snapshot.forEach(child => {
-            if (child.exists) {
+            if (child.exists()) {
                 let leagueId = child.key
                 let status = child.val()
                 let leagueTopic = topicForLeague(leagueId)
@@ -293,7 +301,7 @@ doRefreshPlayerTopics = function(userId) {
         console.log("refreshAllPlayerTopics: leagues done with snapshot " + JSON.stringify(snapshot))    
         return admin.database().ref(`userEvents/${userId}`).once('value').then(snapshot => {
             snapshot.forEach(child => {
-                if (child.exists) {
+                if (child.exists()) {
                     let eventId = child.key
                     let active = child.val()
                     let eventTopic = topicForEvent(eventId)
