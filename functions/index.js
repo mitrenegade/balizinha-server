@@ -76,14 +76,14 @@ exports.createPlayer = function(userId) {
 }
 
 // event creation/change
-exports.onPlayerCreate = functions.database.ref('/players/{userId}').onCreate((snapshot, context) => {
-    console.log("onPlayerCreate triggered with snapshot " + JSON.stringify(snapshot) + " context " + JSON.stringify(context))
-    var playerId = context.params.userId
-    var email = snapshot.email // snapshot only contains email
+// exports.onPlayerCreate = functions.database.ref('/players/{userId}').onCreate((snapshot, context) => {
+//     console.log("onPlayerCreate triggered with snapshot " + JSON.stringify(snapshot) + " context " + JSON.stringify(context))
+//     var playerId = context.params.userId
+//     var email = snapshot.email // snapshot only contains email
 
-    // const status = "member"
-    // return exports.doUpdatePlayerStatus(admin, playerId, exports.defaultLeague(), status)
-})
+//     // const status = "member"
+//     // return exports.doUpdatePlayerStatus(admin, playerId, exports.defaultLeague(), status)
+// })
 
 exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite((snapshot, context) => {
     console.log("onPlayerChange triggered with snapshot " + JSON.stringify(snapshot) + " context " + JSON.stringify(context))
