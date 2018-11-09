@@ -17,7 +17,7 @@ const feed1_0 = require('./feed1.0')
 admin.initializeApp(functions.config().firebase);
 
 // TO TOGGLE BETWEEN DEV AND PROD: change this to .dev or .prod for functions:config variables to be correct
-const config = functions.config().prod
+const config = functions.config().dev
 const stripe = require('stripe')(config.stripe.token)
 // 1.4 leagues
 // 1.5 event.js, league.js, action.js, push.js
@@ -77,12 +77,13 @@ exports.createPlayer = function(userId) {
 
 // event creation/change
 exports.onPlayerCreate = functions.database.ref('/players/{userId}').onCreate((snapshot, context) => {
-    console.log("onPlayerCreate triggered with snapshot " + JSON.stringify(snapshot) + " context " + JSON.stringify(context))
-    var playerId = context.params.userId
-    var email = snapshot.email // snapshot only contains email
+    return snapshot
+//     console.log("onPlayerCreate triggered with snapshot " + JSON.stringify(snapshot) + " context " + JSON.stringify(context))
+//     var playerId = context.params.userId
+//     var email = snapshot.email // snapshot only contains email
 
-    // const status = "member"
-    // return exports.doUpdatePlayerStatus(admin, playerId, exports.defaultLeague(), status)
+//     // const status = "member"
+//     // return exports.doUpdatePlayerStatus(admin, playerId, exports.defaultLeague(), status)
 })
 
 exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite((snapshot, context) => {

@@ -24,6 +24,9 @@ exports.createAction = function(type, userId, eventId, message, defaultMessage, 
         return snapshot.val();
     }).then(player => {
         var name = player["name"]
+        if (name == undefined) {
+            name = player["email"] // allows players without a username to work
+        }
         params["username"] = name
 
         var ref = `/actions/` + actionId
