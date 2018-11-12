@@ -131,7 +131,7 @@ doCreateFeedItem = function(id, type, userId, leagueId, actionId, eventId, messa
         params["defaultMessage"] = defaultMessage
     }
 
-    if (message == undefined && defaultMessage == undefined) {
+    if (message == undefined && defaultMessage == undefined && type != "photo") {
         params["visible"] = false
     }
 

@@ -42,7 +42,7 @@ exports.createStripeCustomer = function(admin, stripe, email, uid) {
     })
 }
 
-exports.validateStripeCustomer = function(req, res, admin) {
+exports.validateStripeCustomer = function(req, res, exports, admin, stripe) {
     const userId = req.body.userId
     const email = req.body.email
 
