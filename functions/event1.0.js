@@ -1,3 +1,4 @@
+const admin = require('firebase-admin');
 exports.createEvent = function(req, res, exports, admin) {
     const userId = req.body.userId
     if (userId == undefined) { res.status(500).json({"error": "A valid user is required to create event"}); return }

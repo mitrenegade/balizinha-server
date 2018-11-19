@@ -1,3 +1,4 @@
+const admin = require('firebase-admin');
 exports.submitFeedback = function(req, res, exports, admin) {
 	const userId = req.body.userId
 	const subject = req.body.subject

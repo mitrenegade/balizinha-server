@@ -1,3 +1,4 @@
+const admin = require('firebase-admin');
 /*
  updateEventLeagueIsPrivate
  - fixes various missing parameters such as leagueIsPrivate

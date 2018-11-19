@@ -1,3 +1,4 @@
+const admin = require('firebase-admin');
 // actions
 exports.createAction = function(type, userId, eventId, message, defaultMessage, exports, admin) {
     console.log("createAction type: " + type + " event id: " + eventId + " message: " + message)

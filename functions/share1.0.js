@@ -1,3 +1,4 @@
+const admin = require('firebase-admin');
 var rp = require('request-promise-native')
 
 // dynamic links https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=a

@@ -1,3 +1,4 @@
+const admin = require('firebase-admin');
 // types supported by mobile client:
 // chat
 // photo

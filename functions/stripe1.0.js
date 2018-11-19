@@ -1,3 +1,5 @@
+const admin = require('firebase-admin');
+
 // Stripe
 const currency = 'USD';
 

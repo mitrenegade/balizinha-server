@@ -22,7 +22,7 @@ const stripe = require('stripe')(config.stripe.token)
 // 1.4 leagues
 // 1.5 event.js, league.js, action.js, push.js
 const API_VERSION = 1.0
-const BUILD_VERSION = 118 // for internal tracking
+const BUILD_VERSION = 119 // for internal tracking
 
 // CONSTANT Utils //////////////////////////////////////////////////////////////////////////////////
 exports.isDev = function() {
@@ -473,8 +473,14 @@ exports.createDynamicLink = function(type, id, metadata) {
 }
 
 // FEED //////////////////////////////////////////////////////////////////////////////////
+/**
+ * params: 
+ * type: String = ["chat", "photo"]
+ * feedItemId: String
+ * userId, leagueId: String (Required)
+ * message: String (optional)
+ */
 exports.createFeedItem = functions.https.onRequest((req, res) => {
-//exports.createFeedItem = function(type, userId, leagueId, eventId, message, defaultMessage) {
     return feed1_0.createFeedItem(req, res, exports, admin)
 })
 

@@ -1,3 +1,4 @@
+const admin = require('firebase-admin');
 // https://stackoverflow.com/questions/43486278/how-do-i-structure-cloud-functions-for-firebase-to-deploy-multiple-functions-fro
 
 exports.createLeague = function(req, res, exports, admin) {
@@ -65,7 +66,7 @@ exports.joinLeaveLeague = function(req, res, exports, admin) {
             throw new Error("Invalid player")
         }
         return exports.doUpdatePlayerStatus(admin, userId, leagueId, status)
-    }).then(() => {
+    }).then((result) => {
 		console.log("JoinLeaveLeague v1.0: success " + JSON.stringify(result))
 		// subscribe to league
 		return exports.subscribeToLeague(leagueId, userId, isJoin)
@@ -213,6 +214,10 @@ exports.changeLeaguePlayerStatus = function(req, res, exports, admin) {
 
     return exports.doUpdatePlayerStatus(admin, userId, leagueId, status).then(result => {
 		console.log("ChangeLeaguePlayerStatus v1.0: success " + JSON.stringify(result))
+		var isJoin = true
+		if (status == "none") {
+			isJoin = false
+	    }
 		return exports.subscribeToLeague(leagueId, userId, isJoin)
 	}).then(() => {
 		return res.send(200, {"result": "success"})
