@@ -105,7 +105,7 @@ exports.capturePayment = function(req, res, stripe, exports, admin) {
         console.log("Stripe 1.1: capturePayment success with response " + JSON.stringify(response))
         // const ref = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
         const chargeRef = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
-        return chargeRef.set(response).then(result => {
+        return chargeRef.update(response).then(result => {
             return res.status(200).json({"result": "success", "chargeId":chargeId, "status": status, "captured": captured})
         })
     }).catch( (err) => {
