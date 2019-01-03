@@ -193,6 +193,15 @@ exports.refundCharge = function(req, res, stripe, exports, admin) {
         console.log("Stripe 1.0: refund result " + JSON.stringify(refund))
         var id = refund["charge"]
         return stripe.charges.retrieve(id)
+    }, error => {
+        console.log("Stripe 1.0: refund error: " + JSON.stringify(error))
+        const status = "refundFailed"
+        const refunded = false
+        const params = {"status": status, "refunded": refunded, "error": error.message}
+        const chargeRef = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
+        return chargeRef.update(params).then(result => {
+            throw error
+        })
     }).then((updatedCharge) => {
         console.log("Stripe 1.0: RefundCharge updated charge " + JSON.stringify(updatedCharge))
         return admin.database().ref(chargeRef).update(updatedCharge).then((result) => {
