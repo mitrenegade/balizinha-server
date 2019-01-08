@@ -115,20 +115,9 @@ exports.joinOrLeaveEvent = function(req, res, exports, admin) {
                 throw new Error("Could not join event; event not found")
             }
             leagueId = snapshot.val().league
-            if (leagueId == undefined || leagueId.length == 0) {
-                // if event doesn't have a league, add it to the default. This should be removed after 1.0.8
-                leagueId = exports.defaultLeague()
-                let params = {"league": leagueId}
-                console.log("JoinOrLeaveEvent: event " + eventId + " must be added to default league " + leagueId)
-                return admin.database().ref(`/events/${eventId}`).update(params).then(() => {
-                    // find if league contains that player
-                    return admin.database().ref(`/leaguePlayers/${leagueId}/${userId}`).once('value')
-                })
-            } else {
-                // find if league contains that player
-                console.log("JoinOrLeaveEvent: checking player's league status for " + leagueId)
-                return admin.database().ref(`/leaguePlayers/${leagueId}/${userId}`).once('value')
-            }
+            // find if league contains that player
+            console.log("JoinOrLeaveEvent: checking player's league status for " + leagueId)
+            return admin.database().ref(`/leaguePlayers/${leagueId}/${userId}`).once('value')
         }).then(snapshot => { //////////// Find league's players and add player to league if necessary
             if (!snapshot.exists() || (snapshot.val() != "member" && snapshot.val() != "organizer")) {
                 // player is not part of the same league

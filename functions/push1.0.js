@@ -164,13 +164,15 @@ exports.subscribeToEvent = function(eventId, userId, join, exports, admin) {
             return console.log(message)
         } else if (join) {
             console.log("Subscribe to event topic: " + topic + " token: " + token)
-            return subscribeToTopic(token, topic)
+            return subscribeToTopic(token, topic).then(result => {
+                return doUpdateSubscriptionStatus(userId, topic, join)
+            })
         } else {
             console.log("Unsubscribe to event topic: " + topic + " token: " + token)
-            return unsubscribeFromTopic(token, topic)
+            return unsubscribeFromTopic(token, topic).then(result => {
+                return doUpdateSubscriptionStatus(userId, topic, join)
+            })
         }
-    }).then(result => {
-        return doUpdateSubscriptionStatus(userId, topic, join)
     })
 }
 
@@ -203,25 +205,23 @@ exports.subscribeToLeague = function(leagueId, userId, isSubscribe, exports, adm
         if (!snapshot.exists()) {
             console.log("SubscribeToLeague: no player found")
             throw new Error("Invalid player")
-        } else if (snapshot.val().fcmToken == undefined) {
-            console.log("Subscribe to league topic: no token available")
-            throw new Error("Could not subscribe for push notifications")
         }
 
         let player = snapshot.val()
-        var token = player["fcmToken"]
-        if (token.length == 0) {
+        if (player.fcmToken == undefined || player.fcmToken.length == 0) {
             console.log("Subscribe to league topic: no token available")
-            throw new Error("Could not subscribe for push notifications")
+            return // do nothing
         } else if (isSubscribe) {
             console.log("Subscribe to League topic: " + topic + " token: " + token)
-            return subscribeToTopic(token, topic)
+            return subscribeToTopic(token, topic).then(result => {
+                return doUpdateSubscriptionStatus(userId, topic, isSubscribe)
+            })
         } else {
             console.log("Unsubscribe to League topic: " + topic + " token: " + token)
-            return unsubscribeFromTopic(token, topic)
+            return unsubscribeFromTopic(token, topic).then(result => {
+                return doUpdateSubscriptionStatus(userId, topic, isSubscribe)
+            })
         }
-    }).then(result => {
-        return doUpdateSubscriptionStatus(userId, topic, isSubscribe)
     })
 }
 
