@@ -56,6 +56,24 @@ exports.doEmailSignup = function(userId, email) {
     })
 }
 
+exports.createPlayerForAnonymousUser = functions.https.onRequest( (req, res) => {
+    const userId = req.body.userId
+    const name = req.body.name
+    if (userId == undefined) {
+        return res.status(500).json({"error": "Invalid user id"})
+    }
+    return admin.database().ref(`players/${userId}`).once('value').then(snapshot => {
+        if (snapshot.exists()) {
+            const player = snapshot.val()
+            return res.status(200).json({"success": false, "message": "Player already exists", "userId": userId})
+        } else {
+            return exports.createPlayer(userId, name).then(() => {
+                res.status(200).json({"success": true, "userId": userId})
+            })
+        }
+    })
+})
+
 // TODO actually implement this in client
 exports.onEmailSignupV1_5 = functions.https.onRequest((req, res) => {
     // in v1_5, when a player is created, their email is added to the anonymous account already created.
@@ -67,11 +85,14 @@ exports.onEmailSignupV1_5 = functions.https.onRequest((req, res) => {
     exports.doEmailSignup(userId, email)
 })
 
-exports.createPlayer = function(userId) {
+exports.createPlayer = function(userId, name) {
     var ref = `/players/${userId}`
     console.log("Creating player for user " + userId)
     var params = {"uid": userId}
     params["createdAt"] = exports.secondsSince1970()
+    if (name != undefined) {
+        params["name"] = name
+    }
     return admin.database().ref(ref).update(params)
 }
 
