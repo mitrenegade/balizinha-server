@@ -206,9 +206,9 @@ exports.subscribeToLeague = function(leagueId, userId, isSubscribe, exports, adm
             console.log("SubscribeToLeague: no player found")
             throw new Error("Invalid player")
         }
-
         let player = snapshot.val()
-        if (player.fcmToken == undefined || player.fcmToken.length == 0) {
+        var token = player["fcmToken"]
+        if (token == undefined || token.length == 0) {
             console.log("Subscribe to league topic: no token available")
             return // do nothing
         } else if (isSubscribe) {
