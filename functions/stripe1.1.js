@@ -8,6 +8,8 @@ exports.holdPayment = function(req, res, stripe, exports, admin) {
     const eventId = req.body.eventId
 
     const chargeId = exports.createUniqueId()
+    var customerId = ""
+    var amount = 0
 
     console.log("Stripe v1.1: holdPayment userId " + userId + " event " + eventId + " new charge " + chargeId)
     var customerDict = {}
@@ -21,8 +23,8 @@ exports.holdPayment = function(req, res, stripe, exports, admin) {
             return snapshot.val() 
         })
     }).then(eventDict => {
-        const customer = customerDict["customer_id"]
-        const amount = eventDict["amount"] * 100 // amount needs to be in cents and is stored in dollars
+        customerId = customerDict["customer_id"]
+        amount = eventDict["amount"] * 100 // amount needs to be in cents and is stored in dollars
         const idempotency_key = chargeId;
         const currency = 'USD'
         const capture = false
@@ -47,9 +49,10 @@ exports.holdPayment = function(req, res, stripe, exports, admin) {
     }, error => {
         // We want to capture errors and render them in a user-friendly way, while
         // still logging an exception with Stackdriver
-        console.log("Stripe 1.1: holdPayment error " + JSON.stringify(error))
+        console.log("Stripe 1.1: holdPayment error " + JSON.stringify(error) + ' for chargeId ' + chargeId)
         const ref = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
-        return ref.child('error').set(error.message).then(result => {
+        const params = {'error': error.message, 'amount': amount, 'customer': customerId, 'player_id': userId}
+        return ref.update(params).then(result => {
             return res.status(500).json({"error": JSON.stringify(error)})
         })
     }).then(result => {

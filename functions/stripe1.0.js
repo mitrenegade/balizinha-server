@@ -121,12 +121,13 @@ exports.createStripeCharge = function(snapshot, context, stripe, exports, admin)
     // Look up the Stripe customer id written in createStripeCustomer
     var customerRef = `/stripe_customers/${userId}`
     var eventRef = `/events/${eventId}`
+    const amount = data.amount;
+    var customerId = ""
     return admin.database().ref(customerRef).once('value').then(snapshot => {
         return snapshot.val();
     }).then(customerDict => {
         // Create a charge using the pushId as the idempotency key, protecting against double charges 
-        const customer = customerDict["customer_id"]
-        const amount = data.amount;
+        customerId = customerDict["customer_id"]
         const idempotency_key = chargeId;
         const currency = 'USD'
         let charge = {amount, currency, customer};
@@ -149,7 +150,8 @@ exports.createStripeCharge = function(snapshot, context, stripe, exports, admin)
         // still logging an exception with Stackdriver
         console.log("Stripe 1.0: createStripeCharge error " + JSON.stringify(error))
         const ref = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
-        return ref.child('error').set(error.message)
+        const params = {'error': error.message, 'amount': amount, 'customer': customerId, 'player_id': userId}
+        return ref.update(params)
     })
 }
 
