@@ -8,21 +8,22 @@ exports.holdPayment = function(req, res, stripe, exports, admin) {
     const eventId = req.body.eventId
 
     const chargeId = exports.createUniqueId()
+    var customer = ""
+    var amount = 0
 
     console.log("Stripe v1.1: holdPayment userId " + userId + " event " + eventId + " new charge " + chargeId)
-    var customerDict = {}
     const customerRef = `/stripe_customers/${userId}`
     return admin.database().ref(customerRef).once('value').then(snapshot => {
-        return snapshot.val();
-    }).then(customer => {
-        customerDict = customer
+        if (!snapshot.exists()) {
+            throw new Error('No stripe customer found')
+        }
+        customer = snapshot.val()["customer_id"]
         const eventRef = `/events/${eventId}`
         return admin.database().ref(eventRef).once('value').then(snapshot => { 
             return snapshot.val() 
         })
     }).then(eventDict => {
-        const customer = customerDict["customer_id"]
-        const amount = eventDict["amount"] * 100 // amount needs to be in cents and is stored in dollars
+        amount = eventDict["amount"] * 100 // amount needs to be in cents and is stored in dollars
         const idempotency_key = chargeId;
         const currency = 'USD'
         const capture = false
@@ -32,7 +33,7 @@ exports.holdPayment = function(req, res, stripe, exports, admin) {
         // if (data.source != undefined) {
         //     charge.source = data.source
         // }
-        console.log("Stripe 1.1: holdPayment amount " + amount + " customerId " + customer + " charge " + JSON.stringify(charge))
+        console.log("Stripe 1.1: holdPayment amount " + amount + " customer " + customer + " charge " + JSON.stringify(charge))
 
         return stripe.charges.create(charge, {idempotency_key})
     }).then(response => {
@@ -41,16 +42,17 @@ exports.holdPayment = function(req, res, stripe, exports, admin) {
         // const ref = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
         response["player_id"] = userId
         const chargeRef = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
-        return chargeRef.set(response).then(result => {
+        return chargeRef.update(response).then(result => {
             return res.status(200).json({"result": "success", "chargeId":chargeId, "status": response["status"], "captured": response["captured"]})
         })
     }, error => {
         // We want to capture errors and render them in a user-friendly way, while
         // still logging an exception with Stackdriver
-        console.log("Stripe 1.1: holdPayment error " + JSON.stringify(error))
+        console.log("Stripe 1.1: holdPayment error " + JSON.stringify(error) + ' for chargeId ' + chargeId)
         const ref = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
-        return ref.child('error').set(error.message).then(result => {
-            return res.status(500).json({"error": JSON.stringify(error)})
+        const params = {'status': 'error', 'error': error.message, 'amount': amount, 'customer': customer, 'player_id': userId}
+        return ref.update(params).then(result => {
+            return res.status(500).json({"error": JSON.stringify(error.message)})
         })
     }).then(result => {
         var type = "holdPaymentForEvent"
@@ -113,7 +115,7 @@ exports.capturePayment = function(req, res, stripe, exports, admin) {
         console.log("CapturePayment error: " + JSON.stringify(error))
         const status = "captureFailed"
         const captured = false
-        const params = {"status": status, "captured": captured, "error": error.message}
+        const params = {"status": status, "captured": captured, "error": error.message, 'created': exports.secondsSince1970()}
         const chargeRef = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
         return chargeRef.update(params).then(result => {
             throw error
