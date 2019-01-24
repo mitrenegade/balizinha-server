@@ -22,7 +22,7 @@ const stripe = require('stripe')(config.stripe.token)
 // 1.4 leagues
 // 1.5 event.js, league.js, action.js, push.js
 const API_VERSION = 1.0
-const BUILD_VERSION = 122 // for internal tracking
+const BUILD_VERSION = 123 // for internal tracking
 
 // CONSTANT Utils //////////////////////////////////////////////////////////////////////////////////
 exports.isDev = function() {
