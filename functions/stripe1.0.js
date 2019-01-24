@@ -122,26 +122,25 @@ exports.createStripeCharge = function(snapshot, context, stripe, exports, admin)
     var customerRef = `/stripe_customers/${userId}`
     var eventRef = `/events/${eventId}`
     const amount = data.amount;
-    var customerId = ""
+    var customer = ""
     return admin.database().ref(customerRef).once('value').then(snapshot => {
         return snapshot.val();
     }).then(customerDict => {
         // Create a charge using the pushId as the idempotency key, protecting against double charges 
-        customerId = customerDict["customer_id"]
+        customer = customerDict["customer_id"]
         const idempotency_key = chargeId;
         const currency = 'USD'
-        let charge = {amount, currency, customerId};
+        let charge = {amount, currency, customer};
         if (data.source != undefined) {
             charge.source = data.source
         }
-        console.log("Stripe 1.0: createStripeCharge amount " + amount + " customerId " + customerId + " charge " + JSON.stringify(charge))
+        console.log("Stripe 1.0: createStripeCharge amount " + amount + " customerId " + customer + " charge " + JSON.stringify(charge))
         return stripe.charges.create(charge, {idempotency_key});
     }).then(response => {
         // If the result is successful, write it back to the database
         console.log("Stripe 1.0: createStripeCharge success with response " + JSON.stringify(response))
         const ref = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
-        return ref.update(response)
-        then(result => {
+        return ref.update(response).then(result => {
             var type = "payForEvent"
             return exports.createAction(type, userId, eventId, null)
         })
@@ -150,7 +149,7 @@ exports.createStripeCharge = function(snapshot, context, stripe, exports, admin)
         // still logging an exception with Stackdriver
         console.log("Stripe 1.0: createStripeCharge error " + JSON.stringify(error))
         const ref = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
-        const params = {'status': 'error', 'error': error.message, 'amount': amount, 'customer': customerId, 'player_id': userId, 'created': exports.secondsSince1970()}
+        const params = {'status': 'error', 'error': error.message, 'amount': amount, 'customer': customer, 'player_id': userId, 'created': exports.secondsSince1970()}
         return ref.update(params)
     })
 }
