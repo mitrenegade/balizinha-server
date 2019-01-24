@@ -130,11 +130,11 @@ exports.createStripeCharge = function(snapshot, context, stripe, exports, admin)
         customerId = customerDict["customer_id"]
         const idempotency_key = chargeId;
         const currency = 'USD'
-        let charge = {amount, currency, customer};
+        let charge = {amount, currency, customerId};
         if (data.source != undefined) {
             charge.source = data.source
         }
-        console.log("Stripe 1.0: createStripeCharge amount " + amount + " customerId " + customer + " charge " + JSON.stringify(charge))
+        console.log("Stripe 1.0: createStripeCharge amount " + amount + " customerId " + customerId + " charge " + JSON.stringify(charge))
         return stripe.charges.create(charge, {idempotency_key});
     }).then(response => {
         // If the result is successful, write it back to the database
@@ -150,7 +150,7 @@ exports.createStripeCharge = function(snapshot, context, stripe, exports, admin)
         // still logging an exception with Stackdriver
         console.log("Stripe 1.0: createStripeCharge error " + JSON.stringify(error))
         const ref = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
-        const params = {'error': error.message, 'amount': amount, 'customer': customerId, 'player_id': userId}
+        const params = {'status': 'error', 'error': error.message, 'amount': amount, 'customer': customerId, 'player_id': userId, 'created': exports.secondsSince1970()}
         return ref.update(params)
     })
 }

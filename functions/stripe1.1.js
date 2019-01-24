@@ -29,12 +29,12 @@ exports.holdPayment = function(req, res, stripe, exports, admin) {
         const currency = 'USD'
         const capture = false
         const description = "Payment hold for event " + eventId
-        let charge = {amount, currency, customer, capture, description};
+        let charge = {amount, currency, customerId, capture, description};
         // TODO is this needed?
         // if (data.source != undefined) {
         //     charge.source = data.source
         // }
-        console.log("Stripe 1.1: holdPayment amount " + amount + " customerId " + customer + " charge " + JSON.stringify(charge))
+        console.log("Stripe 1.1: holdPayment amount " + amount + " customerId " + customerId + " charge " + JSON.stringify(charge))
 
         return stripe.charges.create(charge, {idempotency_key})
     }).then(response => {
@@ -51,7 +51,7 @@ exports.holdPayment = function(req, res, stripe, exports, admin) {
         // still logging an exception with Stackdriver
         console.log("Stripe 1.1: holdPayment error " + JSON.stringify(error) + ' for chargeId ' + chargeId)
         const ref = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
-        const params = {'error': error.message, 'amount': amount, 'customer': customerId, 'player_id': userId}
+        const params = {'status': 'error', 'error': error.message, 'amount': amount, 'customer': customerId, 'player_id': userId}
         return ref.update(params).then(result => {
             return res.status(500).json({"error": JSON.stringify(error)})
         })
@@ -116,7 +116,7 @@ exports.capturePayment = function(req, res, stripe, exports, admin) {
         console.log("CapturePayment error: " + JSON.stringify(error))
         const status = "captureFailed"
         const captured = false
-        const params = {"status": status, "captured": captured, "error": error.message}
+        const params = {"status": status, "captured": captured, "error": error.message, 'created': exports.secondsSince1970()}
         const chargeRef = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
         return chargeRef.update(params).then(result => {
             throw error
