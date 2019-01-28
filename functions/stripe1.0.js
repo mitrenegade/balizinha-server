@@ -1,3 +1,8 @@
+const globals = require('./globals')
+
+const stripeToken = globals.stripeToken
+const stripe = require('stripe')(stripeToken)
+
 const admin = require('firebase-admin');
 
 // Stripe
@@ -6,7 +11,7 @@ const currency = 'USD';
 // cloud functions are all defined in index.js but they call module functions
 // https://stackoverflow.com/questions/43486278/how-do-i-structure-cloud-functions-for-firebase-to-deploy-multiple-functions-fro
 
-exports.ephemeralKeys = function(req, res, stripe) {
+exports.ephemeralKeys = function(req, res) {
     let stripe_version = req.body.api_version
     let customer_id = req.body.customer_id
     console.log('Stripe v1.0 ephemeralKeys with ' + stripe_version + ' and ' + customer_id)
@@ -25,7 +30,7 @@ exports.ephemeralKeys = function(req, res, stripe) {
     });
 }
 
-exports.createStripeCustomer = function(admin, stripe, email, uid) {
+exports.createStripeCustomer = function(admin, email, uid) {
     console.log("Stripe 1.0: Creating stripeCustomer " + uid + " " + email)
     const ref = `/stripe_customers/${uid}/customer_id`
     return stripe.customers.create({
@@ -44,7 +49,7 @@ exports.createStripeCustomer = function(admin, stripe, email, uid) {
     })
 }
 
-exports.validateStripeCustomer = function(req, res, exports, admin, stripe) {
+exports.validateStripeCustomer = function(req, res, exports, admin) {
     const userId = req.body.userId
     const email = req.body.email
 
@@ -98,7 +103,7 @@ exports.savePaymentInfo = function(req, res, admin) {
 }
 
 // Charge the Stripe customer whenever an amount is written to the Realtime database
-exports.createStripeCharge = function(snapshot, context, stripe, exports, admin) {
+exports.createStripeCharge = function(snapshot, context, exports, admin) {
 //function createStripeCharge(req, res, ref) {
     var eventId = context.params.eventId
     var chargeId = context.params.chargeId
@@ -154,7 +159,7 @@ exports.createStripeCharge = function(snapshot, context, stripe, exports, admin)
     })
 }
 
-exports.refundCharge = function(req, res, stripe, exports, admin) {
+exports.refundCharge = function(req, res, exports, admin) {
     const chargeId = req.body.chargeId // charge Id from balizinha
     const eventId = req.body.eventId
     const organizerId = req.body.organizerId
@@ -214,7 +219,7 @@ exports.refundCharge = function(req, res, stripe, exports, admin) {
     })
 }
 
-exports.createStripeSubscription = function(snapshot, context, stripe, exports, admin) {
+exports.createStripeSubscription = function(snapshot, context, exports, admin) {
 //function createStripeCharge(req, res, ref) {
     var organizerId = context.params.organizerId
     var chargeId = context.params.chargeId

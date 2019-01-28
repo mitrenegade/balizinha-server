@@ -1,8 +1,11 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const request = require('request')
+const globals = require('./globals')
 
-const stripe = require('stripe')(exports.config.stripe.token)
+const stripeToken = globals.stripeToken
+const stripe = require('stripe')(stripeToken)
+
 /*** Stripe connect ***/
 // https://stackoverflow.com/questions/52493606/stripe-connect-firebase-functions
 exports.stripeConnectRedirectHandler = function(req, res, exports) {
@@ -17,7 +20,7 @@ exports.stripeConnectRedirectHandler = function(req, res, exports) {
     request.post(url,
         { 
             form: { 
-                "client_secret": exports.config.stripe.token,
+                "client_secret": stripeToken,
                 "code": code,
                 "grant_type": "authorization_code"
             },

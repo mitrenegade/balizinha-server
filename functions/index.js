@@ -1,6 +1,6 @@
 const functions = require('firebase-functions');
+const logging = require('@google-cloud/logging');
 const admin = require('firebase-admin');
-const logging = require('@google-cloud/logging')();
 const app = require('express')
 const moment = require('moment')
 const league1_0 = require('./league1.0')
@@ -14,26 +14,9 @@ const feedback1_0 = require('./feedback1.0')
 const share1_0 = require('./share1.0')
 const feed1_0 = require('./feed1.0')
 const stripeConnect1_0 = require('./stripeConnect1.0')
+const globals = require('./globals')
 
 admin.initializeApp(functions.config().firebase);
-
-// TO TOGGLE BETWEEN DEV AND PROD: change this to .dev or .prod for functions:config variables to be correct
-exports.config = functions.config().dev
-// 1.4 leagues
-// 1.5 event.js, league.js, action.js, push.js
-const API_VERSION = 1.0
-const BUILD_VERSION = 123 // for internal tracking
-
-// CONSTANT Utils //////////////////////////////////////////////////////////////////////////////////
-exports.isDev = function() {
-    return exports.config.panna.environment == "dev"
-}
-exports.getAPIKey = function() {
-    return exports.config.firebase.api_key
-}
-exports.defaultLeague = function() {
-    return exports.config.panna.default_league
-}
 
 exports.onCreateUser = functions.auth.user().onCreate(user => {
     console.log("onCreateUser v1.4 complete with user " + JSON.stringify(user))
@@ -103,8 +86,6 @@ exports.onPlayerCreate = functions.database.ref('/players/{userId}').onCreate((s
 //     var playerId = context.params.userId
 //     var email = snapshot.email // snapshot only contains email
 
-//     // const status = "member"
-//     // return exports.doUpdatePlayerStatus(admin, playerId, exports.defaultLeague(), status)
 })
 
 exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite((snapshot, context) => {
@@ -190,11 +171,11 @@ exports.sampleCloudFunction = functions.https.onRequest((req, res) => {
 // STRIPE //////////////////////////////////////////////////////////////////////////////////
 // http functions
 exports.ephemeralKeys = functions.https.onRequest((req, res) => {
-    return stripe1_0.ephemeralKeys(req, res, stripe)
+    return stripe1_0.ephemeralKeys(req, res)
 });
 
 exports.validateStripeCustomer = functions.https.onRequest( (req, res) => {
-    return stripe1_0.validateStripeCustomer(req, res, exports, admin, stripe)
+    return stripe1_0.validateStripeCustomer(req, res, exports, admin)
 })
 
 exports.savePaymentInfo = functions.https.onRequest( (req, res) => {
@@ -202,11 +183,11 @@ exports.savePaymentInfo = functions.https.onRequest( (req, res) => {
 })
 
 exports.refundCharge = functions.https.onRequest( (req, res) => {
-    return stripe1_0.refundCharge(req, res, stripe, exports, admin)
+    return stripe1_0.refundCharge(req, res, exports, admin)
 })
 
 exports.createStripeSubscription = functions.database.ref(`/charges/organizers/{organizerId}/{chargeId}`).onWrite((snapshot, context) => {
-    return stripe1_0.createStripeSubscription(snapshot, context, stripe, exports, admin)
+    return stripe1_0.createStripeSubscription(snapshot, context, exports, admin)
 })
 
 /**
@@ -215,7 +196,7 @@ exports.createStripeSubscription = functions.database.ref(`/charges/organizers/{
  * result: { result: success, chargeId: String, status: completed, captured: bool },  or { error: String }
  */
 exports.holdPayment = functions.https.onRequest((req, res) => {
-    return stripe1_1.holdPayment(req, res, stripe, exports, admin)
+    return stripe1_1.holdPayment(req, res, exports, admin)
 })
 
 /**
@@ -226,7 +207,7 @@ exports.holdPayment = functions.https.onRequest((req, res) => {
 exports.capturePayment = functions.https.onRequest((req, res) => {
     let api = req.body.apiVersion
     if (api >= "1.1") {
-        return stripe1_1.capturePayment(req, res, stripe, exports, admin)
+        return stripe1_1.capturePayment(req, res, exports, admin)
     } else {
         console.log("api: " + api + ">1.1 ? " + api >= "1.1")
         return res.status(500).json({"error": "Unknown api version"})
@@ -239,7 +220,7 @@ exports.onCreateCharge = functions.database.ref(`/charges/events/{eventId}/{char
     const val = snapshot.val()
     if (val["id"] == undefined) {
         console.log("onCreateCharge: charge initiated by client app; need to create stripe charge")
-        return stripe1_0.createStripeCharge(snapshot, context, stripe, exports, admin)
+        return stripe1_0.createStripeCharge(snapshot, context, exports, admin)
     } else {
         return snapshot
     }
@@ -247,7 +228,7 @@ exports.onCreateCharge = functions.database.ref(`/charges/events/{eventId}/{char
 
 // helper functions
 exports.createStripeCustomer = function(email, uid) {
-    return stripe1_0.createStripeCustomer(admin, stripe, email, uid)
+    return stripe1_0.createStripeCustomer(admin, email, uid)
 }
 
 // STRIPE CONNECT //////////////////////////////////////////////////////////////////////////////////
@@ -266,23 +247,6 @@ exports.createStripeConnectCharge = functions.https.onRequest((req, res) => {
 
 // LEAGUE //////////////////////////////////////////////////////////////////////////////////
 // Pass database to child functions so they have access to it
-
-
-/**
- * Copyright 2016 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
 // http functions
 exports.createLeague = functions.https.onRequest((req, res) => {
