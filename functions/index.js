@@ -26,13 +26,13 @@ const BUILD_VERSION = 123 // for internal tracking
 
 // CONSTANT Utils //////////////////////////////////////////////////////////////////////////////////
 exports.isDev = function() {
-    return config.panna.environment == "dev"
+    return exports.config.panna.environment == "dev"
 }
 exports.getAPIKey = function() {
-    return config.firebase.api_key
+    return exports.config.firebase.api_key
 }
 exports.defaultLeague = function() {
-    return config.panna.default_league
+    return exports.config.panna.default_league
 }
 
 exports.onCreateUser = functions.auth.user().onCreate(user => {
