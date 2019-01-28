@@ -13,12 +13,12 @@ const adminUtils1_0 = require('./adminUtils1.0')
 const feedback1_0 = require('./feedback1.0')
 const share1_0 = require('./share1.0')
 const feed1_0 = require('./feed1.0')
+const stripeConnect1_0 = require('./stripeConnect1.0')
 
 admin.initializeApp(functions.config().firebase);
 
 // TO TOGGLE BETWEEN DEV AND PROD: change this to .dev or .prod for functions:config variables to be correct
-const config = functions.config().dev
-const stripe = require('stripe')(config.stripe.token)
+exports.config = functions.config().dev
 // 1.4 leagues
 // 1.5 event.js, league.js, action.js, push.js
 const API_VERSION = 1.0
@@ -166,8 +166,8 @@ exports.getUniqueId = functions.https.onRequest( (req, res) => {
 
 // TEST calling cloud function from client
 exports.sampleCloudFunction = functions.https.onRequest((req, res) => {
-    const uid = req.query.uid
-    const email = req.query.email
+    const uid = req.body.uid
+    const email = req.body.email
 
     // call this could function in the browser using this url:
     // https://us-central1-balizinha-dev.cloudfunctions.net/sampleCloudFunction?uid=123&email=456
@@ -249,6 +249,20 @@ exports.onCreateCharge = functions.database.ref(`/charges/events/{eventId}/{char
 exports.createStripeCustomer = function(email, uid) {
     return stripe1_0.createStripeCustomer(admin, stripe, email, uid)
 }
+
+// STRIPE CONNECT //////////////////////////////////////////////////////////////////////////////////
+exports.stripeConnectRedirectHandler = functions.https.onRequest((req, res) => {
+    return stripeConnect1_0.stripeConnectRedirectHandler(req, res, exports)
+})
+
+exports.getConnectAccountInfo = functions.https.onRequest((req, res) => {
+    return stripeConnect1_0.getConnectAccountInfo(req, res, exports)
+})
+
+exports.createStripeConnectCharge = functions.https.onRequest((req, res) => {
+    return stripeConnect1_0.createStripeConnectCharge(req, res, exports)
+})
+
 
 // LEAGUE //////////////////////////////////////////////////////////////////////////////////
 // Pass database to child functions so they have access to it
