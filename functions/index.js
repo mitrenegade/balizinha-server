@@ -529,7 +529,13 @@ exports.refreshAllPlayerTopics = functions.https.onRequest((req, res) => {
     return push1_0.refreshAllPlayerTopics(req, res, exports, admin)
 })
 
-
+/**
+ * migrates stripe_customers data to stripeCustomers endpoint
+ * result: {success, count of stripeCustomers, count of stripe_customers}
+ */
+exports.migrateStripeCustomers = functions.https.onRequest((req, res) => {
+    return adminUtils1_0.migrateStripeCustomers(req, res)
+})
 
 /* Resources
 * Versioning: https://github.com/googleapis/nodejs-datastore/tree/master/src
