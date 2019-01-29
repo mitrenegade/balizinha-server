@@ -171,3 +171,101 @@ createStripeConnectChargeToken = function(connectId, customerId) {
         })
     })
 }
+
+////////// Migration from stripe1.0 customer and payment creation to use stripeCustomer
+exports.createStripeCustomer = function(email, uid) {
+    console.log("StripeConnect 1.0: Creating stripeCustomer " + uid + " " + email)
+    const ref = `/stripeCustomers/${uid}/customer_id`
+    return stripe.customers.create({
+        email: email
+    }, function(err, customer) {
+        if (err != undefined) {
+            console.log('CreateStripeCustomer v1.0' + ref + ' resulted in error ' + err)
+            return err
+        } else {
+            console.log('CreateStripeCustomer v1.0 ' + ref + ' email ' + email + ' created with customer_id ' + customer.id)
+            return admin.database().ref(ref).set(customer.id);
+        }
+    }).then(result => {
+        console.log('createStripeCustomer returning the value')
+        return admin.database().ref(ref).once('value')
+    })
+}
+
+exports.validateStripeCustomer = function(req, res) {
+    const userId = req.body.userId
+    const email = req.body.email
+
+    if (userId == undefined || userId == "") {
+        return res.status(500).json({"error": "Could not validate Stripe customer: empty user id"})
+    }
+    if (email == undefined || email == "") {
+        return res.status(500).json({"error": "Could not validate Stripe customer: empty email"})
+    }
+
+    var customerRef = `/stripeCustomers/${userId}/customer_id`
+    return admin.database().ref(customerRef).once('value')
+    .then(snapshot => {
+        return snapshot.val();
+    }).then(customer => {
+        if (customer != undefined) {
+            console.log("Stripe 1.0: ValidateStripeCustomer: userId " + userId + " found customer_id " + customer)
+            return res.status(200).json({"customer_id" : customer})
+        } else {
+            console.log("Stripe 1.0: ValidateStripeCustomer: userId " + userId + " creating customer...")
+            return exports.createStripeCustomer(email, userId)
+            .then(result => {
+                console.log("Stripe 1.0: ValidateStripeCustomer: userId " + userId + " created customer with result " + JSON.stringify(result))
+                return res.status(200).json({"customer_id": result})
+            })
+        }
+    })
+}
+
+// saves a card as a source under stripeCustomers
+exports.savePaymentInfo = function(req, res) {
+    const userId = req.body.userId
+    const source = req.body.source
+    const last4 = req.body.last4
+    const label = req.body.label
+    var customer_id = "unknown"
+    console.log("StripeConnect 1.0: SavePaymentInfo: userId " + userId + " source " + source + " last4 " + last4 + " label " + label)
+    return migrateStripeCustomer(userId).then(customer => {
+        var userRef = `/stripeCustomers/${userId}`
+        var params = {"source": source, "last4": last4, "label": label}
+        customer_id = customer
+        return admin.database().ref(userRef).update(params)
+    }).then(result => {
+        return res.status(200).json({"customer_id": customer_id})
+    }).catch((err) => {
+        console.log("Probably no customer_id for userId. err " + JSON.stringify(err))
+        return res.status(500).json({"error": err})
+    })
+}
+
+/* for migration from stripe_customers to stripeCustomers; makes sure stripeCustomer exists, then returns customer_id
+ * params: userId
+ * rerturn value is customer_id or throw an error if user didn't exist under stripe_customers
+ */
+migrateStripeCustomer = function(userId) {
+    var newCustomerRef = `/stripeCustomers/${userId}`
+    return admin.database().ref(newCustomerRef).once('value').then(snapshot => {
+        if (!snapshot.exists()) {
+            var oldCustomerRef = `/stripe_customers/${userId}`
+            return admin.database().ref(oldCustomerRef).once('value').then(snapshot => {
+                if(!snapshot.exists()) {
+                    console.log("StripeConnect 1.0: migrateStripeCustomer " + userId + " could not be found!")
+                    throw new Error("Invalid customer")
+                }
+                return.admin.database().ref(newCustomerRef).set(snapshot.val()).then(result => {
+                    console.log("StripeConnect 1.0: migrateStripeCustomer " + userId + " succeeded with value " + JSON.stringify(snapshot.val()))
+                    return snapshot.val().customer_id
+                })
+            }
+        } else {
+            console.log("StripeConnect 1.0: migrateStripeCustomer " + userId + " already exists with value " + JSON.stringify(snapshot.val()))
+            return snapshot.val().customer_id
+        }
+    }
+}
+

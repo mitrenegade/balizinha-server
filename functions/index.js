@@ -175,11 +175,11 @@ exports.ephemeralKeys = functions.https.onRequest((req, res) => {
 });
 
 exports.validateStripeCustomer = functions.https.onRequest( (req, res) => {
-    return stripe1_0.validateStripeCustomer(req, res, exports, admin)
+    return stripeConnect1_0.validateStripeCustomer(req, res, exports, admin)
 })
 
 exports.savePaymentInfo = functions.https.onRequest( (req, res) => {
-    return stripe1_0.savePaymentInfo(req, res, admin)
+    return stripeConnect1_0.savePaymentInfo(req, res, admin)
 })
 
 exports.refundCharge = functions.https.onRequest( (req, res) => {
@@ -228,7 +228,7 @@ exports.onCreateCharge = functions.database.ref(`/charges/events/{eventId}/{char
 
 // helper functions
 exports.createStripeCustomer = function(email, uid) {
-    return stripe1_0.createStripeCustomer(admin, email, uid)
+    return stripeConnect1_0.createStripeCustomer(email, uid)
 }
 
 // STRIPE CONNECT //////////////////////////////////////////////////////////////////////////////////
