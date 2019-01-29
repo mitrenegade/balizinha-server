@@ -86,7 +86,7 @@ exports.createStripeConnectCharge = function(req, res, exports) {
     const currency = 'USD'
     const eventId = req.body.eventId
     const connectId = req.body.connectId // index into stripeConnectAccount
-    const customerId = req.body.customerId // index into stripeCustomer
+    const customerId = req.body.customer_id // index into stripeCustomer
     var chargeId = req.body.chargeId
     if (chargeId == undefined) {
         chargeId = exports.createUniqueId()
@@ -152,7 +152,7 @@ createStripeConnectChargeToken = function(connectId, customerId) {
             if (!snapshot.exists()) {
                 throw new Error("No customer account found for " + customerId)
             }
-            var customer = snapshot.val().customerId
+            var customer = snapshot.val().customer_id
             var original_source = snapshot.val().source
             if (customer == undefined) {
                 throw new Error("No customer account associated with " + customer)
