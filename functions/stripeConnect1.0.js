@@ -180,14 +180,14 @@ exports.createStripeCustomer = function(email, uid) {
         email: email
     }, function(err, customer) {
         if (err != undefined) {
-            console.log('CreateStripeCustomer v1.0' + ref + ' resulted in error ' + err)
+            console.log('StripeConnect: CreateStripeCustomer v1.0' + ref + ' resulted in error ' + err)
             return err
         } else {
-            console.log('CreateStripeCustomer v1.0 ' + ref + ' email ' + email + ' created with customer_id ' + customer.id)
+            console.log('StripeConnect: CreateStripeCustomer v1.0 ' + ref + ' email ' + email + ' created with customer_id ' + customer.id)
             return admin.database().ref(ref).set(customer.id);
         }
     }).then(result => {
-        console.log('createStripeCustomer returning the value')
+        console.log('StripeConnect: createStripeCustomer returning the value')
         return admin.database().ref(ref).once('value')
     })
 }
@@ -209,13 +209,13 @@ exports.validateStripeCustomer = function(req, res) {
         return snapshot.val();
     }).then(customer => {
         if (customer != undefined) {
-            console.log("Stripe 1.0: ValidateStripeCustomer: userId " + userId + " found customer_id " + customer)
+            console.log("StripeConnect 1.0: ValidateStripeCustomer: userId " + userId + " found customer_id " + customer)
             return res.status(200).json({"customer_id" : customer})
         } else {
-            console.log("Stripe 1.0: ValidateStripeCustomer: userId " + userId + " creating customer...")
+            console.log("StripeConnect 1.0: ValidateStripeCustomer: userId " + userId + " creating customer...")
             return exports.createStripeCustomer(email, userId)
             .then(result => {
-                console.log("Stripe 1.0: ValidateStripeCustomer: userId " + userId + " created customer with result " + JSON.stringify(result))
+                console.log("StripeConnect 1.0: ValidateStripeCustomer: userId " + userId + " created customer with result " + JSON.stringify(result))
                 return res.status(200).json({"customer_id": result})
             })
         }
@@ -253,19 +253,19 @@ migrateStripeCustomer = function(userId) {
         if (!snapshot.exists()) {
             var oldCustomerRef = `/stripe_customers/${userId}`
             return admin.database().ref(oldCustomerRef).once('value').then(snapshot => {
-                if(!snapshot.exists()) {
+                if (!snapshot.exists()) {
                     console.log("StripeConnect 1.0: migrateStripeCustomer " + userId + " could not be found!")
                     throw new Error("Invalid customer")
                 }
-                return.admin.database().ref(newCustomerRef).set(snapshot.val()).then(result => {
+                return admin.database().ref(newCustomerRef).set(snapshot.val()).then(result => {
                     console.log("StripeConnect 1.0: migrateStripeCustomer " + userId + " succeeded with value " + JSON.stringify(snapshot.val()))
                     return snapshot.val().customer_id
                 })
-            }
+            })
         } else {
             console.log("StripeConnect 1.0: migrateStripeCustomer " + userId + " already exists with value " + JSON.stringify(snapshot.val()))
             return snapshot.val().customer_id
         }
-    }
+    })
 }
 

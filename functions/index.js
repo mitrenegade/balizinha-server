@@ -35,7 +35,7 @@ exports.doEmailSignup = function(userId, email) {
     console.log("onCreateUser calling createPlayer with uid " + userId)
     return exports.createPlayer(userId).then(function (result) {
         console.log("onCreateUser createPlayer success with result " + result)
-        return exports.createStripeCustomer(email, userId)
+        return stripeConnect1_0.createStripeCustomer(email, userId)
     })
 }
 
@@ -175,7 +175,7 @@ exports.ephemeralKeys = functions.https.onRequest((req, res) => {
 });
 
 exports.validateStripeCustomer = functions.https.onRequest( (req, res) => {
-    return stripeConnect1_0.validateStripeCustomer(req, res, exports, admin)
+    return stripeConnect1_0.validateStripeCustomer(req, res)
 })
 
 exports.savePaymentInfo = functions.https.onRequest( (req, res) => {
@@ -225,11 +225,6 @@ exports.onCreateCharge = functions.database.ref(`/charges/events/{eventId}/{char
         return snapshot
     }
 })
-
-// helper functions
-exports.createStripeCustomer = function(email, uid) {
-    return stripeConnect1_0.createStripeCustomer(email, uid)
-}
 
 // STRIPE CONNECT //////////////////////////////////////////////////////////////////////////////////
 exports.stripeConnectRedirectHandler = functions.https.onRequest((req, res) => {
