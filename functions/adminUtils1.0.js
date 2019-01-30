@@ -162,4 +162,28 @@ exports.generateShareLink = function(req, res, exports, admin) {
     })
 }
 
+exports.migrateStripeCustomers = function(req, res) {
+    const oldCustomerRef = `/stripe_customers`
+    const newCustomerRef = `/stripeCustomers`
+    var oldCount = 0
+    var newCount = 0
+    return admin.database().ref(oldCustomerRef).once('value').then(snapshot => {
+        if (!snapshot.exists()) {
+            throw new Error("Endpoint stripe_customers was not found")
+        }
+        oldCount = snapshot.numChildren()
+        console.log("Admin: migrateStripeCustomers oldCount " + oldCount)
+        return snapshot.val()
+    }).then(customers => {
+        return admin.database().ref(newCustomerRef).update(customers)
+    }).then(result => {
+        return admin.database().ref(newCustomerRef).once('value')
+    }).then(snapshot => {
+        newCount = snapshot.numChildren()
+        console.log("Admin: migrateStripeCustomers results: oldCount " + oldCount + " newCount " + newCount)
+        res.status(200).json({"success": true, "old": oldCount, "new": newCount})
+    }).catch(err => {
+        res.status(500).json({"error": err})
+    })
+}
 

@@ -1,9 +1,13 @@
+const globals = require('./globals')
+
+const stripeToken = globals.stripeToken
+const stripe = require('stripe')(stripeToken)
 /**
  * Allows user to join a game and create a payment hold
  * params: userId: String, eventId: String
  * result: { },  or error
  */
-exports.holdPayment = function(req, res, stripe, exports, admin) {
+exports.holdPayment = function(req, res, exports, admin) {
     const userId = req.body.userId
     const eventId = req.body.eventId
 
@@ -60,7 +64,7 @@ exports.holdPayment = function(req, res, stripe, exports, admin) {
     })
 }
 
-exports.capturePayment = function(req, res, stripe, exports, admin) {
+exports.capturePayment = function(req, res, exports, admin) {
     const userId = req.body.userId
     const eventId = req.body.eventId
     const chargeId = req.body.chargeId

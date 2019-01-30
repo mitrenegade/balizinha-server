@@ -1,4 +1,5 @@
 const admin = require('firebase-admin');
+const globals = require('./globals')
 var rp = require('request-promise-native')
 
 // dynamic links https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=a
@@ -7,10 +8,10 @@ var rp = require('request-promise-native')
 // payload format: https://firebase.google.com/docs/reference/dynamic-links/link-shortener
 // use dynamicLinkDomain instead https://stackoverflow.com/questions/51308933/firebase-dynamic-link-internal-error-when-creating-using-curl
 exports.createDynamicLink = function(exports, admin, type, id, socialMetaTagInfo) {
-    const apiKey = exports.getAPIKey()
+    const apiKey = globals.getAPIKey()
     const url = "https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=" + apiKey
     var domain
-    if (exports.isDev()) {
+    if (globals.isDev()) {
         domain = "pannadev.page.link"
     } else {
         domain = "pannaleagues.page.link"
