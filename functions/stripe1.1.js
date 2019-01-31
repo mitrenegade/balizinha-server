@@ -11,6 +11,25 @@ exports.holdPayment = function(req, res, exports, admin) {
     const userId = req.body.userId
     const eventId = req.body.eventId
 
+    return checkForStripeConnectForEvent(eventId).then(result => {
+        if (result == true) {
+            console.log("This is a Stripe Connect user's event")
+            var type = "stripeConnectChargeForEvent"
+            return exports.createAction(type, userId, eventId, null)
+        } else {
+            return holdPaymentForPlatformCharge(userId, eventId)
+        }
+    }).then(result => {
+        if (result["result"]) == 'error' {
+            res.status(500).json(result)
+        } else {
+            res.status(200).json(result)
+        }
+    })
+}
+
+// makes a charge on Panna's platform
+holdPaymentForPlatformCharge = function(userId, eventId) {
     const chargeId = exports.createUniqueId()
     var customer = ""
     var amount = 0
@@ -47,20 +66,21 @@ exports.holdPayment = function(req, res, exports, admin) {
         response["player_id"] = userId
         const chargeRef = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
         return chargeRef.update(response).then(result => {
-            return res.status(200).json({"result": "success", "chargeId":chargeId, "status": response["status"], "captured": response["captured"]})
+            var type = "holdPaymentForEvent"
+            return exports.createAction(type, userId, eventId, null)
+        }).then(result => {
+            return {"result": "success", "chargeId":chargeId, "status": response["status"], "captured": response["captured"]}
         })
     }, error => {
         // We want to capture errors and render them in a user-friendly way, while
         // still logging an exception with Stackdriver
         console.log("Stripe 1.1: holdPayment error " + JSON.stringify(error) + ' for chargeId ' + chargeId)
         const ref = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
-        const params = {'status': 'error', 'error': error.message, 'amount': amount, 'customer': customer, 'player_id': userId}
+        var params = {'status': 'error', 'error': error.message, 'amount': amount, 'customer': customer, 'player_id': userId}
         return ref.update(params).then(result => {
-            return res.status(500).json({"error": JSON.stringify(error.message)})
+            params['result'] = 'error'
+            return params
         })
-    }).then(result => {
-        var type = "holdPaymentForEvent"
-        return exports.createAction(type, userId, eventId, null)
     })
 }
 
@@ -128,4 +148,8 @@ exports.capturePayment = function(req, res, exports, admin) {
         console.log("Stripe v1.1 capturePayment: chargeId " + chargeId + " error: " + err)
         return res.status(500).json({"error": err.message})
     })
+}
+
+checkForStripeConnectForEvent = function(event) {
+
 }
