@@ -20,7 +20,7 @@ exports.holdPayment = function(req, res, exports, admin) {
             return holdPaymentForPlatformCharge(userId, eventId)
         }
     }).then(result => {
-        if (result["result"]) == 'error' {
+        if (result["result"] == 'error') {
             res.status(500).json(result)
         } else {
             res.status(200).json(result)
