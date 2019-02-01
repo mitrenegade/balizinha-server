@@ -36,7 +36,8 @@ exports.holdPayment = function(req, res, exports) {
         } else {
             res.status(200).json(result)
         }
-    }).catch(err => {
+    })
+    .catch(err => {
         console.log("holdPayment: caught error " + JSON.stringify(err))
         res.status(500).json(err)
     })
