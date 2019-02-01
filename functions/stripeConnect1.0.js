@@ -109,7 +109,6 @@ exports.doStripeConnectCharge = function(amount, eventId, connectId, customerId,
     return createStripeConnectChargeToken(connectId, customerId).then(result => {
         var token = result.token
         var stripe_account = result.stripe_account
-        console.log("CreateStripeConnectChargeToken for account " + stripe_account + " token: " + JSON.stringify(token))
         var source = token.id
         const charge = {
             amount, 
@@ -126,15 +125,16 @@ exports.doStripeConnectCharge = function(amount, eventId, connectId, customerId,
         .then(response => {
             // If the result is successful, write it back to the database
             console.log("CreateStripeConnectCharge success with response " + JSON.stringify(response))
+            response.connectId = connectId
+            response.customerId = customerId
+            response.stripeUserId = stripe_account
             const ref = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
             // TODO: also add connectId to it
             return ref.update(response)
         }, error => {
-            // We want to capture errors and render them in a user-friendly way, while
-            // still logging an exception with Stackdriver
             console.log("CreateStripeConnectCharge createCharge error: " + error)
-            const ref = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
-            return ref.child('error').set(error.message).then(()=> {
+            params = {'connectId': connectId, 'customerId': customerId, 'stripeUserId': stripe_account, 'error': error.message}
+            return admin.database().ref(`/charges/events/${eventId}/${chargeId}`).update(params).then(()=> {
                 throw error
             })
         })
@@ -174,7 +174,7 @@ createStripeConnectChargeToken = function(connectId, customerId) {
             })
         }).then(token => {
             const result = {'token': token, 'stripe_account': stripe_account}
-            console.log("createStripeConnectChargeToken: success with token " + token + " stripe_account " + stripe_account)
+            console.log("createStripeConnectChargeToken: success with result " + JSON.stringify(result))
             return result
         })
     })
