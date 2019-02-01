@@ -83,7 +83,6 @@ exports.getConnectAccountInfo = function(req, res, exports) {
 exports.createStripeConnectCharge = function(req, res, exports) {
     // Create a charge using the pushId as the idempotency key, protecting against double charges 
     const amount = req.body.amount;
-    const currency = 'USD'
     const eventId = req.body.eventId
     const connectId = req.body.connectId // index into stripeConnectAccount
     const customerId = req.body.customer_id // index into stripeCustomer
@@ -95,7 +94,17 @@ exports.createStripeConnectCharge = function(req, res, exports) {
     const idempotency_key = chargeId
 
     console.log("CreateStripeConnectCharge amount " + amount + " connectId " + connectId + " customerId " + customerId + " event " + eventId)
+    return exports.doStripeConnectCharge(amount, eventId, connectId, customerId, chargeId).then(result => {
+        return res.status(200).json({"success": true, "chargeId": chargeId, "result": response})
+    }).catch((error) => {
+        console.log("CreateStripeConnectCharge caught error: " + error) //JSON.stringify(error))
+        return res.status(500).json({"error": error})
+    })
+}
+
+exports.doStripeConnectCharge = function(amount, eventId, connectId, customerId, chargeId) {
     // TODO: use two promises to pull stripeConnectAccount and stripeCustomer info
+    const currency = 'USD'
     createStripeConnectChargeToken(connectId, customerId).then(result => {
         var token = result.token
         var stripe_account = result.stripe_account
@@ -118,9 +127,7 @@ exports.createStripeConnectCharge = function(req, res, exports) {
             console.log("CreateStripeConnectCharge success with response " + JSON.stringify(response))
             const ref = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
             // TODO: also add connectId to it
-            return ref.update(response).then(result => {
-                return res.status(200).json({"success": true, "chargeId": chargeId, "result": response})
-            })
+            return ref.update(response)
         }, error => {
             // We want to capture errors and render them in a user-friendly way, while
             // still logging an exception with Stackdriver
@@ -130,9 +137,6 @@ exports.createStripeConnectCharge = function(req, res, exports) {
                 throw error
             })
         })
-    }).catch((error) => {
-        console.log("CreateStripeConnectCharge caught error: " + error) //JSON.stringify(error))
-        return res.status(500).json({"error": error})
     })
 }
 

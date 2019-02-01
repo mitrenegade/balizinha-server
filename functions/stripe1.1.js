@@ -1,4 +1,6 @@
 const globals = require('./globals')
+const stripeConnect = require('./stripeConnect1.0')
+const admin = require('firebase-admin');
 
 const stripeToken = globals.stripeToken
 const stripe = require('stripe')(stripeToken)
@@ -7,17 +9,22 @@ const stripe = require('stripe')(stripeToken)
  * params: userId: String, eventId: String
  * result: { },  or error
  */
-exports.holdPayment = function(req, res, exports, admin) {
+exports.holdPayment = function(req, res, exports) {
     const userId = req.body.userId
     const eventId = req.body.eventId
+    const chargeId = exports.createUniqueId()
 
     return checkForStripeConnectForEvent(eventId).then(result => {
-        if (result == true) {
-            console.log("This is a Stripe Connect user's event")
-            var type = "stripeConnectChargeForEvent"
-            return exports.createAction(type, userId, eventId, null)
+        console.log("holdPayment: checkForStripeConnect result " + JSON.stringify(result) + " with stripeUserAccount? " + (result.stripeUserId != undefined))
+        if (result.type == 'stripeUserAccount' && result.stripeUserId != undefined) {
+            const stripeUserId = result.stripeUserId
+            console.log("This is a Stripe Connect user's event with stripeUserID " + stripeUserId)
+            return exports.doStripeConnectCharge(amount, eventId, connectId, customerId, chargeId).then(result => {
+                var type = "stripeConnectChargeForEvent"
+                return exports.createAction(type, userId, eventId, null)
+            })
         } else {
-            return holdPaymentForPlatformCharge(userId, eventId)
+            return holdPaymentForPlatformCharge(userId, eventId, chargeId, exports)
         }
     }).then(result => {
         if (result["result"] == 'error') {
@@ -25,12 +32,13 @@ exports.holdPayment = function(req, res, exports, admin) {
         } else {
             res.status(200).json(result)
         }
+    }).catch(err => {
+        res.status(500).json(err)
     })
 }
 
 // makes a charge on Panna's platform
-holdPaymentForPlatformCharge = function(userId, eventId) {
-    const chargeId = exports.createUniqueId()
+holdPaymentForPlatformCharge = function(userId, eventId, chargeId, exports) {
     var customer = ""
     var amount = 0
 
@@ -84,7 +92,7 @@ holdPaymentForPlatformCharge = function(userId, eventId) {
     })
 }
 
-exports.capturePayment = function(req, res, exports, admin) {
+exports.capturePayment = function(req, res, exports) {
     const userId = req.body.userId
     const eventId = req.body.eventId
     const chargeId = req.body.chargeId
@@ -99,6 +107,7 @@ exports.capturePayment = function(req, res, exports, admin) {
         }
         return snapshot.val()
     }).then(eventDict => {
+        // BOBBY TODO move event request earlier
         if (eventDict["organizer"] == userId || eventDict["owner"] == userId || isAdmin == true) {
             var initiatedBy = "unknown"
             if (eventDict["organizer"] == userId) {
@@ -150,6 +159,31 @@ exports.capturePayment = function(req, res, exports, admin) {
     })
 }
 
-checkForStripeConnectForEvent = function(event) {
-
+/*
+ * returns {type:"stripeConnectedAccount", stripeUserId:} if stripeConnectedAccounts contains userId
+ * returns {type:"none"} otherwise
+ */
+checkForStripeConnectForEvent = function(eventId) {
+    return admin.database().ref(`events/${eventId}`).once('value').then(snapshot => {
+        if (!snapshot.exists()) {
+            throw new Error("Event not found")
+        }
+        console.log("checkForStripeConnectForEvent: eventId " + eventId)
+        return snapshot.val()
+    }).then(event => {
+        const organizerId = event.organizer
+        console.log("checkForStripeConnectForEvent: organizerId " + organizerId)
+        return admin.database().ref(`stripeConnectAccounts/${organizerId}`).once('value')
+    }).then(snapshot => {
+        if (!snapshot.exists()) {
+            return {'type': 'none'}
+        }
+        const account = snapshot.val()
+        console.log("checkForStripeConnectForEvent: stripeConnectedAccount " + JSON.stringify(account))
+        if (account.stripeUserId != undefined) {
+            return {'type': 'stripeConnectedAccount', 'stripeUserId': account.stripeUserId}
+        } else {
+            return {'type': 'none'}
+        }
+    })
 }

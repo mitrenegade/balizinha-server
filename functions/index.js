@@ -179,11 +179,11 @@ exports.validateStripeCustomer = functions.https.onRequest( (req, res) => {
 })
 
 exports.savePaymentInfo = functions.https.onRequest( (req, res) => {
-    return stripeConnect1_0.savePaymentInfo(req, res, admin)
+    return stripeConnect1_0.savePaymentInfo(req, res)
 })
 
 exports.refundCharge = functions.https.onRequest( (req, res) => {
-    return stripe1_0.refundCharge(req, res, exports, admin)
+    return stripe1_0.refundCharge(req, res)
 })
 
 exports.createStripeSubscription = functions.database.ref(`/charges/organizers/{organizerId}/{chargeId}`).onWrite((snapshot, context) => {
