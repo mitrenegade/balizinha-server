@@ -196,7 +196,7 @@ exports.createStripeSubscription = functions.database.ref(`/charges/organizers/{
  * result: { result: success, chargeId: String, status: completed, captured: bool },  or { error: String }
  */
 exports.holdPayment = functions.https.onRequest((req, res) => {
-    return stripe1_1.holdPayment(req, res, exports, admin)
+    return stripe1_1.holdPayment(req, res, exports)
 })
 
 /**

@@ -15,11 +15,14 @@ exports.holdPayment = function(req, res, exports) {
     const chargeId = exports.createUniqueId()
 
     return checkForStripeConnectForEvent(eventId).then(result => {
-        console.log("holdPayment: checkForStripeConnect result " + JSON.stringify(result) + " with stripeUserAccount? " + (result.stripeUserId != undefined))
-        if (result.type == 'stripeUserAccount' && result.stripeUserId != undefined) {
-            const stripeUserId = result.stripeUserId
-            console.log("This is a Stripe Connect user's event with stripeUserID " + stripeUserId)
-            return exports.doStripeConnectCharge(amount, eventId, connectId, customerId, chargeId).then(result => {
+        const isConnectedAccount = result.type == 'stripeConnectAccount'
+        const foundEvent = result.event
+        console.log("holdPayment: checkForStripeConnect result " + JSON.stringify(result) + " with stripeConnectAccount? " + isConnectedAccount)
+        if (isConnectedAccount) {
+            const connectId = result.connectId
+            const amount = foundEvent.amount * 100
+            console.log("holdPayment: This is a Stripe Connect user's event " + eventId + " with stripeUserId " + connectId + " amount " + amount + " userId " + userId + " chargeId " + chargeId)
+            return stripeConnect.doStripeConnectCharge(amount, eventId, connectId, userId, chargeId).then(result => {
                 var type = "stripeConnectChargeForEvent"
                 return exports.createAction(type, userId, eventId, null)
             })
@@ -27,12 +30,14 @@ exports.holdPayment = function(req, res, exports) {
             return holdPaymentForPlatformCharge(userId, eventId, chargeId, exports)
         }
     }).then(result => {
+        console.log("holdPayment: result " + JSON.stringify(result))
         if (result["result"] == 'error') {
             res.status(500).json(result)
         } else {
             res.status(200).json(result)
         }
     }).catch(err => {
+        console.log("holdPayment: caught error " + JSON.stringify(err))
         res.status(500).json(err)
     })
 }
@@ -164,6 +169,8 @@ exports.capturePayment = function(req, res, exports) {
  * returns {type:"none"} otherwise
  */
 checkForStripeConnectForEvent = function(eventId) {
+    var foundEvent = undefined
+    var organizerId = undefined
     return admin.database().ref(`events/${eventId}`).once('value').then(snapshot => {
         if (!snapshot.exists()) {
             throw new Error("Event not found")
@@ -171,19 +178,20 @@ checkForStripeConnectForEvent = function(eventId) {
         console.log("checkForStripeConnectForEvent: eventId " + eventId)
         return snapshot.val()
     }).then(event => {
-        const organizerId = event.organizer
+        foundEvent = event
+        organizerId = event.organizer
         console.log("checkForStripeConnectForEvent: organizerId " + organizerId)
         return admin.database().ref(`stripeConnectAccounts/${organizerId}`).once('value')
     }).then(snapshot => {
         if (!snapshot.exists()) {
-            return {'type': 'none'}
+            return {'type': 'none', 'event': foundEvent}
         }
         const account = snapshot.val()
-        console.log("checkForStripeConnectForEvent: stripeConnectedAccount " + JSON.stringify(account))
+        console.log("checkForStripeConnectForEvent: stripeConnectAccount " + JSON.stringify(account))
         if (account.stripeUserId != undefined) {
-            return {'type': 'stripeConnectedAccount', 'stripeUserId': account.stripeUserId}
+            return {'type': 'stripeConnectAccount', 'connectId': organizerId, 'event': foundEvent}
         } else {
-            return {'type': 'none'}
+            return {'type': 'none', 'event': foundEvent}
         }
     })
 }

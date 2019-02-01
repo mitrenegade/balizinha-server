@@ -105,7 +105,8 @@ exports.createStripeConnectCharge = function(req, res, exports) {
 exports.doStripeConnectCharge = function(amount, eventId, connectId, customerId, chargeId) {
     // TODO: use two promises to pull stripeConnectAccount and stripeCustomer info
     const currency = 'USD'
-    createStripeConnectChargeToken(connectId, customerId).then(result => {
+    console.log("doStripeConnectCharge: calling createStripeConnectChargeToken with connectId " + connectId + " customerId " + customerId)
+    return createStripeConnectChargeToken(connectId, customerId).then(result => {
         var token = result.token
         var stripe_account = result.stripe_account
         console.log("CreateStripeConnectChargeToken for account " + stripe_account + " token: " + JSON.stringify(token))
@@ -151,7 +152,6 @@ createStripeConnectChargeToken = function(connectId, customerId) {
         if (stripe_account == undefined) {
             throw new Error("No Stripe account associated with " + connectId + ". Dict: " + JSON.stringify(snapshot.val()))
         }
-        console.log("createStripeConnectChargeToken: Stripe account " + stripe_account)
         return admin.database().ref(`/stripeCustomers/${customerId}`).once('value').then(snapshot => {
             if (!snapshot.exists()) {
                 throw new Error("No customer account found for " + customerId)
@@ -161,17 +161,21 @@ createStripeConnectChargeToken = function(connectId, customerId) {
             if (customer == undefined) {
                 throw new Error("No customer account associated with " + customer)
             }
+
             console.log("createStripeConnectChargeToken: Customer " + customer + " source " + original_source + " stripe_account " + stripe_account)
+            const usage = 'single_use'
             // create a one time shared source
             return stripe.sources.create({
                 customer,
                 original_source,
-                usage: 'single_use' // TODO: make this reusable, and add it to a customer/stripe account
+                usage // TODO: make this reusable, and add it to a customer/stripe account
             }, {
                 stripe_account
             })
         }).then(token => {
-            return {token, stripe_account}
+            const result = {'token': token, 'stripe_account': stripe_account}
+            console.log("createStripeConnectChargeToken: success with token " + token + " stripe_account " + stripe_account)
+            return result
         })
     })
 }
