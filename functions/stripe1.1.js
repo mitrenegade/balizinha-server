@@ -38,6 +38,11 @@ exports.holdPayment = function(req, res, exports) {
         }
     })
     .catch(err => {
+        err.error = err.message
+        if (err.message == "If you specify a customer when sharing a source, the source must be attached to the customer beforehand.") {
+            // this happens if a user has a stripe card instead of a source associated with a costomer
+            err.error = "We've upgraded our payment system. Please update your payment method and try again."
+        }
         console.log("holdPayment: caught error " + JSON.stringify(err))
         res.status(500).json(err)
     })
