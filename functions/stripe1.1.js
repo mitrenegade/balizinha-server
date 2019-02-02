@@ -1,4 +1,6 @@
 const globals = require('./globals')
+const stripeConnect = require('./stripeConnect1.0')
+const admin = require('firebase-admin');
 
 const stripeToken = globals.stripeToken
 const stripe = require('stripe')(stripeToken)
@@ -7,11 +9,47 @@ const stripe = require('stripe')(stripeToken)
  * params: userId: String, eventId: String
  * result: { },  or error
  */
-exports.holdPayment = function(req, res, exports, admin) {
+exports.holdPayment = function(req, res, exports) {
     const userId = req.body.userId
     const eventId = req.body.eventId
-
     const chargeId = exports.createUniqueId()
+
+    return checkForStripeConnectForEvent(eventId).then(result => {
+        const isConnectedAccount = result.type == 'stripeConnectAccount'
+        const foundEvent = result.event
+        console.log("holdPayment: checkForStripeConnect result " + JSON.stringify(result) + " with stripeConnectAccount? " + isConnectedAccount)
+        if (isConnectedAccount) {
+            const connectId = result.connectId
+            const amount = foundEvent.amount * 100
+            console.log("holdPayment: This is a Stripe Connect user's event " + eventId + " with stripeUserId " + connectId + " amount " + amount + " userId " + userId + " chargeId " + chargeId)
+            return stripeConnect.doStripeConnectCharge(amount, eventId, connectId, userId, chargeId).then(result => {
+                var type = "stripeConnectChargeForEvent"
+                return exports.createAction(type, userId, eventId, null)
+            })
+        } else {
+            return holdPaymentForPlatformCharge(userId, eventId, chargeId, exports)
+        }
+    }).then(result => {
+        console.log("holdPayment: result " + JSON.stringify(result))
+        if (result["result"] == 'error') {
+            res.status(500).json(result)
+        } else {
+            res.status(200).json(result)
+        }
+    })
+    .catch(err => {
+        err.error = err.message
+        if (err.message == "If you specify a customer when sharing a source, the source must be attached to the customer beforehand.") {
+            // this happens if a user has a stripe card instead of a source associated with a costomer
+            err.error = "We've upgraded our payment system. Please update your payment method and try again."
+        }
+        console.log("holdPayment: caught error " + JSON.stringify(err))
+        res.status(500).json(err)
+    })
+}
+
+// makes a charge on Panna's platform
+holdPaymentForPlatformCharge = function(userId, eventId, chargeId, exports) {
     var customer = ""
     var amount = 0
 
@@ -47,24 +85,25 @@ exports.holdPayment = function(req, res, exports, admin) {
         response["player_id"] = userId
         const chargeRef = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
         return chargeRef.update(response).then(result => {
-            return res.status(200).json({"result": "success", "chargeId":chargeId, "status": response["status"], "captured": response["captured"]})
+            var type = "holdPaymentForEvent"
+            return exports.createAction(type, userId, eventId, null)
+        }).then(result => {
+            return {"result": "success", "chargeId":chargeId, "status": response["status"], "captured": response["captured"]}
         })
     }, error => {
         // We want to capture errors and render them in a user-friendly way, while
         // still logging an exception with Stackdriver
         console.log("Stripe 1.1: holdPayment error " + JSON.stringify(error) + ' for chargeId ' + chargeId)
         const ref = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
-        const params = {'status': 'error', 'error': error.message, 'amount': amount, 'customer': customer, 'player_id': userId}
+        var params = {'status': 'error', 'error': error.message, 'amount': amount, 'customer': customer, 'player_id': userId}
         return ref.update(params).then(result => {
-            return res.status(500).json({"error": JSON.stringify(error.message)})
+            params['result'] = 'error'
+            return params
         })
-    }).then(result => {
-        var type = "holdPaymentForEvent"
-        return exports.createAction(type, userId, eventId, null)
     })
 }
 
-exports.capturePayment = function(req, res, exports, admin) {
+exports.capturePayment = function(req, res, exports) {
     const userId = req.body.userId
     const eventId = req.body.eventId
     const chargeId = req.body.chargeId
@@ -79,6 +118,7 @@ exports.capturePayment = function(req, res, exports, admin) {
         }
         return snapshot.val()
     }).then(eventDict => {
+        // BOBBY TODO move event request earlier
         if (eventDict["organizer"] == userId || eventDict["owner"] == userId || isAdmin == true) {
             var initiatedBy = "unknown"
             if (eventDict["organizer"] == userId) {
@@ -127,5 +167,37 @@ exports.capturePayment = function(req, res, exports, admin) {
     }).catch( (err) => {
         console.log("Stripe v1.1 capturePayment: chargeId " + chargeId + " error: " + err)
         return res.status(500).json({"error": err.message})
+    })
+}
+
+/*
+ * returns {type:"stripeConnectedAccount", stripeUserId:} if stripeConnectedAccounts contains userId
+ * returns {type:"none"} otherwise
+ */
+checkForStripeConnectForEvent = function(eventId) {
+    var foundEvent = undefined
+    var organizerId = undefined
+    return admin.database().ref(`events/${eventId}`).once('value').then(snapshot => {
+        if (!snapshot.exists()) {
+            throw new Error("Event not found")
+        }
+        console.log("checkForStripeConnectForEvent: eventId " + eventId)
+        return snapshot.val()
+    }).then(event => {
+        foundEvent = event
+        organizerId = event.organizer
+        console.log("checkForStripeConnectForEvent: organizerId " + organizerId)
+        return admin.database().ref(`stripeConnectAccounts/${organizerId}`).once('value')
+    }).then(snapshot => {
+        if (!snapshot.exists()) {
+            return {'type': 'none', 'event': foundEvent}
+        }
+        const account = snapshot.val()
+        console.log("checkForStripeConnectForEvent: stripeConnectAccount " + JSON.stringify(account))
+        if (account.stripeUserId != undefined) {
+            return {'type': 'stripeConnectAccount', 'connectId': organizerId, 'event': foundEvent}
+        } else {
+            return {'type': 'none', 'event': foundEvent}
+        }
     })
 }

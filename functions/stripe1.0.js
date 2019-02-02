@@ -30,7 +30,7 @@ exports.ephemeralKeys = function(req, res) {
     });
 }
 
-exports.createStripeCustomer = function(admin, email, uid) {
+exports.createStripeCustomer = function(email, uid) {
     console.log("Stripe 1.0: Creating stripeCustomer " + uid + " " + email)
     const ref = `/stripe_customers/${uid}/customer_id`
     return stripe.customers.create({
@@ -159,7 +159,7 @@ exports.createStripeCharge = function(snapshot, context, exports, admin) {
     })
 }
 
-exports.refundCharge = function(req, res, exports, admin) {
+exports.refundCharge = function(req, res) {
     const chargeId = req.body.chargeId // charge Id from balizinha
     const eventId = req.body.eventId
     const organizerId = req.body.organizerId

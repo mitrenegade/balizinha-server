@@ -83,7 +83,6 @@ exports.getConnectAccountInfo = function(req, res, exports) {
 exports.createStripeConnectCharge = function(req, res, exports) {
     // Create a charge using the pushId as the idempotency key, protecting against double charges 
     const amount = req.body.amount;
-    const currency = 'USD'
     const eventId = req.body.eventId
     const connectId = req.body.connectId // index into stripeConnectAccount
     const customerId = req.body.customer_id // index into stripeCustomer
@@ -95,12 +94,23 @@ exports.createStripeConnectCharge = function(req, res, exports) {
     const idempotency_key = chargeId
 
     console.log("CreateStripeConnectCharge amount " + amount + " connectId " + connectId + " customerId " + customerId + " event " + eventId)
+    return exports.doStripeConnectCharge(amount, eventId, connectId, customerId, chargeId).then(result => {
+        return res.status(200).json({"success": true, "chargeId": chargeId, "result": response})
+    }).catch((error) => {
+        console.log("CreateStripeConnectCharge caught error: " + error) //JSON.stringify(error))
+        return res.status(500).json({"error": error})
+    })
+}
+
+exports.doStripeConnectCharge = function(amount, eventId, connectId, player_id, chargeId) {
     // TODO: use two promises to pull stripeConnectAccount and stripeCustomer info
-    createStripeConnectChargeToken(connectId, customerId).then(result => {
+    const currency = 'USD'
+    console.log("doStripeConnectCharge: calling createStripeConnectChargeToken with connectId " + connectId + " player_id " + player_id)
+    return createStripeConnectChargeToken(connectId, player_id).then(result => {
         var token = result.token
         var stripe_account = result.stripe_account
-        console.log("CreateStripeConnectChargeToken for account " + stripe_account + " token: " + JSON.stringify(token))
         var source = token.id
+        var customerId = result.customerId // for logging only
         const charge = {
             amount, 
             currency,
@@ -116,29 +126,26 @@ exports.createStripeConnectCharge = function(req, res, exports) {
         .then(response => {
             // If the result is successful, write it back to the database
             console.log("CreateStripeConnectCharge success with response " + JSON.stringify(response))
+            response.connectId = connectId
+            response.player_id = player_id
+            response.customer = customerId // old holdPayment uses customer
+            response.stripeUserId = stripe_account
             const ref = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
             // TODO: also add connectId to it
-            return ref.update(response).then(result => {
-                return res.status(200).json({"success": true, "chargeId": chargeId, "result": response})
-            })
+            return ref.update(response)
         }, error => {
-            // We want to capture errors and render them in a user-friendly way, while
-            // still logging an exception with Stackdriver
             console.log("CreateStripeConnectCharge createCharge error: " + error)
-            const ref = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
-            return ref.child('error').set(error.message).then(()=> {
+            params = {'connectId': connectId, 'player_id': player_id, 'customer': customerId, 'stripeUserId': stripe_account, 'error': error.message}
+            return admin.database().ref(`/charges/events/${eventId}/${chargeId}`).update(params).then(()=> {
                 throw error
             })
         })
-    }).catch((error) => {
-        console.log("CreateStripeConnectCharge caught error: " + error) //JSON.stringify(error))
-        return res.status(500).json({"error": error})
     })
 }
 
 // https://stripe.com/docs/connect/shared-customers
 // https://stripe.com/docs/sources/connect#shared-card-sources
-createStripeConnectChargeToken = function(connectId, customerId) {
+createStripeConnectChargeToken = function(connectId, player_id) {
     return admin.database().ref(`/stripeConnectAccounts/${connectId}`).once('value').then(snapshot => {
         if (!snapshot.exists()) {
             throw new Error("No Stripe account found for organization " + connectId)
@@ -147,27 +154,31 @@ createStripeConnectChargeToken = function(connectId, customerId) {
         if (stripe_account == undefined) {
             throw new Error("No Stripe account associated with " + connectId + ". Dict: " + JSON.stringify(snapshot.val()))
         }
-        console.log("createStripeConnectChargeToken: Stripe account " + stripe_account)
-        return admin.database().ref(`/stripeCustomers/${customerId}`).once('value').then(snapshot => {
+        var customer = ""
+        return admin.database().ref(`/stripeCustomers/${player_id}`).once('value').then(snapshot => {
             if (!snapshot.exists()) {
-                throw new Error("No customer account found for " + customerId)
+                throw new Error("No customer account found for " + player_id)
             }
-            var customer = snapshot.val().customer_id
+            customer = snapshot.val().customer_id
             var original_source = snapshot.val().source
             if (customer == undefined) {
                 throw new Error("No customer account associated with " + customer)
             }
+
             console.log("createStripeConnectChargeToken: Customer " + customer + " source " + original_source + " stripe_account " + stripe_account)
+            const usage = 'single_use'
             // create a one time shared source
             return stripe.sources.create({
                 customer,
                 original_source,
-                usage: 'single_use' // TODO: make this reusable, and add it to a customer/stripe account
+                usage // TODO: make this reusable, and add it to a customer/stripe account
             }, {
                 stripe_account
             })
         }).then(token => {
-            return {token, stripe_account}
+            const result = {'token': token, 'stripe_account': stripe_account, 'customerId': customer}
+            console.log("createStripeConnectChargeToken: success with result " + JSON.stringify(result))
+            return result
         })
     })
 }
