@@ -52,24 +52,24 @@ storeStripeConnectTokens = function(userId, stripeUserId, accessToken, refreshTo
 }
 
 exports.getConnectAccountInfo = function(req, res, exports) {
-	var accountId = req.query.accountId
-	if (accountId == undefined) {
-		console.log("getConnectAccountInfo: No Stripe account provided")
-		return res.status(500).json({"error": "No Stripe account provided"})
-	}
+    var accountId = req.query.accountId
+    if (accountId == undefined) {
+        console.log("getConnectAccountInfo: No Stripe account provided")
+        return res.status(500).json({"error": "No Stripe account provided"})
+    }
 
-	return stripe.accounts.retrieve(accountId,
-		function(err, account) {
-		// asynchronously called
-			if (err != undefined) {
-				console.log("getConnectAccountInfo: received error while retrieving accounts: " + JSON.stringify(err))
-				return res.status(500).json({"error": "Received error while retrieving accounts", "info": err})
-			} else {
-				console.log("getConnectAccountInfo: Retrieved accounts for " + accountId + ": " + JSON.stringify(account))
-				return res.status(200).json({"account": account})
-			}
-		}
-	);
+    return stripe.accounts.retrieve(accountId,
+        function(err, account) {
+        // asynchronously called
+            if (err != undefined) {
+                console.log("getConnectAccountInfo: received error while retrieving accounts: " + JSON.stringify(err))
+                return res.status(500).json({"error": "Received error while retrieving accounts", "info": err})
+            } else {
+                console.log("getConnectAccountInfo: Retrieved accounts for " + accountId + ": " + JSON.stringify(account))
+                return res.status(200).json({"account": account})
+            }
+        }
+    );
 }
 
 /*
