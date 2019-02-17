@@ -9,7 +9,7 @@ const stripe = require('stripe')(stripeToken)
  * params: userId: String, eventId: String
  * result: { },  or error
  */
-exports.holdPayment = function(req, res, exports) {
+exports.makePayment = function(req, res, exports) {
     const userId = req.body.userId
     const eventId = req.body.eventId
     const chargeId = exports.createUniqueId()
@@ -21,11 +21,7 @@ exports.holdPayment = function(req, res, exports) {
         if (isConnectedAccount) {
             const connectId = result.connectId
             const amount = foundEvent.amount * 100
-            console.log("holdPayment: This is a Stripe Connect user's event " + eventId + " with stripeUserId " + connectId + " amount " + amount + " userId " + userId + " chargeId " + chargeId)
-            return stripeConnect.doStripeConnectCharge(amount, eventId, connectId, userId, chargeId).then(result => {
-                var type = "stripeConnectChargeForEvent"
-                return exports.createAction(type, userId, eventId, null, "made a payment")
-            })
+            return makeConnectCharge(connectId, amount, userId, eventId, chargeId, exports)
         } else {
             return holdPaymentForPlatformCharge(userId, eventId, chargeId, exports)
         }
@@ -47,6 +43,15 @@ exports.holdPayment = function(req, res, exports) {
         res.status(500).json(err)
     })
 }
+
+makeConnectCharge = function(connectId, amount, userId, eventId, chargeId, exports) {
+    console.log("holdPayment: This is a Stripe Connect user's event " + eventId + " with stripeUserId " + connectId + " amount " + amount + " userId " + userId + " chargeId " + chargeId)
+    return stripeConnect.doStripeConnectCharge(amount, eventId, connectId, userId, chargeId).then(result => {
+        var type = "stripeConnectChargeForEvent"
+        return exports.createAction(type, userId, eventId, null, "made a payment")
+    })
+}
+
 
 // makes a charge on Panna's platform
 holdPaymentForPlatformCharge = function(userId, eventId, chargeId, exports) {
