@@ -9,7 +9,7 @@ const stripe = require('stripe')(stripeToken)
  * params: userId: String, eventId: String
  * result: { },  or error
  */
-exports.holdPayment = function(req, res, exports) {
+exports.makePayment = function(req, res, exports) {
     const userId = req.body.userId
     const eventId = req.body.eventId
     const chargeId = exports.createUniqueId()
@@ -17,17 +17,13 @@ exports.holdPayment = function(req, res, exports) {
     return checkForStripeConnectForEvent(eventId).then(result => {
         const isConnectedAccount = result.type == 'stripeConnectAccount'
         const foundEvent = result.event
+        const amount = foundEvent.amount * 100
         console.log("holdPayment: checkForStripeConnect result " + JSON.stringify(result) + " with stripeConnectAccount? " + isConnectedAccount)
         if (isConnectedAccount) {
             const connectId = result.connectId
-            const amount = foundEvent.amount * 100
-            console.log("holdPayment: This is a Stripe Connect user's event " + eventId + " with stripeUserId " + connectId + " amount " + amount + " userId " + userId + " chargeId " + chargeId)
-            return stripeConnect.doStripeConnectCharge(amount, eventId, connectId, userId, chargeId).then(result => {
-                var type = "stripeConnectChargeForEvent"
-                return exports.createAction(type, userId, eventId, null, "made a payment")
-            })
+            return makeConnectCharge(connectId, userId, eventId, amount, chargeId, exports)
         } else {
-            return holdPaymentForPlatformCharge(userId, eventId, chargeId, exports)
+            return holdPaymentForPlatformCharge(userId, eventId, amount, chargeId, exports)
         }
     }).then(result => {
         console.log("holdPayment: result " + JSON.stringify(result))
@@ -48,28 +44,39 @@ exports.holdPayment = function(req, res, exports) {
     })
 }
 
-// makes a charge on Panna's platform
-holdPaymentForPlatformCharge = function(userId, eventId, chargeId, exports) {
-    var customer = ""
-    var amount = 0
+makeConnectCharge = function(connectId, userId, eventId, amount, chargeId, exports) {
+    console.log("holdPayment: This is a Stripe Connect user's event " + eventId + " with stripeUserId " + connectId + " amount " + amount + " userId " + userId + " chargeId " + chargeId)
+    return stripeConnect.doStripeConnectCharge(amount, eventId, connectId, userId, chargeId).then(result => {
+        var type = "stripeConnectChargeForEvent"
+        return exports.createAction(type, userId, eventId, null, "made a payment")
+    })
+}
 
+
+// makes a charge on Panna's platform
+holdPaymentForPlatformCharge = function(userId, eventId, amount, chargeId, exports) {
     console.log("Stripe v1.1: holdPayment userId " + userId + " event " + eventId + " new charge " + chargeId)
-    const customerRef = `/stripe_customers/${userId}`
+
+    // check old and new stripe customers
+    const customerRef = `/stripeCustomers/${userId}`
     return admin.database().ref(customerRef).once('value').then(snapshot => {
         if (!snapshot.exists()) {
-            throw new Error('No stripe customer found')
+            return admin.database().ref(`/stripe_customers/${userId}`).once('value').then(snapshot => {
+                if (!snapshot.exists()) {
+                    throw new Error("No Stripe customer found")
+                } else {
+                    return snapshot
+                }
+            })
+        } else {
+            return snapshot
         }
-        customer = snapshot.val()["customer_id"]
-        const eventRef = `/events/${eventId}`
-        return admin.database().ref(eventRef).once('value').then(snapshot => { 
-            return snapshot.val() 
-        })
-    }).then(eventDict => {
-        amount = eventDict["amount"] * 100 // amount needs to be in cents and is stored in dollars
+    }).then(snapshot => {
         const idempotency_key = chargeId;
         const currency = 'USD'
         const capture = false
         const description = "Payment hold for event " + eventId
+        const customer = snapshot.val().customer_id
         let charge = {amount, currency, customer, capture, description};
         // TODO is this needed?
         // if (data.source != undefined) {
@@ -86,6 +93,7 @@ holdPaymentForPlatformCharge = function(userId, eventId, chargeId, exports) {
         const chargeRef = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
         return chargeRef.update(response).then(result => {
             var type = "holdPaymentForEvent"
+            console.log("BOBBYTEST eventId for action " + eventId)
             return exports.createAction(type, userId, eventId, null)
         }).then(result => {
             return {"result": "success", "chargeId":chargeId, "status": response["status"], "captured": response["captured"]}
