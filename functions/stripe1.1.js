@@ -24,7 +24,7 @@ exports.holdPayment = function(req, res, exports) {
             console.log("holdPayment: This is a Stripe Connect user's event " + eventId + " with stripeUserId " + connectId + " amount " + amount + " userId " + userId + " chargeId " + chargeId)
             return stripeConnect.doStripeConnectCharge(amount, eventId, connectId, userId, chargeId).then(result => {
                 var type = "stripeConnectChargeForEvent"
-                return exports.createAction(type, userId, eventId, null)
+                return exports.createAction(type, userId, eventId, null, "made a payment")
             })
         } else {
             return holdPaymentForPlatformCharge(userId, eventId, chargeId, exports)

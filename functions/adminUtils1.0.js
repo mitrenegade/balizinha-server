@@ -49,14 +49,15 @@ exports.recountLeagueStats = function(req, res, exports, admin) {
         var promises = []
         snapshot.forEach(child => {
             if (child.exists()) {
-                const leagueId = child.val().id
+                const leagueId = child.key
+                console.log("RecountLeagueStats: Resetting stats for league " + leagueId)
                 var params = { "playerCount" : null, "eventCount": null }
                 var promiseRef = admin.database().ref(`/leagues/${leagueId}`).update(params)
                 promises.push(promiseRef)
             }
         })
         Promise.all(promises).then(result => {
-            console.log("RecountLeagueStats: updated " + promises.length + " leagues")
+            console.log("RecountLeagueStats: updated " + promises.length + " leagues" + " with result " + JSON.stringify(result))
             res.status(200).json({"result": {"count": promises.length}})
         }).catch(err => {
             console.log("RecountLeagueStats: error " + JSON.stringify(err))

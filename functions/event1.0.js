@@ -214,11 +214,11 @@ exports.onEventChange = function(snapshot, context, exports, admin) {
     }
 }
 
-exports.onEventCreate = function(snapshot, context, exports, admin) {
+exports.onEventCreate = function(snapshot, context, exports) {
     const eventId = context.params.eventId
     const userId = context.params.userId
     var data = snapshot.val()
-    console.log("onEventCreate: " + data.name + " info: " + data.info)
+    console.log("onEventCreate: eventName: " + data.name + " eventInfo: " + data.info)
     console.log("onEventCreate: JSON " + JSON.stringify(data))
     var name = data.name
     if (name == undefined) {
@@ -237,6 +237,7 @@ exports.onEventCreate = function(snapshot, context, exports, admin) {
             "socialDescription": info
             // for now, no socialImage
         }
+        console.log("onEventCreate: calling createDynamicLink with eventId " + eventId + " meta " + JSON.stringify(meta))
         return exports.createDynamicLink(type, eventId, meta)
     }).catch(err => {
         console.log("onEventCreate: error " + JSON.stringify(err))
@@ -381,17 +382,18 @@ eventsForLeagues = function(leagueIds, admin, eventAccumulator) {
 
 countEvents = function(snapshot, admin) {
     const parent = snapshot.ref.parent
-    const leagueId = snapshot.val().league
-    const countRef = admin.database().ref(`/leagues/${leagueId}/eventCount`)
-
-    let increment = 1
+    const leagueId = snapshot.val().leagueId
+    let leagueRef = `/leagues/${leagueId}`
+    let countRef = admin.database().ref(leagueRef).child(`eventCount`)
+    console.log("CountEvents: countRef " + countRef)
 
     // Return the promise from countRef.transaction() so our function
     // waits for this async event to complete before it exits.
-    return countRef.transaction((current) => {
-        //console.log("Event v1.0 countEvents for league " + leagueId + ": current " + current)
-        let value = (current || 0) + increment;
+    return countRef.transaction(function(current_value) {
+        console.log("Event v1.0 countEvents for league " + leagueId + ": current " + current_value)
+        let value = (current_value || 0) + 1;
         console.log('Event v1.0: counter updated to ' + JSON.stringify(value))
+        return value
     })
 }
 

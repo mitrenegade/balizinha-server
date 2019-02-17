@@ -367,7 +367,7 @@ exports.getEventsAvailableToUser = functions.https.onRequest((req, res) => {
 
 // database changes
 exports.onEventCreate = functions.database.ref('/events/{eventId}').onCreate((snapshot, context) => {
-    return event1_0.onEventCreate(snapshot, context, exports, admin)
+    return event1_0.onEventCreate(snapshot, context, exports)
 })
 
 exports.onEventChange = functions.database.ref('/events/{eventId}').onWrite((snapshot, context) => {
