@@ -17,12 +17,13 @@ exports.makePayment = function(req, res, exports) {
     return checkForStripeConnectForEvent(eventId).then(result => {
         const isConnectedAccount = result.type == 'stripeConnectAccount'
         const foundEvent = result.event
+        const amount = foundEvent.amount * 100
         console.log("holdPayment: checkForStripeConnect result " + JSON.stringify(result) + " with stripeConnectAccount? " + isConnectedAccount)
         if (isConnectedAccount) {
             const connectId = result.connectId
-            return makeConnectCharge(connectId, userId, eventId, foundEvent, chargeId, exports)
+            return makeConnectCharge(connectId, userId, eventId, amount, chargeId, exports)
         } else {
-            return holdPaymentForPlatformCharge(userId, eventId, foundEvent, chargeId, exports)
+            return holdPaymentForPlatformCharge(userId, eventId, amount, chargeId, exports)
         }
     }).then(result => {
         console.log("holdPayment: result " + JSON.stringify(result))
@@ -43,7 +44,7 @@ exports.makePayment = function(req, res, exports) {
     })
 }
 
-makeConnectCharge = function(connectId, userId, eventId, event, chargeId, exports) {
+makeConnectCharge = function(connectId, userId, eventId, amount, chargeId, exports) {
     const amount = event.amount * 100
     console.log("holdPayment: This is a Stripe Connect user's event " + eventId + " with stripeUserId " + connectId + " amount " + amount + " userId " + userId + " chargeId " + chargeId)
     return stripeConnect.doStripeConnectCharge(amount, eventId, connectId, userId, chargeId).then(result => {
