@@ -45,7 +45,6 @@ exports.makePayment = function(req, res, exports) {
 }
 
 makeConnectCharge = function(connectId, userId, eventId, amount, chargeId, exports) {
-    const amount = event.amount * 100
     console.log("holdPayment: This is a Stripe Connect user's event " + eventId + " with stripeUserId " + connectId + " amount " + amount + " userId " + userId + " chargeId " + chargeId)
     return stripeConnect.doStripeConnectCharge(amount, eventId, connectId, userId, chargeId).then(result => {
         var type = "stripeConnectChargeForEvent"
@@ -55,9 +54,7 @@ makeConnectCharge = function(connectId, userId, eventId, amount, chargeId, expor
 
 
 // makes a charge on Panna's platform
-holdPaymentForPlatformCharge = function(userId, eventId, event, chargeId, exports) {
-    var amount = event.amount * 100
-
+holdPaymentForPlatformCharge = function(userId, eventId, amount, chargeId, exports) {
     console.log("Stripe v1.1: holdPayment userId " + userId + " event " + eventId + " new charge " + chargeId)
 
     // check old and new stripe customers
