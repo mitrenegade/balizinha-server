@@ -387,14 +387,13 @@ countEvents = function(snapshot, admin) {
     let countRef = admin.database().ref(leagueRef).child(`eventCount`)
     console.log("CountEvents: countRef " + countRef)
 
-    let increment = 1
-
     // Return the promise from countRef.transaction() so our function
     // waits for this async event to complete before it exits.
-    return countRef.transaction((current) => {
-        console.log("Event v1.0 countEvents for league " + leagueId + ": current " + current)
-        let value = (current || 0) + increment;
+    return countRef.transaction(function(current_value) {
+        console.log("Event v1.0 countEvents for league " + leagueId + ": current " + current_value)
+        let value = (current_value || 0) + 1;
         console.log('Event v1.0: counter updated to ' + JSON.stringify(value))
+        return value
     })
 }
 
