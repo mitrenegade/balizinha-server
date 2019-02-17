@@ -73,6 +73,7 @@ exports.getConnectAccountInfo = function(req, res, exports) {
 }
 
 /*
+ * Used by RenderPay clients to directly make a stripe connect charge
  * Params:
  * amount: Int, cents
  * orgId: String

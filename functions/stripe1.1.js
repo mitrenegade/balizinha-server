@@ -21,9 +21,9 @@ exports.makePayment = function(req, res, exports) {
         if (isConnectedAccount) {
             const connectId = result.connectId
             const amount = foundEvent.amount * 100
-            return makeConnectCharge(connectId, amount, userId, eventId, chargeId, exports)
+            return makeConnectCharge(connectId, amount, userId, foundEvent, chargeId, exports)
         } else {
-            return holdPaymentForPlatformCharge(userId, eventId, chargeId, exports)
+            return holdPaymentForPlatformCharge(userId, foundEvent, chargeId, exports)
         }
     }).then(result => {
         console.log("holdPayment: result " + JSON.stringify(result))
@@ -44,7 +44,8 @@ exports.makePayment = function(req, res, exports) {
     })
 }
 
-makeConnectCharge = function(connectId, amount, userId, eventId, chargeId, exports) {
+makeConnectCharge = function(connectId, amount, userId, event, chargeId, exports) {
+    const eventId = event.id
     console.log("holdPayment: This is a Stripe Connect user's event " + eventId + " with stripeUserId " + connectId + " amount " + amount + " userId " + userId + " chargeId " + chargeId)
     return stripeConnect.doStripeConnectCharge(amount, eventId, connectId, userId, chargeId).then(result => {
         var type = "stripeConnectChargeForEvent"
@@ -54,27 +55,32 @@ makeConnectCharge = function(connectId, amount, userId, eventId, chargeId, expor
 
 
 // makes a charge on Panna's platform
-holdPaymentForPlatformCharge = function(userId, eventId, chargeId, exports) {
-    var customer = ""
-    var amount = 0
+holdPaymentForPlatformCharge = function(userId, event, chargeId, exports) {
+    var amount = event.amount * 100
+    const eventId = event.id
 
     console.log("Stripe v1.1: holdPayment userId " + userId + " event " + eventId + " new charge " + chargeId)
-    const customerRef = `/stripe_customers/${userId}`
+
+    // check old and new stripe customers
+    const customerRef = `/stripeCustomers/${userId}`
     return admin.database().ref(customerRef).once('value').then(snapshot => {
         if (!snapshot.exists()) {
-            throw new Error('No stripe customer found')
+            return admin.database().ref(`/stripe_customers/${userId}`).once('value').then(snapshot => {
+                if (!snapshot.exists()) {
+                    throw new Error("No Stripe customer found")
+                } else {
+                    return snapshot
+                }
+            })
+        } else {
+            return snapshot
         }
-        customer = snapshot.val()["customer_id"]
-        const eventRef = `/events/${eventId}`
-        return admin.database().ref(eventRef).once('value').then(snapshot => { 
-            return snapshot.val() 
-        })
-    }).then(eventDict => {
-        amount = eventDict["amount"] * 100 // amount needs to be in cents and is stored in dollars
+    }).then(snapshot => {
         const idempotency_key = chargeId;
         const currency = 'USD'
         const capture = false
         const description = "Payment hold for event " + eventId
+        const customer = snapshot.val().customer_id
         let charge = {amount, currency, customer, capture, description};
         // TODO is this needed?
         // if (data.source != undefined) {
