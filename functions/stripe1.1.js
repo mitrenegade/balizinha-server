@@ -20,10 +20,9 @@ exports.makePayment = function(req, res, exports) {
         console.log("holdPayment: checkForStripeConnect result " + JSON.stringify(result) + " with stripeConnectAccount? " + isConnectedAccount)
         if (isConnectedAccount) {
             const connectId = result.connectId
-            const amount = foundEvent.amount * 100
-            return makeConnectCharge(connectId, amount, userId, foundEvent, chargeId, exports)
+            return makeConnectCharge(connectId, userId, eventId, foundEvent, chargeId, exports)
         } else {
-            return holdPaymentForPlatformCharge(userId, foundEvent, chargeId, exports)
+            return holdPaymentForPlatformCharge(userId, eventId, foundEvent, chargeId, exports)
         }
     }).then(result => {
         console.log("holdPayment: result " + JSON.stringify(result))
@@ -44,8 +43,8 @@ exports.makePayment = function(req, res, exports) {
     })
 }
 
-makeConnectCharge = function(connectId, amount, userId, event, chargeId, exports) {
-    const eventId = event.id
+makeConnectCharge = function(connectId, userId, eventId, event, chargeId, exports) {
+    const amount = event.amount * 100
     console.log("holdPayment: This is a Stripe Connect user's event " + eventId + " with stripeUserId " + connectId + " amount " + amount + " userId " + userId + " chargeId " + chargeId)
     return stripeConnect.doStripeConnectCharge(amount, eventId, connectId, userId, chargeId).then(result => {
         var type = "stripeConnectChargeForEvent"
@@ -55,9 +54,8 @@ makeConnectCharge = function(connectId, amount, userId, event, chargeId, exports
 
 
 // makes a charge on Panna's platform
-holdPaymentForPlatformCharge = function(userId, event, chargeId, exports) {
+holdPaymentForPlatformCharge = function(userId, eventId, event, chargeId, exports) {
     var amount = event.amount * 100
-    const eventId = event.id
 
     console.log("Stripe v1.1: holdPayment userId " + userId + " event " + eventId + " new charge " + chargeId)
 
@@ -97,6 +95,7 @@ holdPaymentForPlatformCharge = function(userId, event, chargeId, exports) {
         const chargeRef = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
         return chargeRef.update(response).then(result => {
             var type = "holdPaymentForEvent"
+            console.log("BOBBYTEST eventId for action " + eventId)
             return exports.createAction(type, userId, eventId, null)
         }).then(result => {
             return {"result": "success", "chargeId":chargeId, "status": response["status"], "captured": response["captured"]}
