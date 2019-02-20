@@ -201,6 +201,11 @@ exports.holdPayment = functions.https.onRequest((req, res) => {
     return stripe1_1.makePayment(req, res, exports)
 })
 
+exports.makePayment = functions.https.onRequest((req, res) => {
+    // iOS 1.1.1 and Android 1.0.6 and below still call "holdPayment" from client side
+    // as of API 125, makePayment is a more generic payment call that will decide whether to use platform charges or connect
+    return stripe1_1.makePayment(req, res, exports)
+})
 /**
  * Allows user to capture a payment. This should only be used by the admin app or have organizer validation
  * params: userId: String, eventId: String, chargeId: String
