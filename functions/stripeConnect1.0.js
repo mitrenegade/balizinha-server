@@ -201,6 +201,7 @@ exports.createStripeCustomer = function(email, uid) {
                 const oldRef = `/stripe_customers/${uid}/customer_id`
                 return admin.database().ref(oldRef).set(customer.id)
             })
+        }
     }).then(result => {
         console.log('StripeConnect: createStripeCustomer returning the value')
         return admin.database().ref(ref).once('value')
