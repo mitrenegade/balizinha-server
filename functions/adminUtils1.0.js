@@ -187,4 +187,3 @@ exports.migrateStripeCustomers = function(req, res) {
         res.status(500).json({"error": err})
     })
 }
-
