@@ -196,7 +196,11 @@ exports.createStripeCustomer = function(email, uid) {
             return err
         } else {
             console.log('StripeConnect: CreateStripeCustomer v1.0 ' + ref + ' email ' + email + ' created with customer_id ' + customer.id)
-            return admin.database().ref(ref).set(customer.id);
+            return admin.database().ref(ref).set(customer.id).then(result => {
+                // backwards compatibility for Android v1.0.6 and below that still look for stripe_customers endpoint
+                const oldRef = `/stripe_customers/${uid}/customer_id`
+                return admin.database().ref(oldRef).set(customer.id)
+            })
         }
     }).then(result => {
         console.log('StripeConnect: createStripeCustomer returning the value')
@@ -246,6 +250,11 @@ exports.savePaymentInfo = function(req, res) {
         var userRef = `/stripeCustomers/${userId}`
         var params = {"source": source, "last4": last4, "label": label}
         customer_id = customer
+        return admin.database().ref(userRef).update(params)
+    }).then(result => {
+        // backwards compatibility for Android v1.0.6 and below that still look for stripe_customers endpoint
+        var userRef = `/stripe_customers/${userId}`
+        var params = {"source": source, "last4": last4, "label": label}
         return admin.database().ref(userRef).update(params)
     }).then(result => {
         return res.status(200).json({"customer_id": customer_id})
