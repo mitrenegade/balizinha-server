@@ -7,6 +7,7 @@ const league1_0 = require('./league1.0')
 const event1_0 = require('./event1.0')
 const action1_0 = require('./action1.0')
 const push1_0 = require('./push1.0')
+const push1_1 = require('./push1.1')
 const stripe1_0 = require('./stripe1.0')
 const stripe1_1 = require('./stripe1.1')
 const stripe1_2 = require('./stripe1.2')
@@ -432,8 +433,18 @@ exports.pushForChatAction = function(actionId, eventId, userId, data) {
 
 // PUSH //////////////////////////////////////////////////////////////////////////////////
 
+// iOS 1.1.2 and below
 exports.refreshPlayerSubscriptions = functions.https.onRequest((req, res) => {
     return push1_0.refreshPlayerSubscriptions(req, res, exports, admin)
+})
+
+exports.refreshPlayerSubscriptionsHelper = function(userId, token, pushEnabled) {
+    return push1_0.refreshPlayerSubscriptionsHelper(userId, token, pushEnabled)
+}
+
+// iOS 1.1.3 and above
+exports.updateUserNotificationsEnabled = functions.https.onRequest((req, res) => {
+    return push1_1.updateUserNotificationsEnabled(req, res, exports)
 })
 
 // database changes
