@@ -77,41 +77,6 @@ doUpdateSubscriptionStatus = function(userId, topic, enabled) {
     return admin.database().ref(`playerTopics/${userId}`).update(params)
 }
 
-exports.refreshSubscriptions = function(req, res, exports, admin) {
-    let userId = req.body.userId
-    let pushEnabled = req.body.enabled
-
-    // // user should be subscribed to leagues and events
-    // // also event organizers
-    // var topics = []
-    // return admin.database().ref(`playerLeagues/${userId}`).once('value').then(snapshot => {
-    //     snapshot.forEach(child => {
-    //         if (child.val().exists) {
-    //             let leagueId = child.key
-    //             let status = child.val()
-    //             if (status == "member" || status == "organizer") {
-    //                 let leagueTopic = topicForLeague(leagueId)
-    //                 topics.append(leagueTopic)
-    //             }
-    //         }
-    //     })
-    //     return admin.database().ref(`userEvents/${userId}`).once('value').then(snapshot => {
-    //         snapshot.forEach(child => {
-    //             if (child.val().exists) {
-    //                 let eventId = child.key
-    //                 let active = child.val()
-    //                 if (active == true) {
-    //                     let eventTopic = topicForEvent(eventId)
-    //                     topics.append(eventTopic)
-    //                 }
-    //             }
-    //         })
-
-    //         return console.log("refreshAllPlayerTopics: user " + userId + " topics " + JSON.stringify(topics))
-    //     })
-    // })
-}
-
 // Organizers
 // https://aaronczichon.de/2017/03/13/firebase-cloud-functions/
 exports.subscribeToOrganizerPush = function(snapshot, context, exports, admin) {
@@ -332,56 +297,79 @@ exports.refreshAllPlayerTopics = function(req, res, exports, admin) {
 exports.refreshPlayerSubscriptions = function(req, res, exports, admin) {
     let userId = req.body.userId
     var pushEnabled = req.body.pushEnabled
+    if (pushEnabled == undefined) {
+        pushEnabled = true
+    }
+    console.log("Push 1.0: refreshPlayerSubscriptions userId " + userId + " pushEnabled " + pushEnabled)
 
-    var topics = {}
     return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
-        let player = snapshot.val()
-        let token = player["fcmToken"]
-        console.log("RefreshPlayerSubscriptions: user " + userId + " pushEnabled " + pushEnabled + " for token " + token)
-        // if token doesn't exist, then automatically becomes unsubscribe
-        if (token == undefined) {
-            console.log("RefreshPlayerSubscriptions: player " + userId + " does not have a token")
-            throw new Error("No token found, cannot subscribe or unsubscribe")
-            return
+        if (!snapshot.exists()) {
+            return res.status(500).json({"error": "Invalid player"})
         }
-        return admin.database().ref(`playerTopics/${userId}`).once('value').then(snapshot => {
-            if (!snapshot.exists()) {
-                console.log("RefreshPlayerSubscriptions v1.0: no topics found for userId " + userId)
-                return doRefreshPlayerTopics(userId).then(() => {
-                    return refreshPlayerSubscriptions(req, res, exports, admin)
-                })
-            } else {
-                console.log("refreshPlayerSubscriptions: player has " + snapshot.numChildren() + " topics. snapshot: " + JSON.stringify(snapshot))
-                var subscribed = 0
-                var unsubscribed = 0
-                var promises = []
-                snapshot.forEach(child => {
-                    let topic = child.key
-                    let active = child.val()
-                    if (active) {
-                        if (pushEnabled) {
-                            // active means the user is part of the league or event
-                            var promiseRef = subscribeToTopic(token, topic)
-                            promises.push(promiseRef)                            
-                            subscribed = subscribed + 1
-                        } else {
-                            var promiseRef = unsubscribeFromTopic(token, topic)                           
-                            promises.push(promiseRef)                            
-                            unsubscribed = unsubscribed + 1
-                        }
-                        console.log("Adding promise for topic " + topic)
-                    } // else no need to enable/disable it
-                })
-
-                return Promise.all(promises).then(result => {
-                    console.log("RefreshPlayerSubscriptions: subscribed " + subscribed + " unsubscribed " + unsubscribed)
-                    return res.status(200).json({"success": true, "subscribed": subscribed, "unsubscribed": unsubscribed})
-                })
-            }
-        })
+        let player = snapshot.val()
+        let token = player.fcmToken
+        return doRefreshPlayerSubscriptions(userId, token, pushEnabled)
+    }).then(result => {
+        const subscribed = result.subscribed
+        const unsubscribed = result.unsubscribed
+        console.log("Push 1.0: RefreshPlayerSubscriptions: subscribed " + subscribed + " unsubscribed " + unsubscribed)
+        return res.status(200).json({"success": true, "subscribed": subscribed, "unsubscribed": unsubscribed})        
     }).catch(err => {
-        console.log("RefreshPlayerSubscriptions error: " + JSON.stringify(err));
+        console.log("Push 1.0: RefreshPlayerSubscriptions error: " + JSON.stringify(err));
         return res.status(500).json({"error": err.message})
+    })
+}
+
+exports.refreshPlayerSubscriptionsHelper = function(userId, token, pushEnabled) {
+    return doRefreshPlayerSubscriptions(userId, token, pushEnabled)
+}
+
+doRefreshPlayerSubscriptions = function(userId, token, pushEnabled) {
+    var topics = {}
+    if (userId == undefined) {
+        throw new Error("User id was not specified")
+        return
+    }
+    if (token == undefined) {
+        console.log("DoRefreshPlayerSubscriptions: player " + userId + " does not have a token")
+        throw new Error("No token found, cannot subscribe or unsubscribe")
+        return
+    }
+
+    console.log("DoRefreshPlayerSubscriptions: user " + userId + " pushEnabled " + pushEnabled + " for token " + token)
+    // if token doesn't exist, then automatically becomes unsubscribe
+    return admin.database().ref(`playerTopics/${userId}`).once('value').then(snapshot => {
+        if (!snapshot.exists()) {
+            console.log("DoRefreshPlayerSubscriptions: no topics found for userId " + userId)
+            return doRefreshPlayerTopics(userId).then(() => {
+                return doRefreshPlayerSubscriptions(userId, token, pushEnabled)
+            })
+        } else {
+            console.log("DoRefreshPlayerSubscriptions: player has " + snapshot.numChildren() + " topics. snapshot: " + JSON.stringify(snapshot))
+            var subscribed = 0
+            var unsubscribed = 0
+            var promises = []
+            snapshot.forEach(child => {
+                let topic = child.key
+                let active = child.val()
+                if (active) {
+                    if (pushEnabled) {
+                        // active means the user is part of the league or event
+                        var promiseRef = subscribeToTopic(token, topic)
+                        promises.push(promiseRef)                            
+                        subscribed = subscribed + 1
+                    } else {
+                        var promiseRef = unsubscribeFromTopic(token, topic)                           
+                        promises.push(promiseRef)                            
+                        unsubscribed = unsubscribed + 1
+                    }
+                } // else no need to enable/disable it
+            })
+
+            return Promise.all(promises).then(() => {
+                return {"subscribed": subscribed, "unsubscribed": unsubscribed}
+            })
+        }
     })
 }
 
