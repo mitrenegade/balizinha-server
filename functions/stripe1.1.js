@@ -23,7 +23,7 @@ exports.makePayment = function(req, res, exports) {
             const connectId = result.connectId
             return makeConnectCharge(connectId, userId, eventId, amount, chargeId, exports)
         } else {
-            return holdPaymentForPlatformCharge(userId, eventId, amount, chargeId, exports)
+            return makePaymentForPlatformCharge(userId, eventId, amount, chargeId, exports)
         }
     }).then(result => {
         console.log("holdPayment: result " + JSON.stringify(result))
@@ -54,8 +54,9 @@ makeConnectCharge = function(connectId, userId, eventId, amount, chargeId, expor
 
 
 // makes a charge on Panna's platform
-holdPaymentForPlatformCharge = function(userId, eventId, amount, chargeId, exports) {
-    console.log("Stripe v1.1: holdPayment userId " + userId + " event " + eventId + " new charge " + chargeId)
+makePaymentForPlatformCharge = function(userId, eventId, amount, chargeId, exports) {
+    const capture = true // set to false if hold payments should be used instead of direct charges on the platform
+    console.log("Stripe v1.1: makePaymentForPlatformCharge userId " + userId + " event " + eventId + " new charge " + chargeId)
 
     // check old and new stripe customers
     const customerRef = `/stripeCustomers/${userId}`
@@ -74,26 +75,30 @@ holdPaymentForPlatformCharge = function(userId, eventId, amount, chargeId, expor
     }).then(snapshot => {
         const idempotency_key = chargeId;
         const currency = 'USD'
-        const capture = false
-        const description = "Payment hold for event " + eventId
+        var description = "Payment hold for event " + eventId
+        if (capture == true) {
+            description = "Platform charge event " + eventId
+        }
         const customer = snapshot.val().customer_id
         let charge = {amount, currency, customer, capture, description};
         // TODO is this needed?
         // if (data.source != undefined) {
         //     charge.source = data.source
         // }
-        console.log("Stripe 1.1: holdPayment amount " + amount + " customer " + customer + " charge " + JSON.stringify(charge))
+        console.log("Stripe 1.1: makePaymentForPlatformCharge amount " + amount + " customer " + customer + " charge " + JSON.stringify(charge))
 
         return stripe.charges.create(charge, {idempotency_key})
     }).then(response => {
         // If the result is successful, write it back to the database
-        console.log("Stripe 1.1: holdPayment success with response " + JSON.stringify(response))
+        console.log("Stripe 1.1: makePaymentForPlatformCharge success with response " + JSON.stringify(response))
         // const ref = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
         response["player_id"] = userId
         const chargeRef = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
         return chargeRef.update(response).then(result => {
             var type = "holdPaymentForEvent"
-            console.log("BOBBYTEST eventId for action " + eventId)
+            if (capture == true) {
+                type = "payForEvent"
+            }
             return exports.createAction(type, userId, eventId, null)
         }).then(result => {
             return {"result": "success", "chargeId":chargeId, "status": response["status"], "captured": response["captured"]}
@@ -101,7 +106,7 @@ holdPaymentForPlatformCharge = function(userId, eventId, amount, chargeId, expor
     }, error => {
         // We want to capture errors and render them in a user-friendly way, while
         // still logging an exception with Stackdriver
-        console.log("Stripe 1.1: holdPayment error " + JSON.stringify(error) + ' for chargeId ' + chargeId)
+        console.log("Stripe 1.1: makePaymentForPlatformCharge error " + JSON.stringify(error) + ' for chargeId ' + chargeId)
         const ref = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
         var params = {'status': 'error', 'error': error.message, 'amount': amount, 'customer': customer, 'player_id': userId}
         return ref.update(params).then(result => {

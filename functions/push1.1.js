@@ -1,5 +1,12 @@
 const admin = require('firebase-admin');
 
+/*
+ * userId: String
+ * pushEnabled: Bool
+ * returns: {success: true, subscribed: Int, unsubscribed: Int}
+ * Will return a count of subscribed channels or unsubscribed channels
+ * will also return an error message if failure
+ */
 exports.updateUserNotificationsEnabled = function(req, res, exports) {
     let userId = req.body.userId
     if (userId == undefined) {

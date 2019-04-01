@@ -433,7 +433,7 @@ exports.pushForChatAction = function(actionId, eventId, userId, data) {
 
 // PUSH //////////////////////////////////////////////////////////////////////////////////
 
-// iOS 1.1.2 and below
+// iOS 1.1.1 and below
 exports.refreshPlayerSubscriptions = functions.https.onRequest((req, res) => {
     return push1_0.refreshPlayerSubscriptions(req, res, exports, admin)
 })
@@ -442,7 +442,15 @@ exports.refreshPlayerSubscriptionsHelper = function(userId, token, pushEnabled) 
     return push1_0.refreshPlayerSubscriptionsHelper(userId, token, pushEnabled)
 }
 
-// iOS 1.1.3 and above
+// iOS 1.1.2 and above
+// Android 1.0.9 and above?
+/*
+ * userId: String
+ * pushEnabled: Bool
+ * returns: {success: true, subscribed: Int, unsubscribed: Int}
+ * Will return a count of subscribed channels or unsubscribed channels
+ * will also return an error message if failure
+ */
 exports.updateUserNotificationsEnabled = functions.https.onRequest((req, res) => {
     return push1_1.updateUserNotificationsEnabled(req, res, exports)
 })
