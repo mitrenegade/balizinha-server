@@ -9,6 +9,7 @@ const action1_0 = require('./action1.0')
 const push1_0 = require('./push1.0')
 const stripe1_0 = require('./stripe1.0')
 const stripe1_1 = require('./stripe1.1')
+const stripe1_2 = require('./stripe1.2')
 const adminUtils1_0 = require('./adminUtils1.0')
 const feedback1_0 = require('./feedback1.0')
 const share1_0 = require('./share1.0')
@@ -128,6 +129,7 @@ exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite((sn
 //     exports.sendPush(testToken, msg)
 // })
 
+// TODO: move this to global
 exports.secondsSince1970 = function() {
     var secondsSince1970 = new Date().getTime() / 1000
     return Math.floor(secondsSince1970)
@@ -186,8 +188,14 @@ exports.refundCharge = functions.https.onRequest( (req, res) => {
     return stripe1_0.refundCharge(req, res)
 })
 
+// this should no longer be used
 exports.createStripeSubscription = functions.database.ref(`/charges/organizers/{organizerId}/{chargeId}`).onWrite((snapshot, context) => {
     return stripe1_0.createStripeSubscription(snapshot, context, exports, admin)
+})
+
+// creates a subscription after a subscription object is created
+exports.createSubscription = functions.https.onRequest( (req, res) => {
+    return stripe1_2.createSubscription(req, res, exports)
 })
 
 /**
