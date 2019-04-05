@@ -24,7 +24,8 @@ topicForEventOrganizer = function(eventId) {
 }
 
 // Send Push
-exports.sendPushToTopic = function(title, topic, body, admin) {
+// deprecated
+exports.sendPushToTopic = function(title, topic, body) {
     var topicString = "/topics/" + topic
     // topicString = topicString.replace(/-/g , '_');
     console.log("Push v1.0: send push to topic " + topicString + " title: " + title + " body: " + body)
