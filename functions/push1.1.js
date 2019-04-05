@@ -39,3 +39,29 @@ exports.updateUserNotificationsEnabled = function(req, res, exports) {
         return res.status(500).json({"error": err.message})
     })
 }
+
+// Send Push with body
+exports.sendPushToTopic = function(title, topic, body, type) {
+    var topicString = "/topics/" + topic
+    // topicString = topicString.replace(/-/g , '_');
+    console.log("Push v1.1: send push to topic " + topicString + " title: " + title + " body: " + body + " type " + type)
+
+    var notification = {
+        title: title,
+        body: body,
+        sound: 'default',
+        badge: '1'
+    }
+
+    // message format: { notification: notification, data: data }
+    // for some reason, using admin.messaging().send(message) triggers "FCM has not been configured"
+    var message = {
+        notification: notification
+    };
+    if (type != undefined) {
+        message.data = {"type": type}
+    }
+
+    // Send a message to devices subscribed to the provided topic.
+    return admin.messaging().sendToTopic(topicString, message)
+}
