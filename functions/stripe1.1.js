@@ -18,7 +18,7 @@ exports.makePayment = function(req, res, exports) {
         const isConnectedAccount = result.type == 'stripeConnectAccount'
         const foundEvent = result.event
         const amount = foundEvent.amount * 100
-        console.log("holdPayment: checkForStripeConnect result " + JSON.stringify(result) + " with stripeConnectAccount? " + isConnectedAccount)
+        console.log("Stripe 1.1: makePayment: checkForStripeConnect result " + JSON.stringify(result) + " with stripeConnectAccount? " + isConnectedAccount)
         if (isConnectedAccount) {
             const connectId = result.connectId
             return makeConnectCharge(connectId, userId, eventId, amount, chargeId, exports)
@@ -26,7 +26,7 @@ exports.makePayment = function(req, res, exports) {
             return makePaymentForPlatformCharge(userId, eventId, amount, chargeId, exports)
         }
     }).then(result => {
-        console.log("holdPayment: result " + JSON.stringify(result))
+        console.log("Stripe 1.1: makePayment: result " + JSON.stringify(result))
         if (result["result"] == 'error') {
             res.status(500).json(result)
         } else {
@@ -39,13 +39,13 @@ exports.makePayment = function(req, res, exports) {
             // this happens if a user has a stripe card instead of a source associated with a costomer
             err.error = "We've upgraded our payment system. Please update your payment method and try again."
         }
-        console.log("holdPayment: caught error " + JSON.stringify(err))
+        console.log("Stripe 1.1: makePayment: caught error " + JSON.stringify(err))
         res.status(500).json(err)
     })
 }
 
 makeConnectCharge = function(connectId, userId, eventId, amount, chargeId, exports) {
-    console.log("holdPayment: This is a Stripe Connect user's event " + eventId + " with stripeUserId " + connectId + " amount " + amount + " userId " + userId + " chargeId " + chargeId)
+    console.log("Stripe 1.1: makeConnectCharge: This is a Stripe Connect user's event " + eventId + " with stripeUserId " + connectId + " amount " + amount + " userId " + userId + " chargeId " + chargeId)
     return stripeConnect.doStripeConnectCharge(amount, eventId, connectId, userId, chargeId).then(result => {
         var type = "stripeConnectChargeForEvent"
         return exports.createAction(type, userId, eventId, null, "made a payment")

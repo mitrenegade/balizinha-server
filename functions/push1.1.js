@@ -46,19 +46,22 @@ exports.sendPushToTopic = function(title, topic, body, data) {
     // topicString = topicString.replace(/-/g , '_');
     console.log("Push v1.1: send push to topic " + topicString + " title: " + title + " body: " + body + " data " + JSON.stringify(data))
 
+    var notification = {
+        title: title,
+        body: body,
+        sound: 'default',
+        badge: '1'
+    }
+
+    // message format: { notification: notification, data: data }
+    // for some reason, using admin.messaging().send(message) triggers "FCM has not been configured"
     var message = {
-        topic: topicString,
-        notification: {
-            title: title,
-            body: body,
-            sound: 'default',
-            badge: '1'
-        }
+        notification: notification
     };
     if (data != undefined) {
         message.data = data
     }
 
     // Send a message to devices subscribed to the provided topic.
-    return admin.messaging().send(message)
+    return admin.messaging().sendToTopic(topicString, message)
 }
