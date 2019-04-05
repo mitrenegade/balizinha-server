@@ -5,7 +5,7 @@ const functions = require('firebase-functions');
 // 1.4 leagues
 // 1.5 event.js, league.js, action.js, push.js
 const API_VERSION = 1.0
-const BUILD_VERSION = 126 // for internal tracking
+const BUILD_VERSION = 127 // for internal tracking
 
 // TO TOGGLE BETWEEN DEV AND PROD: change this to .dev or .prod for functions:config variables to be correct
 const config = functions.config().prod
