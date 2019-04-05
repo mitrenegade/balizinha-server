@@ -44,7 +44,7 @@ exports.updateUserNotificationsEnabled = function(req, res, exports) {
 exports.sendPushToTopic = function(title, topic, body, info) {
     var topicString = "/topics/" + topic
     // topicString = topicString.replace(/-/g , '_');
-    console.log("Push v1.1: send push to topic " + topicString + " title: " + title + " body: " + body + " type " + type)
+    console.log("Push v1.1: send push to topic " + topicString + " title: " + title + " body: " + body + " info " + JSON.stringify(info))
 
     var notification = {
         title: title,
