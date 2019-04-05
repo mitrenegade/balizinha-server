@@ -41,10 +41,10 @@ exports.updateUserNotificationsEnabled = function(req, res, exports) {
 }
 
 // Send Push with body
-exports.sendPushToTopic = function(title, topic, body, data) {
+exports.sendPushToTopic = function(title, topic, body, type) {
     var topicString = "/topics/" + topic
     // topicString = topicString.replace(/-/g , '_');
-    console.log("Push v1.1: send push to topic " + topicString + " title: " + title + " body: " + body + " data " + JSON.stringify(data))
+    console.log("Push v1.1: send push to topic " + topicString + " title: " + title + " body: " + body + " type " + type)
 
     var notification = {
         title: title,
@@ -58,8 +58,8 @@ exports.sendPushToTopic = function(title, topic, body, data) {
     var message = {
         notification: notification
     };
-    if (data != undefined) {
-        message.data = data
+    if (type != undefined) {
+        message.data = {"type": type}
     }
 
     // Send a message to devices subscribed to the provided topic.

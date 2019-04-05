@@ -90,6 +90,7 @@ exports.onActionChange = function(snapshot, context, exports, admin) {
     // for a chat action, update createdAt, username then create a duplicate
         const createdAt = exports.secondsSince1970()
         const userId = data["user"]
+        const eventId = data["event"]
         return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
             return snapshot.val();
         }).then(player => { 
@@ -109,7 +110,7 @@ exports.onActionChange = function(snapshot, context, exports, admin) {
         }).then(result => {
             // send push
             console.log("onActionChange: pushForChatAction with result " + JSON.stringify(result))
-            exports.pushForChatAction(actionId, data["event"], data["user"], data)
+            exports.pushForChatAction(actionId, eventId, userId, data)
             return result
         })
     } else {
@@ -132,6 +133,6 @@ exports.pushForChatAction = function(actionId, eventId, userId, data, exports, a
         var topic = "event" + eventId 
         console.log("Sending push for chat by user " + name + " " + email + " for chat to topic " + topic + " with message: " + msg)
 
-        return exports.sendPushToTopic(title, topic, msg, data)
+        return exports.sendPushToTopic(title, topic, msg, data.type)
     })
 }

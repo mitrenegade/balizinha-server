@@ -205,7 +205,7 @@ exports.onEventChange = function(snapshot, context, exports, admin) {
 
         // send push
         var msg = "An event you're going to, " + name + ", has been cancelled."
-        return exports.sendPushToTopic(title, topic, msg, data).then(result => {
+        return exports.sendPushToTopic(title, topic, msg, "eventChange").then(result => {
             return countEvents(snapshot, admin)
         })
     } else {
