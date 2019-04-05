@@ -41,7 +41,7 @@ exports.updateUserNotificationsEnabled = function(req, res, exports) {
 }
 
 // Send Push with body
-exports.sendPushToTopic = function(title, topic, body, type) {
+exports.sendPushToTopic = function(title, topic, body, info) {
     var topicString = "/topics/" + topic
     // topicString = topicString.replace(/-/g , '_');
     console.log("Push v1.1: send push to topic " + topicString + " title: " + title + " body: " + body + " type " + type)
@@ -58,8 +58,8 @@ exports.sendPushToTopic = function(title, topic, body, type) {
     var message = {
         notification: notification
     };
-    if (type != undefined) {
-        message.data = {"type": type}
+    if (info != undefined) {
+        message.data = info
     }
 
     // Send a message to devices subscribed to the provided topic.

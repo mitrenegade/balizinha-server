@@ -465,8 +465,8 @@ exports.createOrganizerTopicForNewEvent = function(eventId, organizerId) {
     return push1_0.createOrganizerTopicForNewEvent(eventId, organizerId, exports, admin)
 }
 
-exports.sendPushToTopic = function(title, topic, msg, type) {
-    return push1_1.sendPushToTopic(title, topic, msg, type)
+exports.sendPushToTopic = function(title, topic, msg, info) {
+    return push1_1.sendPushToTopic(title, topic, msg, info)
 }
 
 exports.subscribeToEvent = function(eventId, userId, join) {

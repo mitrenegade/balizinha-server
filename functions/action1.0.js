@@ -132,7 +132,7 @@ exports.pushForChatAction = function(actionId, eventId, userId, data, exports, a
         var title = "Event chat"
         var topic = "event" + eventId 
         console.log("Sending push for chat by user " + name + " " + email + " for chat to topic " + topic + " with message: " + msg)
-
-        return exports.sendPushToTopic(title, topic, msg, data.type)
+        let info = {"type": data.type, "eventId": eventId}
+        return exports.sendPushToTopic(title, topic, msg, info)
     })
 }

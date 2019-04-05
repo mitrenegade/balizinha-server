@@ -147,7 +147,8 @@ exports.pushForCreateEvent = function(eventId, leagueId, name, place, exports, a
     let topic = topicForLeague(leagueId)
     var msg = "A new event, " + name + ", is available in " + place
     console.log("Push v1.0 for CreateEvent: sending push " + title + " to " + topic + " with msg " + msg)
-    return exports.sendPushToTopic(title, topic, msg, "createEvent")
+    let info = {"type": "createEvent", "eventId": eventId}
+    return exports.sendPushToTopic(title, topic, msg, info)
 }
 
 exports.pushForJoinEvent = function(eventId, name, join, exports, admin) {
@@ -159,7 +160,8 @@ exports.pushForJoinEvent = function(eventId, name, join, exports, admin) {
     var title = "Event update"
     var topic = topicForEventOrganizer(eventId) // join/leave message only for owners
     console.log("Push v1.0 for JoinEvent: user " + name + " joined event " + topic + " with message: " + msg)
-    return exports.sendPushToTopic(title, topic, msg, "joinEvent")
+    let info = {"type": "joinEvent", "eventId": eventId}
+    return exports.sendPushToTopic(title, topic, msg, info)
 }
 
 // leagues
@@ -222,6 +224,7 @@ exports.pushForLeagueFeedItem = function(leagueId, type, userId, message, export
                 body = snapshot.val().name + actionString
             }
             console.log("Push v1.0 for LeagueFeedItem: sending push " + title + " to " + topic + " with body " + body)
+            let info = {"type": "leagueChat", "leagueId": leagueId}
             return exports.sendPushToTopic(title, topic, body, "leagueChat")
         })
     }).catch(function(error) {
