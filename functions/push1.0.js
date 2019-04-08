@@ -357,7 +357,7 @@ doRefreshPlayerSubscriptions = function(userId, token, pushEnabled) {
                 let topic = child.key
                 let active = child.val()
                 if (active) {
-                    if (pushEnabled) {
+                    if (pushEnabled == true) {
                         // active means the user is part of the league or event
                         var promiseRef = subscribeToTopic(token, topic)
                         promises.push(promiseRef)                            
