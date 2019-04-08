@@ -29,7 +29,7 @@ exports.updateUserNotificationsEnabled = function(req, res, exports) {
     	// update player object
         subscribeCounts = result
         console.log("Push 1.1: UpdateUserNotificationsEnabled: updating notificationsEnabled to " + pushEnabled)
-        return admin.database().ref(`/players/${userId}`).update("notificationsEnabled": pushEnabled)
+        return admin.database().ref(`/players/${userId}`).update({"notificationsEnabled": pushEnabled})
         .then(() => {
             const subscribed = result.subscribed
             const unsubscribed = result.unsubscribed
