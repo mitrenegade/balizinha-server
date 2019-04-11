@@ -20,9 +20,8 @@ exports.createAction = function(type, userId, eventId, message, defaultMessage, 
     }
 
     return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
-        return snapshot.val();
-    }).then(player => {
-        if (player.exists()) {
+        if (snapshot.exists()) {
+            let player = snapshot.val()
             var name = player["name"]
             if (name == undefined) {
                 name = player["email"] // allows players without a username to work
