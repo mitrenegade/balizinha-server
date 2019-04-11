@@ -5,36 +5,25 @@ exports.cancelEvent = function(req, res, exports) {
 	if (eventId == undefined) {
  		return res.status(500).json({"error": "Event not found"})
  	}
+	let isCancelled = req.body.isCancelled
+	if (isCancelled == undefined) {
+ 		return res.status(500).json({"error": "Did not specify whether event was to be cancelled"})
+ 	}
 
-	return changeEventCancellationStatus(eventId, true).then(results => {
+	return changeEventCancellationStatus(eventId, isCancelled).then(results => {
         // create action
         console.log("Event v1.1 cancelEvent event " + eventId)
         var type = "cancelEvent"
-        return exports.createAction(type, organizerId, eventId, null, "cancelled an event")
+        var defaultMessage = "cancelled an event"
+        if (isCancelled == false) {
+        	type = "uncancelEvent"
+        	defaultMessage = "reinstated an event"
+        }
+        return exports.createAction(type, organizerId, eventId, null, defaultMessage)
 	}).then(() => {
 		return res.status(200).json({"success": true})
 	}).catch(err => {
         console.log("Event v1.1 cancelEvent error: " + JSON.stringify(err));
-        return res.status(500).json({"error": err.message})
-	})
-}
-
-exports.uncancelEvent = function(req, res, exports) {
-	let eventId = req.body.eventId
-	if (eventId == undefined) {
- 		return res.status(500).json({"error": "Event not found"})
- 	}
-
-	return changeEventCancellationStatus(eventId, false).then(results => {
-        // create action
-        console.log("Event v1.1 uncancelEvent event " + eventId)
-        var type = "uncancelEvent"
-        let organizerId = results["organizerId"]
-        return exports.createAction(type, organizerId, eventId, null, "reinstated an event")
-	}).then(() => {
-		return res.status(200).json({"success": true})
-	}).catch(err => {
-        console.log("Event v1.1 uncancelEvent error: " + JSON.stringify(err));
         return res.status(500).json({"error": err.message})
 	})
 }

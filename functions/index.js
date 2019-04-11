@@ -388,18 +388,11 @@ exports.getEventsAvailableToUser = functions.https.onRequest((req, res) => {
 
 /**
  * params: eventId: String
+ *         isCancelled: Bool
  * result: [ success: true ]
  */
 exports.cancelEvent = functions.https.onRequest((req, res) => {
     return event1_1.cancelEvent(req, res, exports)
-})
-
-/**
- * params: eventId: String
- * result: [ success: true ]
- */
-exports.uncancelEvent = functions.https.onRequest((req, res) => {
-    return event1_1.uncancelEvent(req, res, exports)
 })
 
 // database changes
