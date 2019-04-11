@@ -9,10 +9,10 @@ exports.cancelEvent = function(req, res, exports) {
 	if (isCancelled == undefined) {
  		return res.status(500).json({"error": "Did not specify whether event was to be cancelled"})
  	}
-
+ 	console.log("Event 1.1: cancelEvent eventId " + eventId + " isCancelled " + isCancelled)
 	return changeEventCancellationStatus(eventId, isCancelled).then(results => {
         // create action
-        console.log("Event v1.1 cancelEvent event " + eventId)
+        console.log("Event v1.1 createAction for cancelEvent event " + eventId)
         var type = "cancelEvent"
         var defaultMessage = "cancelled an event"
         if (isCancelled == false) {
@@ -31,6 +31,8 @@ exports.cancelEvent = function(req, res, exports) {
 changeEventCancellationStatus = function(eventId, isCancelled) {
 	let eventRef = `/events/${eventId}`
 	var organizerId = undefined
+
+	// deprecated: active = true/false. use status = active or cancelled instead
 	var params = {"active": !isCancelled}
 	if (isCancelled == true) {
 		params["status"] = "cancelled"
@@ -43,7 +45,7 @@ changeEventCancellationStatus = function(eventId, isCancelled) {
 	 		throw new Error("Event not found")
 		}
 		organizerId = snapshot.val()["organizer"]
-		// deprecated: active = true/false. use status = active or cancelled instead
+		console.log("Event v1.1: updated event with params " + JSON.stringify(params))
 		return admin.database().ref(eventRef).update(params)
 	}).then(() => {
 		params["organizerId"] = organizerId

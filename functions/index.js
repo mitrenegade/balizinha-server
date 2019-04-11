@@ -393,6 +393,7 @@ exports.getEventsAvailableToUser = functions.https.onRequest((req, res) => {
  * result: [ success: true ]
  */
 exports.cancelEvent = functions.https.onRequest((req, res) => {
+    console.log("Cloud code cancelEvent")
     return event1_1.cancelEvent(req, res, exports)
 })
 
