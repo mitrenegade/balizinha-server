@@ -386,6 +386,22 @@ exports.getEventsAvailableToUser = functions.https.onRequest((req, res) => {
     return event1_0.getEventsAvailableToUser(req, res, exports, admin)
 })
 
+/**
+ * params: eventId: String
+ * result: [ success: true ]
+ */
+exports.cancelEvent = functions.https.onRequest((req, res) => {
+    return event1_1.cancelEvent(req, res, exports)
+})
+
+/**
+ * params: eventId: String
+ * result: [ success: true ]
+ */
+exports.uncancelEvent = functions.https.onRequest((req, res) => {
+    return event1_1.uncancelEvent(req, res, exports)
+})
+
 // database changes
 exports.onEventCreate = functions.database.ref('/events/{eventId}').onCreate((snapshot, context) => {
     return event1_0.onEventCreate(snapshot, context, exports)
