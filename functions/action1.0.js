@@ -20,14 +20,15 @@ exports.createAction = function(type, userId, eventId, message, defaultMessage, 
     }
 
     return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
-        if (snapshot.exists()) {
-            let player = snapshot.val()
-            var name = player["name"]
-            if (name == undefined) {
-                name = player["email"] // allows players without a username to work
-            }
-            params["username"] = name
+        if (!snapshot.exists()) {
+            throw new Error("User for this action could not be found")
         }
+        let player = snapshot.val()
+        var name = player["name"]
+        if (name == undefined) {
+            name = player["email"] // allows players without a username to work
+        }
+        params["username"] = name
         var ref = `/actions/` + actionId
         console.log("Creating action in /actions with unique id " + actionId + " message: " + message + " params: " + JSON.stringify(params))
         return admin.database().ref(ref).set(params)
