@@ -5,6 +5,7 @@ const app = require('express')
 const moment = require('moment')
 const league1_0 = require('./league1.0')
 const event1_0 = require('./event1.0')
+const event1_1 = require('./event1.1')
 const action1_0 = require('./action1.0')
 const push1_0 = require('./push1.0')
 const push1_1 = require('./push1.1')
@@ -384,6 +385,15 @@ exports.joinOrLeaveEvent = functions.https.onRequest((req, res) => {
  */
 exports.getEventsAvailableToUser = functions.https.onRequest((req, res) => {
     return event1_0.getEventsAvailableToUser(req, res, exports, admin)
+})
+
+/**
+ * params: eventId: String
+ *         isCancelled: Bool
+ * result: [ success: true ]
+ */
+exports.cancelEvent = functions.https.onRequest((req, res) => {
+    return event1_1.cancelEvent(req, res, exports)
 })
 
 // database changes

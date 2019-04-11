@@ -10,9 +10,7 @@ exports.createAction = function(type, userId, eventId, message, defaultMessage, 
 
     var params = {}
     params["type"] = type
-    params["event"] = eventId
     params["eventId"] = eventId // slowly transitioning to use eventId
-    params["user"] = userId
     params["userId"] = userId // slowly transitioning to use userId
     params["message"] = message
     var createdAt = exports.secondsSince1970()
@@ -22,14 +20,15 @@ exports.createAction = function(type, userId, eventId, message, defaultMessage, 
     }
 
     return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
-        return snapshot.val();
-    }).then(player => {
+        if (!snapshot.exists()) {
+            throw new Error("User for this action could not be found")
+        }
+        let player = snapshot.val()
         var name = player["name"]
         if (name == undefined) {
             name = player["email"] // allows players without a username to work
         }
         params["username"] = name
-
         var ref = `/actions/` + actionId
         console.log("Creating action in /actions with unique id " + actionId + " message: " + message + " params: " + JSON.stringify(params))
         return admin.database().ref(ref).set(params)
