@@ -10,9 +10,7 @@ exports.createAction = function(type, userId, eventId, message, defaultMessage, 
 
     var params = {}
     params["type"] = type
-    params["event"] = eventId
     params["eventId"] = eventId // slowly transitioning to use eventId
-    params["user"] = userId
     params["userId"] = userId // slowly transitioning to use userId
     params["message"] = message
     var createdAt = exports.secondsSince1970()
