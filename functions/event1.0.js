@@ -38,6 +38,7 @@ exports.createEvent = function(req, res, exports, admin) {
     var createdAt = exports.secondsSince1970()
     params["createdAt"] = createdAt
     params["organizer"] = userId
+    params["owner"] = userId // old apps still use this info
     params["leagueId"] = league
 
     // optional params
