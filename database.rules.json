@@ -1,6 +1,12 @@
 {
   "rules": {
     ".read": "auth != null",
-    ".write": "auth != null"
+    ".write": "auth != null",
+    "events": {
+    	".indexOn": "league"
+    },
+    "feedItems": {
+    	".indexOn": "leagueId"
+    }
   }
 }
