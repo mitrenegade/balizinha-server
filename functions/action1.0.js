@@ -88,7 +88,7 @@ exports.onActionChange = function(snapshot, context, exports, admin) {
     if (actionType == "chat" && created == true) {
     // for a chat action, update createdAt, username then create a duplicate
         const createdAt = exports.secondsSince1970()
-        const userId = data["user"]
+        const userId = data["userId"]
         const eventId = data["event"]
         return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
             return snapshot.val();
