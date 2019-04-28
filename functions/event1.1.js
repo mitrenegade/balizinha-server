@@ -52,3 +52,34 @@ changeEventCancellationStatus = function(eventId, isCancelled) {
 		return params
 	})
 }
+
+exports.deleteEvent = function(req, res, exports) {
+	let eventId = req.body.eventId
+	if (eventId == undefined) {
+ 		return res.status(500).json({"error": "Event not found"})
+ 	}
+ 	console.log("Event 1.1: deleteEvent eventId " + eventId)
+
+ 	return admin.database().ref(`/events/${eventId}`).remove().then(() => {
+ 		return admin.database().ref(`eventUsers/${eventId}`).once('value')
+ 	}).then(snapshot => {
+        if (!snapshot.exists()) {
+            console.log("Event 1.1: deleteEvent: no users found for snapshot")
+            return res.status(200).json({"success": true})
+        }
+
+        var promises = []
+        snapshot.forEach(child => {
+            let userId = child.key
+		 	let promiseRef = admin.database().ref(`/userEvents/${userId}/${eventId}`).remove()
+            promises.push(promiseRef)
+        })
+
+        return Promise.all(promises)
+	}).then(() => {
+		return res.status(200).json({"success": true})
+	}).catch(err => {
+        console.log("Event v1.1 deleteEvent error: " + JSON.stringify(err));
+        return res.status(500).json({"error": err.message})
+	})
+}
