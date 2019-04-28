@@ -10,7 +10,7 @@ exports.createLeague = function(req, res, exports, admin) {
 
 	const leagueId = exports.createUniqueId()
     var ref = `/leagues/` + leagueId
-    var params = {"name": name, "city": city, "info": info, "owner": userId}
+    var params = {"name": name, "city": city, "info": info, "ownerId": userId}
     var createdAt = exports.secondsSince1970()
     params["createdAt"] = createdAt
     // TODO: name validation?
@@ -85,7 +85,7 @@ exports.doUpdatePlayerStatus = function(admin, userId, leagueId, status) {
 	console.log("League v1.0 DoUpdatePlayerStatus: userId " + userId + " leagueId " + leagueId + " status " + status)
 
 	    // validation
-    if (status != "member" && status != "organizer" && status != "owner" && status != "none") {
+    if (status != "member" && status != "organizer" && status != "none") {
     	throw new Error({"message": "Invalid status. Cannot change user to " + status, "userId": userId})
     	return
     }
@@ -121,7 +121,7 @@ countLeaguePlayers = function(leagueId, status, admin) {
     var increment = 0
     if (status == "none") {
     	increment = -1
-    } else if (status == "member" || status == "organizer" || status == "owner") {
+    } else if (status == "member" || status == "organizer") {
     	increment = 1
     }
 
@@ -152,7 +152,7 @@ exports.recountPlayers = function(snapshot, admin) {
 	        var members = 0
 	        snapshot.forEach(child => {
 	        	const status = child.val()
-	            if (status == "member" || status == "organizer" || status == "owner") {
+	            if (status == "member" || status == "organizer") {
 	                members = members + 1
 	            }
 	        })
