@@ -53,7 +53,7 @@ changeEventCancellationStatus = function(eventId, isCancelled) {
 	})
 }
 
-exports.deleteEvent = function(req, res, exports) {
+exports.deleteEvent = function(req, res) {
 	let eventId = req.body.eventId
 	if (eventId == undefined) {
  		return res.status(500).json({"error": "Event not found"})
@@ -76,6 +76,8 @@ exports.deleteEvent = function(req, res, exports) {
         })
 
         return Promise.all(promises)
+	}).then(() => {
+			return admin.database().ref(`eventUsers/${eventId}`).remove()
 	}).then(() => {
 		return res.status(200).json({"success": true})
 	}).catch(err => {

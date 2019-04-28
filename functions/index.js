@@ -401,7 +401,7 @@ exports.cancelEvent = functions.https.onRequest((req, res) => {
  * result: [ success: true ]
  */
 exports.deleteEvent = functions.https.onRequest((req, res) => {
-    return event1_1.deleteEvent(req, res, exports)
+    return event1_1.deleteEvent(req, res)
 })
 
 // database changes
