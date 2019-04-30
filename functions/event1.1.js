@@ -85,3 +85,52 @@ exports.deleteEvent = function(req, res) {
         return res.status(500).json({"error": err.message})
 	})
 }
+
+exports.shouldChargeForEvent = function(req, res) {
+	let eventId = req.body.eventId
+	let userId = req.body.userId
+
+	var event = undefined
+	var user = undefined
+	return admin.database().ref(`/events/${eventId}`).once('value')
+	.then(snapshot => {
+        if (!snapshot.exists()) {
+            console.log("Event 1.1: shouldChargeForEvent: event no longer exists")
+            throw new Error("Event not found")
+        }
+        event = snapshot.val()
+        return admin.database().ref('/players/${userId}').once('value')
+    }.then(snapshot => {
+        if (!snapshot.exists()) {
+            console.log("Event 1.1: shouldChargeForEvent: user doesn't exist")
+            throw new Error("User not found")
+        }
+        user = snapshot.val()
+        return calculateAmountForEvent(user, event)
+    }).then(result => {
+		console.log("Event v1.1 shouldChargeForEvent result: " + JSON.stringify(result))
+    	return res.status(200).json(result)
+    }).catch(err => {
+    	if (err.message == "Payment not required") {
+    		console.log("Event v1.1 shouldChargeForEvent payment not required")
+    		return res.status(200).json("paymentRequired": false)
+    	} else {
+    		console.log("Event v1.1 shouldChargeForEvent error: " + JSON.stringify(err))
+    		return res.status(500).json("error": err.message)
+    	}
+    })
+}
+
+calculateAmountForEvent = function(user, event) {
+    let paymentRequired = event.paymentRequired
+    let amount = event.amount
+    if (paymentRequired == undefined || paymentRequired == false || amount == undefined || amount == 0) {
+    	throw new Error("Payment not required") // not actually an error - used to break the promise chain
+    }
+
+    // check promotion
+    if (user.promotionId != undefined) {
+    	return ({"paymentRequired": false})
+    }
+    return ({"paymentRequired": true, "amount": amount})
+}
