@@ -411,7 +411,7 @@ exports.deleteEvent = functions.https.onRequest((req, res) => {
  * result: { paymentRequired: bool, amount: Double? }
  */
 exports.shouldChargeForEvent = functions.https.onRequest((req, res) => {
-    return event1_1.shouldChargeForEvent(req, res, exports) // exports needed for promo helpers
+    return event1_1.shouldChargeForEvent(req, res) // exports needed for promo helpers
 })
 
 // database changes
@@ -553,24 +553,24 @@ exports.createFeedItemForJoinLeaveLeague = function(userId, leagueId, isJoin) {
     return feed1_0.createFeedItemForJoinLeaveLeague(userId, leagueId, isJoin, exports, admin) 
 }
 
-// PROMOTIONS //////////////////////////////////////////////////////////////////////////////////
+// // PROMOTIONS //////////////////////////////////////////////////////////////////////////////////
 
-// helper
-/**
- * params: promoId: String
- * result: promotion JSON or undefined
- */
-exports.getPromotion = function(promoId) {
-    return promotion1_0.getPromotion(promoId)
-}
+// // helper
+// /**
+//  * params: promoId: String
+//  * result: promotion JSON or undefined
+//  */
+// exports.getPromotion = function(promoId) {
+//     return promotion1_0.getPromotion(promoId)
+// }
 
-/**
- * params: promotion: JSON representing a promotion object
- * result: bool whether promo is valid and active
- */
-exports.isValidPromotionCode = function(promotion) {
-    return promotion1_0.isValidPromotionCode(promotion)
-}
+// /**
+//  * params: promotion: JSON representing a promotion object
+//  * result: bool whether promo is valid and active
+//  */
+// exports.isValidPromotionCode = function(promotion) {
+//     return promotion1_0.isValidPromotionCode(promotion)
+// }
 
 // UTILS - used by Admin app //////////////////////////////////////////////////////////////////////////////////
 /**
