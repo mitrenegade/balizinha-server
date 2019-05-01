@@ -86,7 +86,7 @@ exports.deleteEvent = function(req, res) {
 	})
 }
 
-exports.shouldChargeForEvent = function(req, res) {
+exports.shouldChargeForEvent = function(req, res, exports) {
 	let eventId = req.body.eventId
 	let userId = req.body.userId
 
@@ -95,18 +95,18 @@ exports.shouldChargeForEvent = function(req, res) {
 	return admin.database().ref(`/events/${eventId}`).once('value')
 	.then(snapshot => {
         if (!snapshot.exists()) {
-            console.log("Event 1.1: shouldChargeForEvent: event no longer exists")
+            console.log("Event 1.1: shouldChargeForEvent: event " + eventId + " doesn't exists")
             throw new Error("Event not found")
         }
         event = snapshot.val()
         return admin.database().ref('/players/${userId}').once('value')
     }.then(snapshot => {
         if (!snapshot.exists()) {
-            console.log("Event 1.1: shouldChargeForEvent: user doesn't exist")
+            console.log("Event 1.1: shouldChargeForEvent: user " + userId + " doesn't exist")
             throw new Error("User not found")
         }
         user = snapshot.val()
-        return calculateAmountForEvent(user, event)
+        return calculateAmountForEvent(user, event, exports)
     }).then(result => {
 		console.log("Event v1.1 shouldChargeForEvent result: " + JSON.stringify(result))
     	return res.status(200).json(result)
@@ -128,9 +128,42 @@ calculateAmountForEvent = function(user, event) {
     	throw new Error("Payment not required") // not actually an error - used to break the promise chain
     }
 
-    // check promotion
-    if (user.promotionId != undefined) {
-    	return ({"paymentRequired": false})
-    }
-    return ({"paymentRequired": true, "amount": amount})
+    if (user.promotionId == undefined) {
+	    return ({"paymentRequired": true, "amount": amount})
+	}
+
+	// calculate promotion
+	return applyPromotionForEvent(event.amount, user.promoId).then(result => {
+		console.log("Event 1.1: calculateAmountForEvent after applying promotion: result " + JSON.stringify(result))
+		return result
+	}).catch(err => {
+		if err.message == "No valid promo" {
+			return ({"paymentRequired": true, "amount": amount})
+		} else {
+			console.log("Event 1.1: calculateAmountForEvent error " + JSON.stringify(err))
+			throw err
+		}
+	})
+}
+
+applyPromotionForEvent = function(amount, promoId) {
+	console.log("Event 1.1: applyPromotionForEvent: promotion " + promo.id + " to amount " + amount)
+	return exports.getPromotion(promoId).then(result => {
+		let isValid = exports.isValidPromotion(result)
+		if (!isValid) {
+			throw new Error("No valid promo")
+		}
+
+		let value = result.value
+		var amountRemaining = amount
+		if (result.type == "percentDiscount") {
+			amountRemaining = amount * value / 100
+		} else if (result.type == "amountDiscount") {
+			amountRemaining = amount - value
+		} else {
+			throw new Error("No valid promo")
+		}
+		console.log("Event 1.1: applyPromotionForEvent valid promotion" + promo.id + " value " + value + " amountRemaining " + amountRemaining)
+		return {"paymentRequired": amountRemaining > 0, "amount": amountRemaining}
+	})
 }

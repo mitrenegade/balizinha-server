@@ -556,8 +556,20 @@ exports.createFeedItemForJoinLeaveLeague = function(userId, leagueId, isJoin) {
 // PROMOTIONS //////////////////////////////////////////////////////////////////////////////////
 
 // helper
-exports.isValidPromotionCode = function(promoId) {
-    return promotion1_0.isValidPromotionCode(promoId)
+/**
+ * params: promoId: String
+ * result: promotion JSON or undefined
+ */
+exports.getPromotion = function(promoId) {
+    return promotion1_0.getPromotion(promoId)
+}
+
+/**
+ * params: promotion: JSON representing a promotion object
+ * result: bool whether promo is valid and active
+ */
+exports.isValidPromotionCode = function(promotion) {
+    return promotion1_0.isValidPromotionCode(promotion)
 }
 
 // UTILS - used by Admin app //////////////////////////////////////////////////////////////////////////////////
