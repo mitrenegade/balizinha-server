@@ -159,13 +159,13 @@ applyPromotionForEvent = function(amount, promoId) {
 		let value = result.value
 		var amountRemaining = amount
 		if (result.type == "percentDiscount") {
-			amountRemaining = amount * value / 100
+			amountRemaining = amount * (100 - value) / 100
 		} else if (result.type == "amountDiscount") {
 			amountRemaining = amount - value
 		} else {
 			throw new Error("No valid promo")
 		}
-		console.log("Event 1.1: applyPromotionForEvent valid promotion" + promoId + " value " + value + " amountRemaining " + amountRemaining)
+		console.log("Event 1.1: applyPromotionForEvent valid promotion: " + promoId + " value " + value + " amountRemaining " + amountRemaining)
 		return {"paymentRequired": amountRemaining > 0, "amount": amountRemaining}
 	})
 }
