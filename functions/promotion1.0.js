@@ -6,7 +6,7 @@ exports.getPromotion = function(promoId) {
 			return undefined
 		}
 		return snapshot.val()
-	}
+	})
 }
 
 exports.isValidPromotionCode = function(promotion) {

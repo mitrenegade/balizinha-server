@@ -100,7 +100,7 @@ exports.shouldChargeForEvent = function(req, res, exports) {
         }
         event = snapshot.val()
         return admin.database().ref('/players/${userId}').once('value')
-    }.then(snapshot => {
+    }).then(snapshot => {
         if (!snapshot.exists()) {
             console.log("Event 1.1: shouldChargeForEvent: user " + userId + " doesn't exist")
             throw new Error("User not found")
@@ -113,10 +113,10 @@ exports.shouldChargeForEvent = function(req, res, exports) {
     }).catch(err => {
     	if (err.message == "Payment not required") {
     		console.log("Event v1.1 shouldChargeForEvent payment not required")
-    		return res.status(200).json("paymentRequired": false)
+    		return res.status(200).json({"paymentRequired": false})
     	} else {
     		console.log("Event v1.1 shouldChargeForEvent error: " + JSON.stringify(err))
-    		return res.status(500).json("error": err.message)
+    		return res.status(500).json({"error": err.message})
     	}
     })
 }
@@ -129,7 +129,7 @@ calculateAmountForEvent = function(user, event) {
     }
 
     if (user.promotionId == undefined) {
-	    return ({"paymentRequired": true, "amount": amount})
+	    return {"paymentRequired": true, "amount": amount}
 	}
 
 	// calculate promotion
@@ -137,8 +137,8 @@ calculateAmountForEvent = function(user, event) {
 		console.log("Event 1.1: calculateAmountForEvent after applying promotion: result " + JSON.stringify(result))
 		return result
 	}).catch(err => {
-		if err.message == "No valid promo" {
-			return ({"paymentRequired": true, "amount": amount})
+		if (err.message == "No valid promo") {
+			return {"paymentRequired": true, "amount": amount}
 		} else {
 			console.log("Event 1.1: calculateAmountForEvent error " + JSON.stringify(err))
 			throw err
