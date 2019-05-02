@@ -26,7 +26,10 @@ exports.updateEventLeagueIsPrivate = function(req, res, exports, admin) {
         var publicCount = 0
         snapshot.forEach(child => {
             const eventId = child.key
-            const leagueId = child.val().league
+            var leagueId = child.val().league
+            if (leagueId == undefined) {
+                leagueId = child.val().leagueId
+            }
             const isPrivate = leagueIsPrivate[leagueId]
             if (isPrivate == true) {
                 privateCount = privateCount + 1

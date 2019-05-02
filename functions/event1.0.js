@@ -40,6 +40,7 @@ exports.createEvent = function(req, res, exports, admin) {
     params["organizer"] = userId
     params["owner"] = userId // old apps still use this info
     params["leagueId"] = league
+    params["league"] = league
 
     // optional params
     if (paymentRequired) { params["paymentRequired"] = paymentRequired }
@@ -114,7 +115,10 @@ exports.joinOrLeaveEvent = function(req, res, exports, admin) {
                 console.log("JoinOrLeaveEvent: could not find event " + eventId)
                 throw new Error("Could not join event; event not found")
             }
-            leagueId = snapshot.val().league
+            leagueId = snapshot.val().leagueId
+            if (leagueId == undefined) {
+                leagueId = snapshot.val().league
+            }
             // find if league contains that player
             console.log("JoinOrLeaveEvent: checking player's league status for " + leagueId)
             return admin.database().ref(`/leaguePlayers/${leagueId}/${userId}`).once('value')
@@ -383,7 +387,10 @@ eventsForLeagues = function(leagueIds, admin, eventAccumulator) {
 
 countEvents = function(snapshot, admin) {
     const parent = snapshot.ref.parent
-    const leagueId = snapshot.val().leagueId
+    var leagueId = snapshot.val().leagueId
+    if (leagueId == undefined) {
+        leagueId = snapshot.val().league
+    }
     let leagueRef = `/leagues/${leagueId}`
     let countRef = admin.database().ref(leagueRef).child(`eventCount`)
     console.log("CountEvents: countRef " + countRef)
