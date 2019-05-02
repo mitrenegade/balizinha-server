@@ -17,6 +17,7 @@ const feedback1_0 = require('./feedback1.0')
 const share1_0 = require('./share1.0')
 const feed1_0 = require('./feed1.0')
 const stripeConnect1_0 = require('./stripeConnect1.0')
+const promotion1_0 = require('./promotion1.0')
 const globals = require('./globals')
 
 admin.initializeApp(functions.config().firebase);
@@ -404,6 +405,15 @@ exports.deleteEvent = functions.https.onRequest((req, res) => {
     return event1_1.deleteEvent(req, res)
 })
 
+/**
+ * params: eventId: String
+ *         userId: String
+ * result: { paymentRequired: bool, amount: Double? }
+ */
+exports.shouldChargeForEvent = functions.https.onRequest((req, res) => {
+    return event1_1.shouldChargeForEvent(req, res) // exports needed for promo helpers
+})
+
 // database changes
 exports.onEventCreate = functions.database.ref('/events/{eventId}').onCreate((snapshot, context) => {
     return event1_0.onEventCreate(snapshot, context, exports)
@@ -542,6 +552,25 @@ exports.createFeedItemForEventAction = function(type, userId, actionId, message,
 exports.createFeedItemForJoinLeaveLeague = function(userId, leagueId, isJoin) {
     return feed1_0.createFeedItemForJoinLeaveLeague(userId, leagueId, isJoin, exports, admin) 
 }
+
+// // PROMOTIONS //////////////////////////////////////////////////////////////////////////////////
+
+// // helper
+ /**
+ * params: promoId: String
+ * result: promotion JSON or undefined
+ */
+exports.promotionWithId = functions.https.onRequest((req, res) => {
+    return promotion1_0.promotionWithId(req, res)
+})
+
+// /**
+//  * params: promotion: JSON representing a promotion object
+//  * result: bool whether promo is valid and active
+//  */
+// exports.isValidPromotionCode = function(promotion) {
+//     return promotion1_0.isValidPromotionCode(promotion)
+// }
 
 // UTILS - used by Admin app //////////////////////////////////////////////////////////////////////////////////
 /**

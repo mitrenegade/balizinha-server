@@ -14,7 +14,7 @@
     "dateformat": "^3.0.3",
     "express": "^4.16.4",
     "firebase-admin": "^6.0.0",
-    "firebase-functions": "^2.1.0",
+    "firebase-functions": "^2.3.0",
     "moment": "^2.24.0",
     "psl": "^1.1.31",
     "request": "^2.88.0",
