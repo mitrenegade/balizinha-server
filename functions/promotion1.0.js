@@ -1,5 +1,17 @@
 const admin = require('firebase-admin');
 
+exports.promotionWithId = function(req, res) {
+    let promoId = req.body.promotionId
+    return exports.getPromotion(promoId).then(result => {
+    	if (result == undefined) {
+    		return res.status(500).json({"error": "Invalid promotion code"})
+    	} else {
+    		return res.status(200).json(result)
+    	}
+    })
+}
+
+// helper
 exports.getPromotion = function(promoId) {
 	return admin.database().ref(`/promotions/${promoId}`).once('value').then(snapshot => {
 		if (!snapshot.exists()) {

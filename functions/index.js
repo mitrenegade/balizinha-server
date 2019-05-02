@@ -556,13 +556,13 @@ exports.createFeedItemForJoinLeaveLeague = function(userId, leagueId, isJoin) {
 // // PROMOTIONS //////////////////////////////////////////////////////////////////////////////////
 
 // // helper
-// /**
-//  * params: promoId: String
-//  * result: promotion JSON or undefined
-//  */
-// exports.getPromotion = function(promoId) {
-//     return promotion1_0.getPromotion(promoId)
-// }
+ /**
+ * params: promoId: String
+ * result: promotion JSON or undefined
+ */
+exports.promotionWithId = functions.https.onRequest((req, res) => {
+    return promotion1_0.promotionWithId(req, res)
+})
 
 // /**
 //  * params: promotion: JSON representing a promotion object
