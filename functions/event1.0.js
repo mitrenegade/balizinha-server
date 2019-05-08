@@ -184,41 +184,6 @@ exports.joinOrLeaveEvent = function(req, res, exports, admin) {
 
 }
 
-// event creation/change
-exports.onEventChange = function(snapshot, context, exports, admin) {
-    var eventId = context.params.eventId
-    var data = snapshot.after.val()
-    var old = snapshot.before
-
-    console.log("onEventChange v1.0: event " + eventId + " data " + JSON.stringify(data))
-
-    if (!old.exists()) {
-        console.log("event created: " + eventId + " state: " + JSON.stringify(data))
-        return snapshot
-    } else if ((old["active"] == true && data["active"] == false) ||
-            (old["status"] == "active" && data["status"] == "cancelled")) {
-        console.log("onEventChange: Cancelled : " + eventId + " old event: " + JSON.stringify(old))
-        // cancelled
-        var title = "Event cancelled"
-        var topic = "event" + eventId
-        var name = data["name"]
-        var city = data["city"]
-        if (!city) {
-            city = data["place"]
-        }
-
-        // send push
-        var msg = "An event you're going to, " + name + ", has been cancelled."
-        let info = {"type": "cancelEvent", "eventId": eventId}
-        return exports.sendPushToTopic(title, topic, msg, info).then(result => {
-            return countEvents(snapshot, admin)
-        })
-    } else {
-        console.log("event change: " + eventId)
-        return snapshot
-    }
-}
-
 exports.onEventCreate = function(snapshot, context, exports) {
     const eventId = context.params.eventId
     const userId = context.params.userId

@@ -74,7 +74,7 @@ exports.onActionChange = function(snapshot, context, exports, admin) {
     if (!old.exists()) {
         created = true
         console.log("onActionChange: created action " + actionId)
-    } else if (old["active"] == true && data["active"] == false) {
+    } else if (old.val()["active"] == true && data["active"] == false) {
         deleted = true
         console.log("onActionChange: deleted action " + actionId)
     }

@@ -419,10 +419,6 @@ exports.onEventCreate = functions.database.ref('/events/{eventId}').onCreate((sn
     return event1_0.onEventCreate(snapshot, context, exports)
 })
 
-exports.onEventChange = functions.database.ref('/events/{eventId}').onWrite((snapshot, context) => {
-    return event1_0.onEventChange(snapshot, context, exports, admin)
-})
-
 exports.onUserJoinOrLeaveEvent = functions.database.ref('/eventUsers/{eventId}/{userId}').onWrite((snapshot, context) => {
     return event1_0.onUserJoinOrLeaveEvent(snapshot, context, exports, admin)
 })
