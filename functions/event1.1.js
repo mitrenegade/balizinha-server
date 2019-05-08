@@ -11,6 +11,7 @@ exports.cancelEvent = function(req, res, exports) {
  		return res.status(500).json({"error": "Did not specify whether event was to be cancelled"})
  	}
  	console.log("Event 1.1: cancelEvent eventId " + eventId + " isCancelled " + isCancelled)
+ 	var eventName = undefined
 	return changeEventCancellationStatus(eventId, isCancelled).then(results => {
         // create action
         var type = "cancelEvent"
@@ -20,12 +21,21 @@ exports.cancelEvent = function(req, res, exports) {
         	defaultMessage = "reinstated an event"
         }
         let organizerId = results["organizerId"]
+        eventName = results["name"]
         console.log("Event v1.1 createAction for cancelEvent event " + eventId + " by organizer " + organizerId)
         return exports.createAction(type, organizerId, eventId, null, defaultMessage)
 	}).then(() => {
+		if (isCancelled) {
+			return sendPushForCancelEvent(eventId, eventName, exports)
+		} else {
+			return
+		}
+		// TODO: update league score based on a cancelled event - should be lower
+        // return countEvents(snapshot, admin)
+	}).then(() => {
 		return res.status(200).json({"success": true})
 	}).catch(err => {
-        console.log("Event v1.1 cancelEvent error: " + JSON.stringify(err));
+        console.log("Event v1.1 cancelEvent error: " + err.message);
         return res.status(500).json({"error": err.message})
 	})
 }
@@ -41,17 +51,31 @@ changeEventCancellationStatus = function(eventId, isCancelled) {
 		params["status"] = "active"
 	}
 	var organizerId = undefined
+	var eventName = undefined
 	return admin.database().ref(eventRef).once('value').then(snapshot => {
 		if (!snapshot.exists()) {
 	 		throw new Error("Event not found")
 		}
 		organizerId = snapshot.val()["organizer"]
+		eventName = snapshot.val()["name"]
 		return admin.database().ref(eventRef).update(params)
 	}).then(() => {
 		params["organizerId"] = organizerId
+		params["name"] = eventName
 		console.log("Event v1.1: updated event with params " + JSON.stringify(params))
 		return params
 	})
+}
+
+sendPushForCancelEvent = function(eventId, eventName, exports) {
+    var title = "Event cancelled"
+    var topic = "event" + eventId
+
+    // send push
+    var msg = "An event you're going to, " + eventName + ", has been cancelled."
+    console.log("Push v1.0 for onEventChange: sending push " + title + " to " + topic + " with msg " + msg)
+    let info = {"type": "cancelEvent", "eventId": eventId}
+    return exports.sendPushToTopic(title, topic, msg, info)
 }
 
 exports.deleteEvent = function(req, res) {

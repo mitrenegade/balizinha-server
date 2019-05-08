@@ -225,7 +225,7 @@ exports.pushForLeagueFeedItem = function(leagueId, type, userId, message, export
             }
             console.log("Push v1.0 for LeagueFeedItem: sending push " + title + " to " + topic + " with body " + body)
             let info = {"type": "leagueChat", "leagueId": leagueId}
-            return exports.sendPushToTopic(title, topic, body, "leagueChat")
+            return exports.sendPushToTopic(title, topic, body, info)
         })
     }).catch(function(error) {
         // catches this error so that the push doesn't cause the action to fail
