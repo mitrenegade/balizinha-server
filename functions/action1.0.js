@@ -89,7 +89,7 @@ exports.onActionChange = function(snapshot, context, exports, admin) {
     // for a chat action, update createdAt, username then create a duplicate
         const createdAt = exports.secondsSince1970()
         const userId = data["userId"]
-        const eventId = data["event"]
+        const eventId = data["eventId"]
         return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
             return snapshot.val();
         }).then(player => { 
@@ -100,7 +100,7 @@ exports.onActionChange = function(snapshot, context, exports, admin) {
             return admin.database().ref(ref).update({"createdAt": createdAt, "username": name})
         }).then(result => {
             // create eventAction
-            var eventId = data["event"]
+            var eventId = data["eventId"]
             var ref = `/eventActions/` + eventId
             // when initializing a dict, use [var] notation. otherwise use params[var] = val
             var params = { [actionId] : true}
