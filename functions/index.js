@@ -99,7 +99,7 @@ exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite((sn
 
     // update city
     if (data["city"] != undefined) {
-        var city = data["city"].toLowerCase()
+        var city = data["city"].toLowerCase().trim()
         var ref = `/cityPlayers/` + city
         console.log("Creating cityPlayers for city " + city + " and player " + playerId)
         var params = {[playerId]: true}
@@ -439,6 +439,14 @@ exports.pushForJoinEvent = function(eventId, name, join) {
 }
 
 // ACTION //////////////////////////////////////////////////////////////////////////////////
+/**
+ * params:
+ *  userId: String
+ *  eventId: String
+ *  message: String
+ * result: { actionId: String }
+*/
+
 exports.postChat = functions.https.onRequest((req, res) => {
     return action1_0.postChat(req, res, exports, admin)
 })
