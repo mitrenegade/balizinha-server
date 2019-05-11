@@ -96,6 +96,7 @@ exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite((sn
     console.log("onPlayerChange triggered with snapshot " + JSON.stringify(snapshot) + " context " + JSON.stringify(context))
     var playerId = context.params.userId
     var data = snapshot.after.val()
+    var old = snapshot.before.val()
 
     // update city
     if (data["city"] != undefined) {
@@ -103,7 +104,13 @@ exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite((sn
         var ref = `/cityPlayers/` + city
         console.log("Creating cityPlayers for city " + city + " and player " + playerId)
         var params = {[playerId]: true}
-        return admin.database().ref(ref).update(params)
+        return admin.database().ref(ref).update(params).then(() => {
+            var oldCity = old["city"].toLowerCase()
+            if (oldCity != city) {
+                var params = {[playerId]: false}
+                return admin.database().ref(`/cityPlayers/${oldCity}`).update(params)
+            }
+        })
     }
 
     if (data["promotionId"] != undefined) {
