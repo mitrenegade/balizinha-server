@@ -96,14 +96,21 @@ exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite((sn
     console.log("onPlayerChange triggered with snapshot " + JSON.stringify(snapshot) + " context " + JSON.stringify(context))
     var playerId = context.params.userId
     var data = snapshot.after.val()
+    var old = snapshot.before.val()
 
     // update city
     if (data["city"] != undefined) {
-        var city = data["city"].toLowerCase()
+        var city = data["city"].toLowerCase().trim()
         var ref = `/cityPlayers/` + city
         console.log("Creating cityPlayers for city " + city + " and player " + playerId)
         var params = {[playerId]: true}
-        return admin.database().ref(ref).update(params)
+        return admin.database().ref(ref).update(params).then(() => {
+            var oldCity = old["city"].toLowerCase()
+            if (oldCity != city) {
+                var params = {[playerId]: false}
+                return admin.database().ref(`/cityPlayers/${oldCity}`).update(params)
+            }
+        })
     }
 
     if (data["promotionId"] != undefined) {
@@ -439,6 +446,14 @@ exports.pushForJoinEvent = function(eventId, name, join) {
 }
 
 // ACTION //////////////////////////////////////////////////////////////////////////////////
+/**
+ * params:
+ *  userId: String
+ *  eventId: String
+ *  message: String
+ * result: { actionId: String }
+*/
+
 exports.postChat = functions.https.onRequest((req, res) => {
     return action1_0.postChat(req, res, exports, admin)
 })
