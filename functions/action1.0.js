@@ -12,6 +12,7 @@ exports.createAction = function(type, userId, eventId, message, defaultMessage, 
     params["type"] = type
     params["event"] = eventId // android 1.0.7 still uses event
     params["eventId"] = eventId // slowly transitioning to use eventId
+    params["user"] = userId // android 1.0.7 still uses user
     params["userId"] = userId // slowly transitioning to use userId
     params["message"] = message
     var createdAt = exports.secondsSince1970()
