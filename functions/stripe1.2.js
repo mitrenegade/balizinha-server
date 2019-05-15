@@ -18,7 +18,7 @@ exports.createSubscription = function(req, res, exports) {
 
     const uniqueId = exports.createUniqueId() // TODO: use globals
 
-	if (!type || !leagueId || !amount || !playerId) {
+	if (!type || !leagueId || !userId) {
 		throw new Error("Create subscrption failed: missing parameter")
 	}
 
@@ -49,20 +49,21 @@ exports.createSubscription = function(req, res, exports) {
         return stripe.subscriptions.create(subscription);
     }).then(response => {
         // If the result is successful, write it back to the database
-        console.log("Stripe 1.2: CreateStripeSubscription success with response " + response)
+        console.log("Stripe 1.2: CreateStripeSubscription success with response " + JSON.stringify(response))
         const ref = admin.database().ref(`/subscriptions/${uniqueId}`)
-        var params = response
+        var params = {}
         params.type = type
         params.leagueId = leagueId
-        params.playerId = playerId
-        params.stripeInfo = response
+        params.userId = userId
+        params.status = "active"
+        params.subscription = response
         return ref.update(params).then(result => {
         	res.status(200).json({"result": result})
         })
     }).catch((err) => {
-        console.log("Stripe 1.2: CreateSubscription error " + error.message)
+        console.log("Stripe 1.2: CreateSubscription error " + err.message)
         const ref = admin.database().ref(`/subscriptions/${uniqueId}`)
-        const params = {"error": error.message, "status": "error"}
+        const params = {"error": err.message, "status": "error"}
         return ref.update(params).then(result => {
             return res.status(500).json({"error": err.message})
         })
