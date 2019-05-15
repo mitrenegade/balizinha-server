@@ -198,14 +198,24 @@ exports.refundCharge = functions.https.onRequest( (req, res) => {
     return stripe1_0.refundCharge(req, res)
 })
 
-// this should no longer be used
-exports.createStripeSubscription = functions.database.ref(`/charges/organizers/{organizerId}/{chargeId}`).onWrite((snapshot, context) => {
-    return stripe1_0.createStripeSubscription(snapshot, context, exports, admin)
-})
-
-// creates a subscription after a subscription object is created
+/**
+ * Creates a subscription. <<>>
+ * params: type: [owner, membershp]
+ *         leagueId: String
+ *         userId: String
+ * Result: { subscription object including stripeInfo }
+ */
 exports.createSubscription = functions.https.onRequest( (req, res) => {
     return stripe1_2.createSubscription(req, res, exports)
+})
+
+/**
+ * loads all subscriptions from /subscriptions for current user
+ * params: userId: String
+ * result: [ subscriptions ]
+ */
+exports.getSubscriptions = functions.https.onRequest( (req, res) => {
+    return stripe1_2.getSubscriptions(req, res)
 })
 
 /**
