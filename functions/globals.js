@@ -19,16 +19,17 @@ module.exports = {
 	buildVersion: BUILD_VERSION
 }
 
+// https://evdokimovm.github.io/javascript/nodejs/2016/06/13/NodeJS-How-to-Use-Functions-from-Another-File-using-module-exports.html
 doSecondsSince1970 = function() {
     var secondsSince1970 = new Date().getTime() / 1000
     return Math.floor(secondsSince1970)
 }
 
-exports.secondsSince1970 = function() {
+module.exports.secondsSince1970 = function() {
 	return doSecondsSince1970()
 }
 
-exports.createUniqueId = function() {
+module.exports.createUniqueId = function() {
     var secondsSince1970 = doSecondsSince1970()
     var randomId = Math.floor(Math.random() * 899999 + 100000)
     return `${secondsSince1970}-${randomId}`
