@@ -4,9 +4,9 @@ exports.getVenues = function(req, res) {
 	let ref = `/venues/`
 	return admin.database().ref(ref).once('value').then(snapshot => {
 		if (!snapshot.exists()) {
-	 		res.status(200).json({"venues": []})
+	 		res.status(200).json({"results": []})
 		} else {
-	 		res.status(200).json({"venues": snapshot.val()})
+	 		res.status(200).json({"results": snapshot.val()})
 		}
 	})
 }
@@ -15,9 +15,9 @@ exports.getCities = function(req, res) {
 	let ref = `/cities/`
 	return admin.database().ref(ref).once('value').then(snapshot => {
 		if (!snapshot.exists()) {
-	 		res.status(200).json({"cities": []})
+	 		res.status(200).json({"results": []})
 		} else {
-	 		res.status(200).json({"cities": snapshot.val()})
+	 		res.status(200).json({"results": snapshot.val()})
 		}
 	})
 }
