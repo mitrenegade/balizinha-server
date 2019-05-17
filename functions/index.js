@@ -19,6 +19,7 @@ const feed1_0 = require('./feed1.0')
 const stripeConnect1_0 = require('./stripeConnect1.0')
 const promotion1_0 = require('./promotion1.0')
 const globals = require('./globals')
+const venue1_0 = require('./venue1.0')
 
 admin.initializeApp(functions.config().firebase);
 
@@ -582,6 +583,24 @@ exports.promotionWithId = functions.https.onRequest((req, res) => {
 // exports.isValidPromotionCode = function(promotion) {
 //     return promotion1_0.isValidPromotionCode(promotion)
 // }
+
+// VENUES - venues and cities //////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * params: none
+ * result: [ venues ]
+ */
+exports.getVenues = functions.https.onRequest((req, res) => {
+    return venue1_0.getVenues(req, res)
+})
+
+/**
+ * params: none
+ * result: [ cities ]
+ */
+exports.getCities = functions.https.onRequest((req, res) => {
+    return venue1_0.getCities(req, res)
+})
 
 // UTILS - used by Admin app //////////////////////////////////////////////////////////////////////////////////
 /**
