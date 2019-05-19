@@ -606,6 +606,10 @@ exports.createCity = functions.https.onRequest((req, res) => {
     return venue1_0.createCity(req, res)
 })
 
+exports.deleteCity = functions.https.onRequest((req, res) => {
+    return venue1_0.deleteCity(req, res)
+})
+
 // UTILS - used by Admin app //////////////////////////////////////////////////////////////////////////////////
 /**
  * params: userId: String

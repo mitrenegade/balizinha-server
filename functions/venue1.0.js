@@ -47,6 +47,14 @@ exports.createCity = function(req, res) {
 	})
 }
 
+exports.deleteCity = function(req, res) {
+	let cityId = req.body.cityId
+	console.log("Venue 1.0: deleteCity " + cityId)
+	return admin.database().ref(`/cities/` + cityId).remove().then(result => {
+		res.status(200).json({"cityId": cityId, "success": true})
+	})
+}
+
 exports.createVenue = function(req, res) {
 	res(500).json({'error': 'Not implemented'})
 }
