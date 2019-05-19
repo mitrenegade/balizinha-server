@@ -32,7 +32,7 @@ exports.createCity = function(req, res) {
 
 	let cityId = globals.createUniqueId()
 	let ref = `/cities/` + cityId
-	var params = {"name": name, "createdAt": createdAt}
+	var params = {"name": name, "createdAt": createdAt, "verified": false}
 	if (state != undefined) {
 		params["state"] = state
 	}
