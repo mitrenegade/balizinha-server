@@ -113,6 +113,9 @@ exports.onActionChange = function(snapshot, context, exports, admin) {
             console.log("onActionChange: pushForChatAction with result " + JSON.stringify(result))
             exports.pushForChatAction(actionId, eventId, userId, data)
             return result
+        }).catch(err => {
+            console.log("onActionChange: error " + err.message + " action " + JSON.stringify(data))
+            return snapshot
         })
     } else {
         return snapshot
