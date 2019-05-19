@@ -19,6 +19,7 @@ const feed1_0 = require('./feed1.0')
 const stripeConnect1_0 = require('./stripeConnect1.0')
 const promotion1_0 = require('./promotion1.0')
 const globals = require('./globals')
+const venue1_0 = require('./venue1.0')
 
 admin.initializeApp(functions.config().firebase);
 
@@ -139,20 +140,16 @@ exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite((sn
 //     exports.sendPush(testToken, msg)
 // })
 
-// TODO: move this to global
 exports.secondsSince1970 = function() {
-    var secondsSince1970 = new Date().getTime() / 1000
-    return Math.floor(secondsSince1970)
+    return globals.secondsSince1970()
 }
 
 exports.createUniqueId = function() {
-    var secondsSince1970 = exports.secondsSince1970()
-    var randomId = Math.floor(Math.random() * 899999 + 100000)
-    return `${secondsSince1970}-${randomId}`
+    return globals.createUniqueId()
 }
 
 exports.getUniqueId = functions.https.onRequest( (req, res) => {
-    var uniqueId = exports.createUniqueId()
+    var uniqueId = globals.createUniqueId()
     console.log('Called getUniqueId with result ' + uniqueId)
     res.status(200).json({"id": uniqueId})
 })
@@ -582,6 +579,36 @@ exports.promotionWithId = functions.https.onRequest((req, res) => {
 // exports.isValidPromotionCode = function(promotion) {
 //     return promotion1_0.isValidPromotionCode(promotion)
 // }
+
+// VENUES - venues and cities //////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * params: none
+ * result: [ venues ]
+ */
+exports.getVenues = functions.https.onRequest((req, res) => {
+    return venue1_0.getVenues(req, res)
+})
+
+exports.createVenue = functions.https.onRequest((req, res) => {
+    return venue1_0.createVenue(req, res)
+})
+
+/**
+ * params: none
+ * result: [ cities ]
+ */
+exports.getCities = functions.https.onRequest((req, res) => {
+    return venue1_0.getCities(req, res)
+})
+
+exports.createCity = functions.https.onRequest((req, res) => {
+    return venue1_0.createCity(req, res)
+})
+
+exports.deleteCity = functions.https.onRequest((req, res) => {
+    return venue1_0.deleteCity(req, res)
+})
 
 // UTILS - used by Admin app //////////////////////////////////////////////////////////////////////////////////
 /**
