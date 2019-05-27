@@ -382,7 +382,7 @@ exports.recountEvents = function(snapshot, admin) {
         }
         var leagueId = leagueRef.key
         console.log("Event v1.0 recountEvents for league " + leagueId)
-        return admin.database().ref(`/events`).orderByChild('league').equalTo(leagueId).once('value')
+        return admin.database().ref(`/events`).orderByChild('leagueId').equalTo(leagueId).once('value')
         .then(leagueEventsSnapshot => {
             var active = 0
             leagueEventsSnapshot.forEach(child => {
