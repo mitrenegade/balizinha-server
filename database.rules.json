@@ -7,6 +7,9 @@
     },
     "feedItems": {
     	".indexOn": "leagueId"
+    },
+    "actions": {
+    	".indexOn": "eventId"
     }
   }
 }
