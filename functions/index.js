@@ -602,6 +602,11 @@ exports.getCities = functions.https.onRequest((req, res) => {
     return venue1_0.getCities(req, res)
 })
 
+/**
+ * params: name, state: String
+ *         lat, lon: Double
+ * result: [ cityId: String, city: { city } ]
+ */
 exports.createCity = functions.https.onRequest((req, res) => {
     return venue1_0.createCity(req, res)
 })

@@ -3,10 +3,13 @@
     ".read": "auth != null",
     ".write": "auth != null",
     "events": {
-    	".indexOn": "leagueIsPrivate"
+    	".indexOn": ["leagueIsPrivate", "leagueId"]
     },
     "feedItems": {
     	".indexOn": "leagueId"
+    },
+    "actions": {
+    	".indexOn": "eventId"
     }
   }
 }

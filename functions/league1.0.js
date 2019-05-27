@@ -233,7 +233,7 @@ exports.getEventsForLeague = function(req, res, exports, admin) {
 	// find all leagueId where playerId = true
 	var ref = admin.database().ref("events")
 	console.log("getEventsForLeague " + leagueId)
-	return ref.orderByChild("league").equalTo(leagueId).once('value').then(snapshot => {
+	return ref.orderByChild("leagueId").equalTo(leagueId).once('value').then(snapshot => {
 		console.log("orderByChild for league " + leagueId + " result: " + JSON.stringify(snapshot))
 		return snapshot.val()
 	}).then(result => {
