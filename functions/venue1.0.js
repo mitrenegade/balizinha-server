@@ -42,7 +42,11 @@ exports.createCity = function(req, res) {
 	}
 	return admin.database().ref(ref).set(params).then(result => {
 		return admin.database().ref(ref).once('value').then(snapshot => {
-			res.status(200).json({"cityId": cityId})
+			if (!snapshot.exists()) {
+				return res.status(500).json({"error": "Could not create new city"})
+			} else {
+				return res.status(200).json({"cityId": cityId, "city": snapshot.val()})
+			}
 		})
 	})
 }
