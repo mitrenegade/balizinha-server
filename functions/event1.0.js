@@ -332,7 +332,7 @@ eventsForLeagues = function(leagueIds, admin, eventAccumulator) {
         }
         var leagueId = leagueIds[0]
         var remainingLeagues = leagueIds.slice(1, leagueIds.length)
-        return admin.database().ref(`/events`).orderByChild('league').equalTo(leagueId).once('value').then(snapshot => {
+        return admin.database().ref(`/events`).orderByChild('leagueId').equalTo(leagueId).once('value').then(snapshot => {
             if (snapshot.exists()) {
                 var accumulatedEvents = Object.assign({}, eventAccumulator, snapshot.val())
                 //console.log("EventsForLeagues: leagueId " + leagueId + " accumulator " + JSON.stringify(eventAccumulator) + " new elements " + snapshot.numChildren() + " leagues left: " + remainingLeagues.count + " new accumulatedEvents " + JSON.stringify(accumulatedEvents))
