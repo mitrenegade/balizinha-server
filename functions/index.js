@@ -428,8 +428,7 @@ exports.onUserJoinOrLeaveEvent = functions.database.ref('/eventUsers/{eventId}/{
 })
 
 exports.onEventDelete = functions.database.ref('/events/{eventId}').onDelete((snapshot, context) => {
-    // deletion of events doesn't happen from the app
-    return event1_0.onEventDelete(snapshot, context, exports, admin)
+    return event1_0.onEventDelete(snapshot, context)
 })
 
 
