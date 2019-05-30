@@ -254,12 +254,11 @@ exports.onUserJoinOrLeaveEvent = function(snapshot, context, exports, admin) {
     })
 }
 
-exports.onEventDelete = function(snapshot, context, exports, admin) {
+exports.onEventDelete = function(snapshot, context) {
     var eventId = context.params.eventId
-    var data = snapshot.after.val()
-    var old = snapshot.before
+    var deletedObject = snapshot.val()
 
-    console.log("Event delete v1.0: id " + eventId + " snapsht before " + JSON.stringify(old) + " after " + JSON.stringify(data))
+    return console.log("Event delete v1.0: id " + eventId + " snapshot before " + JSON.stringify(deletedObject))
     // do nothing
     // should we delete all actionIds?
     // should we delete all leagueEvents?

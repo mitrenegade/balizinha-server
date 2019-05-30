@@ -72,10 +72,11 @@ exports.onActionChange = function(snapshot, context, exports, admin) {
     var deleted = false
     var data = snapshot.after.val()
     var old = snapshot.before
+    const actionType = data["type"]
 
     if (!old.exists()) {
         created = true
-        console.log("onActionChange: created action " + actionId)
+        console.log("onActionChange: created action " + actionId + " type " + actionType)
     } else if (old.val()["active"] == true && data["active"] == false) {
         deleted = true
         console.log("onActionChange: deleted action " + actionId)
@@ -86,7 +87,6 @@ exports.onActionChange = function(snapshot, context, exports, admin) {
         console.log("onActionChange: changed action " + actionId)
     }
 
-    const actionType = data["type"]
     if (actionType == "chat" && created == true) {
     // for a chat action, update createdAt, username then create a duplicate
         const createdAt = exports.secondsSince1970()
