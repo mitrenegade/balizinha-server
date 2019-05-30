@@ -55,7 +55,9 @@ exports.deleteCity = function(req, res) {
 	let cityId = req.body.cityId
 	console.log("Venue 1.0: deleteCity " + cityId)
 	return admin.database().ref(`/cities/` + cityId).remove().then(result => {
-		res.status(200).json({"cityId": cityId, "success": true})
+		return admin.database().ref(`/cityPlayers/` + cityId).remove()
+	}).then(result => {
+		return res.status(200).json({"cityId": cityId, "success": true})
 	})
 }
 

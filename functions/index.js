@@ -112,7 +112,7 @@ exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite((sn
                 var params = {[playerId]: false}
                 return admin.database().ref(`/cityPlayers/${oldCityId}`).update(params)
             } else {
-                return console.log("onPlayerChange: city updated to id " + cityId)
+                console.log("onPlayerChange: city updated to id " + cityId)
             }
         })
     }
