@@ -47,7 +47,7 @@ exports.makePayment = function(req, res, exports) {
 makeConnectCharge = function(connectId, userId, eventId, amount, chargeId, exports) {
     console.log("Stripe 1.1: makeConnectCharge: This is a Stripe Connect user's event " + eventId + " with stripeUserId " + connectId + " amount " + amount + " userId " + userId + " chargeId " + chargeId)
     return stripeConnect.doStripeConnectCharge(amount, eventId, connectId, userId, chargeId).then(result => {
-        var type = "stripeConnectChargeForEvent"
+        var type = globals.ActionType.stripeConnectChargeForEvent
         return exports.createAction(type, userId, eventId, null, "made a payment")
     })
 }
@@ -95,9 +95,9 @@ makePaymentForPlatformCharge = function(userId, eventId, amount, chargeId, expor
         response["player_id"] = userId
         const chargeRef = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
         return chargeRef.update(response).then(result => {
-            var type = "holdPaymentForEvent"
+            var type = globals.ActionType.holdPaymentForEvent
             if (capture == true) {
-                type = "payForEvent"
+                type = globals.ActionType.payForEvent
             }
             return exports.createAction(type, userId, eventId, null)
         }).then(result => {

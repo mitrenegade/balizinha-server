@@ -1,4 +1,5 @@
 const admin = require('firebase-admin');
+const globals = require('./globals')
 exports.createEvent = function(req, res, exports, admin) {
     const userId = req.body.userId
     if (userId == undefined) { res.status(500).json({"error": "A valid user is required to create event"}); return }
@@ -64,7 +65,7 @@ exports.createEvent = function(req, res, exports, admin) {
     }).then(result => {
         // create action
         console.log("CreateEvent v1.0 createAction event " + eventId + " organizer " + userId)
-        var type = "createEvent"
+        var type = globals.ActionType.createEvent
         return exports.createAction(type, userId, eventId, null)
     }).then(result => {
         // join event
@@ -167,11 +168,11 @@ exports.joinOrLeaveEvent = function(req, res, exports, admin) {
             console.log("JoinOrLeaveEvent v1.0: leave results " + JSON.stringify(result))
         }
         if (addedByOrganizer) {
-            return exports.createAction("addedToEvent", userId, eventId, null, "A player was added to this game").then(result => {
+            return exports.createAction(globals.ActionType.addedToEvent, userId, eventId, null, "A player was added to this game").then(result => {
                 return res.status(200).json({"result": result, "eventId": eventId})
             })
         } else if (removedByOrganizer) {
-            return exports.createAction("removedFromEvent", userId, eventId, null, "A player was removed from this game").then(result => {
+            return exports.createAction(globals.ActionType.removedFromEvent, userId, eventId, null, "A player was removed from this game").then(result => {
                 return res.status(200).json({"result": result, "eventId": eventId})
             })
         } else {
@@ -236,10 +237,10 @@ exports.onUserJoinOrLeaveEvent = function(snapshot, context, exports, admin) {
     }
 
     var join = true
-    var type = "joinEvent"
+    var type = globals.ActionType.joinEvent
     if (data == false) {
         join = false
-        type = "leaveEvent"
+        type = globals.ActionType.leaveEvent
     }
     return exports.subscribeToEvent(eventId, userId, join).then(result => {
         return admin.database().ref(`/players/${userId}`).once('value')

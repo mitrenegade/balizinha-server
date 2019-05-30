@@ -1,5 +1,6 @@
 const admin = require('firebase-admin');
 const promotionService = require('./promotion1.0')
+const globals = require('./globals')
 
 exports.cancelEvent = function(req, res, exports) {
 	let eventId = req.body.eventId
@@ -14,10 +15,10 @@ exports.cancelEvent = function(req, res, exports) {
  	var eventName = undefined
 	return changeEventCancellationStatus(eventId, isCancelled).then(results => {
         // create action
-        var type = "cancelEvent"
+        var type = globals.ActionType.cancelEvent
         var defaultMessage = "cancelled an event"
         if (isCancelled == false) {
-        	type = "uncancelEvent"
+        	type = globals.ActionType.uncancelEvent
         	defaultMessage = "reinstated an event"
         }
         let organizerId = results["organizerId"]
