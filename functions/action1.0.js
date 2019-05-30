@@ -1,4 +1,5 @@
 const admin = require('firebase-admin');
+const globals = require('./globals')
 // actions
 exports.createAction = function(type, userId, eventId, message, defaultMessage, exports, admin) {
     console.log("createAction type: " + type + " event id: " + eventId + " message: " + message)
@@ -55,7 +56,7 @@ exports.postChat = function(req, res, exports, admin) {
     let eventId = req.body.eventId
     let message = req.body.message
 
-    let type = "chat"
+    let type = globals.ActionType.chat
 
     // this triggers side effects in createAction: createFeedItemForEventAction
     // this also triggers side effects in onActionChange: adding player name, createdAt, and pushForChatAction

@@ -146,7 +146,7 @@ exports.createStripeCharge = function(snapshot, context, exports, admin) {
         console.log("Stripe 1.0: createStripeCharge success with response " + JSON.stringify(response))
         const ref = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
         return ref.update(response).then(result => {
-            var type = "payForEvent"
+            var type = globals.ActionType.payForEvent
             return exports.createAction(type, userId, eventId, null)
         })
     }, error => {

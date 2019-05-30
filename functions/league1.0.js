@@ -1,5 +1,6 @@
 const admin = require('firebase-admin');
 // https://stackoverflow.com/questions/43486278/how-do-i-structure-cloud-functions-for-firebase-to-deploy-multiple-functions-fro
+const globals = require('./globals')
 
 exports.createLeague = function(req, res, exports, admin) {
 	// Use database to declare databaseRefs:
