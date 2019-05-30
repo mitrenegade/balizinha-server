@@ -34,3 +34,30 @@ module.exports.createUniqueId = function() {
     var randomId = Math.floor(Math.random() * 899999 + 100000)
     return `${secondsSince1970}-${randomId}`
 }
+
+// enums
+const ActionType = {
+	chat: "chat"
+	createEvent: "createEvent"
+    joinEvent: "joinEvent"
+    leaveEvent: "leaveEvent"
+    addedToEvent: "addedToEvent"
+    removedFromEvent: "removedFromEvent"
+    
+    // league
+    joinLeague: "joinLeague"
+    leaveLeague: "leaveLeague"
+    
+    // payment
+    holdPaymentForEvent: "holdPaymentForEvent"
+    payForEvent: "payForEvent"
+    stripeConnectChargeForEvent: "stripeConnectChargeForEvent"
+
+    // cancel event
+    cancelEvent: "cancelEvent"
+    uncancelEvent: "uncancelEvent"
+    
+    systemMessage: "systemMessage"
+}
+
+module.exports.ActionType = ActionType
