@@ -37,25 +37,25 @@ module.exports.createUniqueId = function() {
 
 // enums
 const ActionType = {
-	chat: "chat"
-	createEvent: "createEvent"
-    joinEvent: "joinEvent"
-    leaveEvent: "leaveEvent"
-    addedToEvent: "addedToEvent"
-    removedFromEvent: "removedFromEvent"
+	chat: "chat",
+	createEvent: "createEvent",
+    joinEvent: "joinEvent",
+    leaveEvent: "leaveEvent",
+    addedToEvent: "addedToEvent",
+    removedFromEvent: "removedFromEvent",
     
     // league
-    joinLeague: "joinLeague"
-    leaveLeague: "leaveLeague"
+    joinLeague: "joinLeague",
+    leaveLeague: "leaveLeague",
     
     // payment
-    holdPaymentForEvent: "holdPaymentForEvent"
-    payForEvent: "payForEvent"
-    stripeConnectChargeForEvent: "stripeConnectChargeForEvent"
+    holdPaymentForEvent: "holdPaymentForEvent",
+    payForEvent: "payForEvent",
+    stripeConnectChargeForEvent: "stripeConnectChargeForEvent",
 
     // cancel event
-    cancelEvent: "cancelEvent"
-    uncancelEvent: "uncancelEvent"
+    cancelEvent: "cancelEvent",
+    uncancelEvent: "uncancelEvent",
     
     systemMessage: "systemMessage"
 }
