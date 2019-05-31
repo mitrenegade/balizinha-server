@@ -133,7 +133,9 @@ exports.doStripeConnectCharge = function(amount, eventId, connectId, player_id, 
             response.stripeUserId = stripe_account
             const ref = admin.database().ref(`/charges/events/${eventId}/${chargeId}`)
             // TODO: also add connectId to it
-            return ref.update(response)
+            return ref.update(response).then( ()=> {
+                return response
+            })
         }, error => {
             console.log("CreateStripeConnectCharge createCharge error: " + error)
             params = {'connectId': connectId, 'player_id': player_id, 'customer': customerId, 'stripeUserId': stripe_account, 'error': error.message}

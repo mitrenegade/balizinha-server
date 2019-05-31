@@ -7,7 +7,8 @@ const stripe = require('stripe')(stripeToken)
 /**
  * Allows user to join a game and create a payment hold
  * params: userId: String, eventId: String
- * result: { },  or error
+ * result: { result: "success", chargeId: String, status: "succeeded", captured: bool}
+        or { result: "error", message: String }
  */
 exports.makePayment = function(req, res, exports) {
     const userId = req.body.userId
@@ -28,9 +29,9 @@ exports.makePayment = function(req, res, exports) {
     }).then(result => {
         console.log("Stripe 1.1: makePayment: result " + JSON.stringify(result))
         if (result["result"] == 'error') {
-            res.status(500).json(result)
+            return res.status(500).json(result)
         } else {
-            res.status(200).json(result)
+            return res.status(200).json(result)
         }
     })
     .catch(err => {
@@ -40,15 +41,23 @@ exports.makePayment = function(req, res, exports) {
             err.error = "We've upgraded our payment system. Please update your payment method and try again."
         }
         console.log("Stripe 1.1: makePayment: caught error " + JSON.stringify(err))
-        res.status(500).json(err)
+        return res.status(500).json(err)
     })
 }
 
 makeConnectCharge = function(connectId, userId, eventId, amount, chargeId, exports) {
     console.log("Stripe 1.1: makeConnectCharge: This is a Stripe Connect user's event " + eventId + " with stripeUserId " + connectId + " amount " + amount + " userId " + userId + " chargeId " + chargeId)
-    return stripeConnect.doStripeConnectCharge(amount, eventId, connectId, userId, chargeId).then(result => {
+    var chargeResult = {'result': ''}
+    return stripeConnect.doStripeConnectCharge(amount, eventId, connectId, userId, chargeId).then(response => {
+        chargeResult = {"result": "success", 
+                        "chargeId":chargeId, 
+                        "status": response["status"], 
+                        "captured": response["captured"]}
         var type = globals.ActionType.stripeConnectChargeForEvent
         return exports.createAction(type, userId, eventId, null, "made a payment")
+    }).then(actionId => {
+        // createAction returns a single actionId which is not the result we want
+        return chargeResult
     })
 }
 
