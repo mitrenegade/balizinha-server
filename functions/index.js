@@ -388,8 +388,10 @@ exports.joinOrLeaveEvent = functions.https.onRequest((req, res) => {
 })
 
 /**
+ * This function returns a dictionary of eventId:eventDict where the eventDict is the full event data
+ * This function handles finding events that belong to the user (in private leagues)
  * params: userId: String
- * result: [ events ]
+ * result: [ results: {eventId: {eventDict}} ]
  */
 exports.getEventsAvailableToUser = functions.https.onRequest((req, res) => {
     return event1_0.getEventsAvailableToUser(req, res, exports, admin)
