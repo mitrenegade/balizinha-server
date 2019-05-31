@@ -75,6 +75,15 @@ exports.onActionChange = function(snapshot, context, exports, admin) {
     var old = snapshot.before
     const actionType = data["type"]
 
+    var eventId = data["eventId"]
+    if (eventId == undefined) {
+        eventId = data["event"] // backwards compatibility to support event
+    }
+    var userId = data["userId"]
+    if (userId == undefined) {
+        userId = data["user"] // backwards compatibility to support user
+    }
+
     if (!old.exists()) {
         created = true
         console.log("onActionChange: created action " + actionId + " type " + actionType)
@@ -91,8 +100,6 @@ exports.onActionChange = function(snapshot, context, exports, admin) {
     if (actionType == "chat" && created == true) {
     // for a chat action, update createdAt, username then create a duplicate
         const createdAt = exports.secondsSince1970()
-        const userId = data["userId"]
-        const eventId = data["eventId"]
         return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
             return snapshot.val();
         }).then(player => { 
@@ -103,7 +110,6 @@ exports.onActionChange = function(snapshot, context, exports, admin) {
             return admin.database().ref(ref).update({"createdAt": createdAt, "username": name})
         }).then(result => {
             // create eventAction
-            var eventId = data["eventId"]
             var ref = `/eventActions/` + eventId
             // when initializing a dict, use [var] notation. otherwise use params[var] = val
             var params = { [actionId] : true}
