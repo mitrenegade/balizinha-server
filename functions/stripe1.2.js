@@ -80,11 +80,13 @@ exports.getSubscriptions = function(req, res) {
     console.log("Stripe 1.2: getSubscriptions userId" + userId)
 
     // Look up the Stripe customer id written in createStripeCustomer
-    return admin.database().ref(`/subscriptions/${userId}`).once('value').then(snapshot => {
+    let ref = admin.database().ref(`/subscriptions`)
+    return ref.orderByChild("userId").equalTo(userId).once('value').then(snapshot => {
         if (!snapshot.exists()) {
             throw new Error("No subscriptions exists for user")
         }
-        return snapshot.val();
+        console.log("Subscriptions for userId " + userId + ": " + snapshot.key)
+        return snapshot
     }).then(result => {
         return res.status(200).json({'result': result})
     }).catch(err => {
