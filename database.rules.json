@@ -13,6 +13,9 @@
     },
     "subscriptions": {
       ".indexOn": ["userId", "leagueId"]
+    },
+    "leagues": {
+      ".indexOn": ["owner", "isPrivate"]
     }
   }
 }
