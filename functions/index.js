@@ -4,6 +4,7 @@ const admin = require('firebase-admin');
 const app = require('express')
 const moment = require('moment')
 const league1_0 = require('./league1.0')
+const league1_1 = require('./league1.1')
 const event1_0 = require('./event1.0')
 const event1_1 = require('./event1.1')
 const action1_0 = require('./action1.0')
@@ -342,6 +343,11 @@ exports.getEventsForLeague = functions.https.onRequest((req, res) => {
  */
 exports.getLeagueStats = functions.https.onRequest((req, res) => {
     return league1_0.getLeagueStats(req, res, exports, admin)
+})
+
+// get leagues and subscription objects for ownership
+exports.getOwnerLeaguesAndSubscriptions = functions.https.onRequest((req, res) => {
+    return league1_1.getOwnerLeaguesAndSubscriptions(req, res)
 })
 
 // database changes
