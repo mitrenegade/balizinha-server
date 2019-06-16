@@ -4,6 +4,7 @@ const admin = require('firebase-admin');
 const app = require('express')
 const moment = require('moment')
 const league1_0 = require('./league1.0')
+const league1_1 = require('./league1.1')
 const event1_0 = require('./event1.0')
 const event1_1 = require('./event1.1')
 const action1_0 = require('./action1.0')
@@ -198,14 +199,24 @@ exports.refundCharge = functions.https.onRequest( (req, res) => {
     return stripe1_0.refundCharge(req, res)
 })
 
-// this should no longer be used
-exports.createStripeSubscription = functions.database.ref(`/charges/organizers/{organizerId}/{chargeId}`).onWrite((snapshot, context) => {
-    return stripe1_0.createStripeSubscription(snapshot, context, exports, admin)
-})
-
-// creates a subscription after a subscription object is created
+/**
+ * Creates a subscription. <<>>
+ * params: type: [owner, membershp]
+ *         leagueId: String
+ *         userId: String
+ * Result: { subscription object including stripeInfo }
+ */
 exports.createSubscription = functions.https.onRequest( (req, res) => {
     return stripe1_2.createSubscription(req, res, exports)
+})
+
+/**
+ * loads all subscriptions from /subscriptions for current user
+ * params: userId: String
+ * result: [ subscriptions ]
+ */
+exports.getSubscriptions = functions.https.onRequest( (req, res) => {
+    return stripe1_2.getSubscriptions(req, res)
 })
 
 /**
@@ -332,6 +343,11 @@ exports.getEventsForLeague = functions.https.onRequest((req, res) => {
  */
 exports.getLeagueStats = functions.https.onRequest((req, res) => {
     return league1_0.getLeagueStats(req, res, exports, admin)
+})
+
+// get leagues and subscription objects for ownership
+exports.getOwnerLeaguesAndSubscriptions = functions.https.onRequest((req, res) => {
+    return league1_1.getOwnerLeaguesAndSubscriptions(req, res)
 })
 
 // database changes

@@ -3,13 +3,16 @@
     ".read": "auth != null",
     ".write": "auth != null",
     "events": {
-    	".indexOn": ["leagueIsPrivate", "leagueId"]
+        ".indexOn": ["leagueIsPrivate", "leagueId"]
     },
     "feedItems": {
-    	".indexOn": "leagueId"
+        ".indexOn": "leagueId"
     },
     "actions": {
-    	".indexOn": "eventId"
+        ".indexOn": "eventId"
+    },
+    "subscriptions": {
+      ".indexOn": ["userId", "leagueId"]
     }
   }
 }
