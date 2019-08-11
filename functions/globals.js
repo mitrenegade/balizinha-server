@@ -56,6 +56,9 @@ const ActionType = {
     // cancel event
     cancelEvent: "cancelEvent",
     uncancelEvent: "uncancelEvent",
+
+    // venues
+    createVenue: "createVenue",
     
     systemMessage: "systemMessage"
 }
