@@ -346,8 +346,20 @@ exports.getLeagueStats = functions.https.onRequest((req, res) => {
 })
 
 // get leagues and subscription objects for ownership
+/*
+ * params: userId
+ * results: {leagues: [League], subscriptions: [Subscription]}
+ */
 exports.getOwnerLeaguesAndSubscriptions = functions.https.onRequest((req, res) => {
     return league1_1.getOwnerLeaguesAndSubscriptions(req, res)
+})
+
+/*
+ * params: userId
+ * results: {leagues: [League]}
+ */
+exports.getLeaguesOwnedByUser = functions.https.onRequest((req, res) => {
+    return league1_1.getLeaguesOwnedByUser(req, res)
 })
 
 // database changes
