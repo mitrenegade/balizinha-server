@@ -623,7 +623,7 @@ exports.getVenues = functions.https.onRequest((req, res) => {
 })
 
 exports.createVenue = functions.https.onRequest((req, res) => {
-    return venue1_0.createVenue(req, res)
+    return venue1_0.createVenue(req, res, exports)
 })
 
 /**
