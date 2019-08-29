@@ -68,10 +68,13 @@ exports.createVenue = function(req, res, exports) {
     }
 
     let name = req.body.name
+    var type = req.body.type
+    if (type == undefined) { 
+    	type = "unknown"
+    }
     let street = req.body.street
     var lat = req.body.lat
     var lon = req.body.lon
-
     let cityId = req.body.cityId
     let placeId = req.body.placeId
 
@@ -79,8 +82,7 @@ exports.createVenue = function(req, res, exports) {
     if (street == undefined) { return res.status(500).json({"error": "Street is required to create a venue"}) }
     if (lat == undefined) { return res.status(500).json({"error": "Latitude is required to create a venue"}) }
     if (lon == undefined) { return res.status(500).json({"error": "Longitude is required to create a venue"}) }
-
-    if (cityId == undefined) { return res.status(500).json({"error": "Select a city to create a venue"}) 
+    if (cityId == undefined) { return res.status(500).json({"error": "Select a city to create a venue"}) }
 
     console.log("Venue 1.0: createVenue cityId: " + cityId + " User lat/lon: (" + lat + ", " + lon + ")")
     let ref = `/cities/${cityId}`
@@ -101,12 +103,11 @@ exports.createVenue = function(req, res, exports) {
 		}
 
 		return doCreateVenue(userId, name, city, state, lat, lon, cityId, placeId)
-
-	}
+	})
 }
 
-doCreateVenue = function(userId, name, street, city, state, lat, lon, cityId, placeId) {
-    var params = {userId, name, street, city, state, lat, lon, cityId}
+doCreateVenue = function(userId, name, type, street, city, state, lat, lon, cityId, placeId) {
+    var params = {userId, name, type, street, city, state, lat, lon, cityId}
     var createdAt = exports.secondsSince1970()
     params["createdAt"] = createdAt
     if (placeId != undefined) {
