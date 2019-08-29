@@ -69,10 +69,8 @@ exports.createVenue = function(req, res, exports) {
 
     let name = req.body.name
     let street = req.body.street
-    let city = req.body.city // optional if cityId exists
-    let state = req.body.state // optional if cityId exists
-    let lat = req.body.lat
-    let lon = req.body.lon
+    var lat = req.body.lat
+    var lon = req.body.lon
 
     let cityId = req.body.cityId
     let placeId = req.body.placeId
@@ -82,19 +80,44 @@ exports.createVenue = function(req, res, exports) {
     if (lat == undefined) { return res.status(500).json({"error": "Latitude is required to create a venue"}) }
     if (lon == undefined) { return res.status(500).json({"error": "Longitude is required to create a venue"}) }
 
-    if (city == undefined) { return res.status(500).json({"error": "City is required to create a venue"}) }
-    if (state == undefined) { return res.status(500).json({"error": "State is required to create a venue"}) }
+    if (cityId == undefined) { return res.status(500).json({"error": "Select a city to create a venue"}) 
 
-    var params = {"name": name, "street": street, "city": city, "state": state, "lat": lat, "lon": lon}
+    console.log("Venue 1.0: createVenue cityId: " + cityId + " User lat/lon: (" + lat + ", " + lon + ")")
+    let ref = `/cities/${cityId}`
+    return admin.database().ref(ref).once('value').then(snapshot => {
+    	if (!snapshot.exists()) {
+    		return res.status(500).json({"error": "Invalid city selected!"})
+    	}
+
+    	let city = snapshot.name
+    	let state = snapshot.state
+    	if (city == undefined) { return res.status(500).json({"error": "Invalid name in selected city! Please select a different one."}) }
+    	if (state == undefined) { return res.status(500).json({"error": "Invalid state in selected city! Please select a different one."}) }
+		if (snapshot.lat != undefined && snapshot.lat != 0) {
+			lat = snapshot.lat
+		}
+		if (snapshot.lon != undefined && snapshot.lon != 0) {
+			lon = snapshot.lon
+		}
+
+		return doCreateVenue(userId, name, city, state, lat, lon, cityId, placeId)
+
+	}
+}
+
+doCreateVenue = function(userId, name, street, city, state, lat, lon, cityId, placeId) {
+    var params = {userId, name, street, city, state, lat, lon, cityId}
     var createdAt = exports.secondsSince1970()
     params["createdAt"] = createdAt
-    params["userId"] = userId
+    if (placeId != undefined) {
+    	params["placeId"] = placeId
+    }
 
     let venueId = exports.createUniqueId()
+	console.log("Venue 1.0: doCreateVenue " + venueId + ": " + JSON.stringify(params))
     let ref = `/venues/${venueId}`
     return admin.database().ref(ref).set(params).then(result => {
         // create action
-        console.log("CreateVenue v1.0 venue " + venueId)
         let type = globals.ActionType.createVenue
         return exports.createAction(type, userId, venueId, null)
     }).then(result => {
