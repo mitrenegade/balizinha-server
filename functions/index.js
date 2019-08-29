@@ -25,7 +25,11 @@ const venue1_0 = require('./venue1.0')
 admin.initializeApp(functions.config().firebase);
 
 exports.serverInfo = functions.https.onRequest((req, res) => {
-    return res.status(200).json({"version": API_VERSION})
+    var environment = "production"
+    if (globals.isDev == true) {
+        environment = "development"
+    }
+    return res.status(200).json({"version": globals.apiVersion, "build": globals.buildVersion, "environment": environment})
 });
 
 exports.onCreateUser = functions.auth.user().onCreate(user => {
