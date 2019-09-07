@@ -86,7 +86,7 @@ exports.createVenue = function(req, res, exports) {
     if (city == undefined) { return res.status(500).json({"error": "Select a city to create a venue"}) }
     if (state == undefined) { return res.status(500).json({"error": "Select a state to create a venue"}) }
 
-    console.log("Venue 1.0: createVenue cityId: " + cityId + " User lat/lon: (" + lat + ", " + lon + ")")
+    console.log("Venue 1.0: createVenue city: " + city + " state " + state +  " User lat/lon: (" + lat + ", " + lon + ") placeId: " + placeId)
  //    let ref = `/cities/${cityId}`
  //    return admin.database().ref(ref).once('value').then(snapshot => {
  //    	if (!snapshot.exists()) {
