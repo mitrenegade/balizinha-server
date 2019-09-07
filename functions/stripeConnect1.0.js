@@ -112,11 +112,12 @@ exports.doStripeConnectCharge = function(amount, eventId, connectId, player_id, 
         var stripe_account = result.stripe_account
         var source = token.id
         var customerId = result.customerId // for logging only
+        const application_fee_amount = 100
         const charge = {
             amount, 
             currency,
-            source
-            //application_fee
+            source,
+            application_fee_amount
         }
         const headers = {
 //            idempotency_key, 
