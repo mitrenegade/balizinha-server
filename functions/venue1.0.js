@@ -75,39 +75,42 @@ exports.createVenue = function(req, res, exports) {
     let street = req.body.street
     var lat = req.body.lat
     var lon = req.body.lon
-    let cityId = req.body.cityId
+    let city = req.body.city
+    let state = req.body.state
     let placeId = req.body.placeId
 
     if (name == undefined) { return res.status(500).json({"error": "Name is required to create a venue"}) }
     if (street == undefined) { return res.status(500).json({"error": "Street is required to create a venue"}) }
     if (lat == undefined) { return res.status(500).json({"error": "Latitude is required to create a venue"}) }
     if (lon == undefined) { return res.status(500).json({"error": "Longitude is required to create a venue"}) }
-    if (cityId == undefined) { return res.status(500).json({"error": "Select a city to create a venue"}) }
+    if (city == undefined) { return res.status(500).json({"error": "Select a city to create a venue"}) }
+    if (state == undefined) { return res.status(500).json({"error": "Select a state to create a venue"}) }
 
-    console.log("Venue 1.0: createVenue cityId: " + cityId + " User lat/lon: (" + lat + ", " + lon + ")")
-    let ref = `/cities/${cityId}`
-    return admin.database().ref(ref).once('value').then(snapshot => {
-    	if (!snapshot.exists()) {
-    		return res.status(500).json({"error": "Invalid city selected!"})
-    	}
+    console.log("Venue 1.0: createVenue city: " + city + " state " + state +  " User lat/lon: (" + lat + ", " + lon + ") placeId: " + placeId)
+ //    let ref = `/cities/${cityId}`
+ //    return admin.database().ref(ref).once('value').then(snapshot => {
+ //    	if (!snapshot.exists()) {
+ //    		return res.status(500).json({"error": "Invalid city selected!"})
+ //    	}
 
-    	let city = snapshot.name
-    	let state = snapshot.state
-    	if (city == undefined) { return res.status(500).json({"error": "Invalid name in selected city! Please select a different one."}) }
-    	if (state == undefined) { return res.status(500).json({"error": "Invalid state in selected city! Please select a different one."}) }
-		if (snapshot.lat != undefined && snapshot.lat != 0) {
-			lat = snapshot.lat
-		}
-		if (snapshot.lon != undefined && snapshot.lon != 0) {
-			lon = snapshot.lon
-		}
+ //    	let city = snapshot.name
+ //    	let state = snapshot.state
+ //    	if (city == undefined) { return res.status(500).json({"error": "Invalid name in selected city! Please select a different one."}) }
+ //    	if (state == undefined) { return res.status(500).json({"error": "Invalid state in selected city! Please select a different one."}) }
+	// 	if (snapshot.lat != undefined && snapshot.lat != 0) {
+	// 		lat = snapshot.lat
+	// 	}
+	// 	if (snapshot.lon != undefined && snapshot.lon != 0) {
+	// 		lon = snapshot.lon
+	// 	}
 
-		return doCreateVenue(userId, name, city, state, lat, lon, cityId, placeId)
-	})
+	// 	return doCreateVenue(userId, name, city, state, lat, lon, cityId, placeId)
+	// })
+	return doCreateVenue(userId, name, city, state, lat, lon, placeId)
 }
 
-doCreateVenue = function(userId, name, type, street, city, state, lat, lon, cityId, placeId) {
-    var params = {userId, name, type, street, city, state, lat, lon, cityId}
+doCreateVenue = function(userId, name, type, street, city, state, lat, lon, placeId) {
+    var params = {userId, name, type, street, city, state, lat, lon}
     var createdAt = exports.secondsSince1970()
     params["createdAt"] = createdAt
     if (placeId != undefined) {
