@@ -60,7 +60,7 @@ exports.createEvent = function(req, res, exports) {
         // promises remains empty
         console.log("CreateEvent 2.0: no venueId provided")
     } else {
-    let venueRef = `/venues/${venueId}`
+        let venueRef = `/venues/${venueId}`
         var promiseRef = admin.database().ref(venueRef).once('value').then().then(snapshot => {
             if (snapshot.exists()) {
                 city = snapshot.val().city
@@ -73,7 +73,7 @@ exports.createEvent = function(req, res, exports) {
                 console.log("CreateEvent 2.0: venueId was invalid")
                 throw new Error("Invalid venue specified for event")
             }
-        }
+        })
         promises.push(promiseRef)
     }
     Promise.all(promises).then(result => {
@@ -94,12 +94,13 @@ exports.createEvent = function(req, res, exports) {
 
         let eventId = exports.createUniqueId()
         let leagueRef = `/leagues/${league}`
-        return admin.database().ref(leagueRef).once('value').then(snapshot => {
-            if (!snapshot.exists()) {
-                params["leagueIsPrivate"] = false
-            } else {
-                params["leagueIsPrivate"] = snapshot.val().isPrivate
-            }
+        return admin.database().ref(leagueRef).once('value')
+    }).then(snapshot => {
+        if (!snapshot.exists()) {
+            params["leagueIsPrivate"] = false
+        } else {
+            params["leagueIsPrivate"] = snapshot.val().isPrivate
+        }
 
         let ref = `/events/` + eventId
         return admin.database().ref(ref).set(params)
