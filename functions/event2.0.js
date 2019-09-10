@@ -112,7 +112,7 @@ exports.createEvent = function(req, res, exports) {
     }).then(result => {
         // join event
         console.log("CreateEvent v1.0 success for event " + eventId + " with result " + JSON.stringify(result))
-        return event1_0.doJoinOrLeaveEvent(userId, eventId, true, admin)
+        return exports.doJoinOrLeaveEvent(userId, eventId, true, admin)
     }).then(result => {
         console.log("CreateEvent v1.0: createOrganizerTopicForNewEvent " + eventId + " adding organizer " + userId)
         return exports.createOrganizerTopicForNewEvent(eventId, userId)

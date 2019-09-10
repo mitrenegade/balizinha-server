@@ -471,8 +471,11 @@ exports.onEventDelete = functions.database.ref('/events/{eventId}').onDelete((sn
     return event1_0.onEventDelete(snapshot, context)
 })
 
-
 // helpers - must be defined here in order to use in module
+exports.doJoinOrLeaveEvent = function(userId, eventId, join, admin) {
+    return event1_0.doJoinOrLeaveEvent(userId, eventId, join, admin)
+}
+
 exports.pushForCreateEvent = function(eventId, leagueId, name, place) {
     return push1_0.pushForCreateEvent(eventId, leagueId, name, place, exports, admin)
 }
