@@ -146,7 +146,7 @@ exports.joinOrLeaveEvent = function(req, res, exports, admin) {
                 console.log("JoinOrLeaveEvent v1.0: no player found for userId " + userId + ": must be anonymous")
                 throw new Error("Please sign up to join this game")
             }
-            return doJoinOrLeaveEvent(userId, eventId, join, admin)
+            return exports.doJoinOrLeaveEvent(userId, eventId, join, admin)
         })
     } else {
         // leaving event; does not need to check for league
@@ -157,7 +157,7 @@ exports.joinOrLeaveEvent = function(req, res, exports, admin) {
                 console.log("JoinOrLeaveEvent: could not find event " + eventId)
                 throw new Error("Could not join event; event not found")
             }
-            return doJoinOrLeaveEvent(userId, eventId, join, admin)
+            return exports.doJoinOrLeaveEvent(userId, eventId, join, admin)
         })
     }
 
