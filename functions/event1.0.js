@@ -70,7 +70,7 @@ exports.createEvent = function(req, res, exports, admin) {
     }).then(result => {
         // join event
         console.log("CreateEvent v1.0 success for event " + eventId + " with result " + JSON.stringify(result))
-        return doJoinOrLeaveEvent(userId, eventId, true, admin)
+        return exports.doJoinOrLeaveEvent(userId, eventId, true, admin)
     }).then(result => {
         console.log("CreateEvent v1.0: createOrganizerTopicForNewEvent " + eventId + " adding organizer " + userId)
         return exports.createOrganizerTopicForNewEvent(eventId, userId)
@@ -89,7 +89,7 @@ exports.createEvent = function(req, res, exports, admin) {
 }
 
 // helper function
-doJoinOrLeaveEvent = function(userId, eventId, join, admin) {
+exports.doJoinOrLeaveEvent = function(userId, eventId, join, admin) {
     var params = { [userId] : join }
     return admin.database().ref(`/eventUsers/${eventId}`).update(params).then(results => {
         var params2 = { [eventId] : join }
