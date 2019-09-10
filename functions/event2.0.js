@@ -92,7 +92,6 @@ exports.createEvent = function(req, res, exports) {
             params["venueId"] = venueId
         }
 
-        let eventId = exports.createUniqueId()
         let leagueRef = `/leagues/${league}`
         return admin.database().ref(leagueRef).once('value')
     }).then(snapshot => {
@@ -102,6 +101,7 @@ exports.createEvent = function(req, res, exports) {
             params["leagueIsPrivate"] = snapshot.val().isPrivate
         }
 
+        let eventId = exports.createUniqueId()
         let ref = `/events/` + eventId
         return admin.database().ref(ref).set(params)
     }).then(result => {
