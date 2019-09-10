@@ -7,6 +7,7 @@ const league1_0 = require('./league1.0')
 const league1_1 = require('./league1.1')
 const event1_0 = require('./event1.0')
 const event1_1 = require('./event1.1')
+const event2_0 = require('./event2.0')
 const action1_0 = require('./action1.0')
 const push1_0 = require('./push1.0')
 const push1_1 = require('./push1.1')
@@ -396,18 +397,16 @@ exports.doUpdatePlayerStatus = function(admin, userId, leagueId, status) {
  * params: 
  ** required: userId, city, place: String
  **           startTime, endTime: Int (seconds from 1970)
- ** optional: league, name, type, state, info: String
+ **           
+ ** optional: 
+ **           league, name, type, state, info: String
  **           maxPlayers: Int
  **           paymentRequired: Bool
  **           amount, lat, lon: Double
  * result: [ { eventId: String } ]
  */
 exports.createEvent = functions.https.onRequest((req, res) => {
-    let api = req.body.apiVersion
-    // if (api == "1.6") {
-    //     // TODO
-    // }
-    return event1_0.createEvent(req, res, exports, admin)
+    return event2_0.createEvent(req, res, exports, admin)
 })
 
 /**
@@ -472,8 +471,11 @@ exports.onEventDelete = functions.database.ref('/events/{eventId}').onDelete((sn
     return event1_0.onEventDelete(snapshot, context)
 })
 
-
 // helpers - must be defined here in order to use in module
+exports.doJoinOrLeaveEvent = function(userId, eventId, join, admin) {
+    return event1_0.doJoinOrLeaveEvent(userId, eventId, join, admin)
+}
+
 exports.pushForCreateEvent = function(eventId, leagueId, name, place) {
     return push1_0.pushForCreateEvent(eventId, leagueId, name, place, exports, admin)
 }

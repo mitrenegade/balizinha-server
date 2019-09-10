@@ -111,7 +111,7 @@ exports.createVenue = function(req, res, exports) {
 
 doCreateVenue = function(userId, name, type, street, city, state, lat, lon, placeId) {
     var params = {userId, name, type, street, city, state, lat, lon}
-    var createdAt = exports.secondsSince1970()
+    var createdAt = globals.secondsSince1970()
     params["createdAt"] = createdAt
     if (placeId != undefined) {
     	params["placeId"] = placeId

@@ -70,7 +70,7 @@ exports.createEvent = function(req, res, exports, admin) {
     }).then(result => {
         // join event
         console.log("CreateEvent v1.0 success for event " + eventId + " with result " + JSON.stringify(result))
-        return doJoinOrLeaveEvent(userId, eventId, true, admin)
+        return exports.doJoinOrLeaveEvent(userId, eventId, true, admin)
     }).then(result => {
         console.log("CreateEvent v1.0: createOrganizerTopicForNewEvent " + eventId + " adding organizer " + userId)
         return exports.createOrganizerTopicForNewEvent(eventId, userId)
@@ -89,7 +89,7 @@ exports.createEvent = function(req, res, exports, admin) {
 }
 
 // helper function
-doJoinOrLeaveEvent = function(userId, eventId, join, admin) {
+exports.doJoinOrLeaveEvent = function(userId, eventId, join, admin) {
     var params = { [userId] : join }
     return admin.database().ref(`/eventUsers/${eventId}`).update(params).then(results => {
         var params2 = { [eventId] : join }
@@ -146,7 +146,7 @@ exports.joinOrLeaveEvent = function(req, res, exports, admin) {
                 console.log("JoinOrLeaveEvent v1.0: no player found for userId " + userId + ": must be anonymous")
                 throw new Error("Please sign up to join this game")
             }
-            return doJoinOrLeaveEvent(userId, eventId, join, admin)
+            return exports.doJoinOrLeaveEvent(userId, eventId, join, admin)
         })
     } else {
         // leaving event; does not need to check for league
@@ -157,7 +157,7 @@ exports.joinOrLeaveEvent = function(req, res, exports, admin) {
                 console.log("JoinOrLeaveEvent: could not find event " + eventId)
                 throw new Error("Could not join event; event not found")
             }
-            return doJoinOrLeaveEvent(userId, eventId, join, admin)
+            return exports.doJoinOrLeaveEvent(userId, eventId, join, admin)
         })
     }
 
