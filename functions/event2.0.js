@@ -13,13 +13,6 @@ exports.createEvent = function(req, res, exports) {
     if (name == undefined) { name = "Balizinha" }
     if (type == undefined) { type = "3 vs 3" }
 
-    var recurrence = req.body.recurrence
-    if (recurrence == undefined) { recurrence = "none"}
-    if (recurrence != "none") {
-        const recurrenceEndDateInterval = req.body.recurrenceEndDate
-        if (recurrenceEndDateInterval == undefined) { return res.status(500).json({"error": "End of recurrence is required for a recurring event!"}) } 
-    }
-
     const startTime = req.body.startTime
     const endTime = req.body.endTime
     if (startTime == undefined) { return res.status(500).json({"error": "Start time is required to create event"}) } // error if not exist
@@ -49,6 +42,12 @@ exports.createEvent = function(req, res, exports) {
     params["owner"] = userId // old apps still use this info
     params["leagueId"] = league
     params["league"] = league
+
+    var recurrence = req.body.recurrence
+    if (recurrence == undefined) {
+        recurrence = "none"
+    }
+    params["recurrence"] = recurrence
 
     // optional params
     if (paymentRequired) { params["paymentRequired"] = paymentRequired }
@@ -102,19 +101,24 @@ exports.createEvent = function(req, res, exports) {
             params["leagueIsPrivate"] = snapshot.val().isPrivate
         }
 
-        let ref = `/events/` + eventId
-        return admin.database().ref(ref).set(params)
+        if (recurrence == "none") {
+            let ref = `/events/` + eventId
+            return admin.database().ref(ref).set(params)
+        } else {
+            return createRecurringEvents(eventId, params, recurrence, req, exports)
+        }
     }).then(result => {
         // create action
-        console.log("CreateEvent v1.0 createAction event " + eventId + " organizer " + userId)
+        console.log("Promises returned with result " + JSON.stringify(result))
+        console.log("CreateEvent v2.0 createAction event " + eventId + " organizer " + userId)
         var type = globals.ActionType.createEvent
         return exports.createAction(type, userId, eventId, null)
     }).then(result => {
         // join event
-        console.log("CreateEvent v1.0 success for event " + eventId + " with result " + JSON.stringify(result))
+        console.log("CreateEvent v2.0 success for event " + eventId + " with result " + JSON.stringify(result))
         return exports.doJoinOrLeaveEvent(userId, eventId, true, admin)
     }).then(result => {
-        console.log("CreateEvent v1.0: createOrganizerTopicForNewEvent " + eventId + " adding organizer " + userId)
+        console.log("CreateEvent v2.0: createOrganizerTopicForNewEvent " + eventId + " adding organizer " + userId)
         return exports.createOrganizerTopicForNewEvent(eventId, userId)
     }).then(result => {
         var placeName = city
@@ -125,7 +129,50 @@ exports.createEvent = function(req, res, exports) {
     }).then(result => {
         return res.status(200).json({"result": result, "eventId": eventId})
     }).catch(err => {
-        console.log("CreateEvent v1.0 error: " + JSON.stringify(err));
+        console.log("CreateEvent v2.0 error: " + JSON.stringify(err));
         return res.status(500).json({"error": err.message})
     })
+}
+
+function createRecurringEvents(eventId, params, recurrence, req, exports) {
+    params["recurrenceEventId"] = eventId
+    const recurrenceEndDateInterval = req.body.recurrenceEndDate
+    if (recurrenceEndDateInterval == undefined) { throw new Error("End of recurrence is required for a recurring event!") } 
+
+    const startDateInterval = params["startTime"]
+    const endDateInterval = params["endTime"]
+    const eventLength = endDateInterval - startDateInterval
+
+    var eventStartDates = []
+    var nextStartDate = startDateInterval
+    console.log("Event 2.0: params " + JSON.stringify(params))
+    console.log(`Event 2.0: createRecurringEvents: startDateInterval ${startDateInterval} recurrenceEndDateInterval ${recurrenceEndDateInterval} recurrence ${recurrence}`)
+
+    while (nextStartDate <= recurrenceEndDateInterval) {
+        console.log(`Event 2.0: --> nextStartDate ${nextStartDate} to ${nextStartDate + eventLength}`)
+        eventStartDates.push(nextStartDate)
+
+        if (recurrence == "daily") {
+            nextStartDate = nextStartDate + 24*3600
+        } else if (recurrence == "weekly") {
+            nextStartDate = nextStartDate + 7*24*3600
+        } else if (recurrence == "monthly") {
+            var date = new Date(nextDateInterval * 1000) // in milliseconds
+            date.setMonth(date.getMonth()+1)
+            nextStartDate = date.getTime() / 1000
+        }
+    }
+
+    var promises = []
+    for (i = 0; i < eventStartDates.length; i++) {
+        var nextParams = params
+        let newEventId = exports.createUniqueId()
+        params["startTime"] = eventStartDates[i]
+        params["endTime"] = eventStartDates[i] + eventLength
+        console.log("Event2.0: creating recurring event " + i + " with id " + newEventId)
+        let ref = `/events/` +  newEventId
+        let promiseRef = admin.database().ref(ref).set(params)
+        promises.push(promiseRef)
+    }
+    return Promise.all(promises)
 }
