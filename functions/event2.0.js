@@ -157,7 +157,7 @@ function createRecurringEvents(eventId, params, recurrence, req, exports) {
         } else if (recurrence == "weekly") {
             nextStartDate = nextStartDate + 7*24*3600
         } else if (recurrence == "monthly") {
-            var date = new Date(nextDateInterval * 1000) // in milliseconds
+            var date = new Date(nextStartDate * 1000) // in milliseconds
             date.setMonth(date.getMonth()+1)
             nextStartDate = date.getTime() / 1000
         }
