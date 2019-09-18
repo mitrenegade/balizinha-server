@@ -134,7 +134,7 @@ exports.createEvent = function(req, res, exports) {
     })
 }
 
-function createRecurringEvents(eventId, params, recurrence, req, exports) {
+createRecurringEvents = function(eventId, params, recurrence, req, exports) {
     params["recurrenceEventId"] = eventId
     const recurrenceEndDateInterval = req.body.recurrenceEndDate
     if (recurrenceEndDateInterval == undefined) { throw new Error("End of recurrence is required for a recurring event!") } 
@@ -145,7 +145,7 @@ function createRecurringEvents(eventId, params, recurrence, req, exports) {
 
     var eventStartDates = []
     var nextStartDate = startDateInterval
-    console.log("Event 2.0: params " + JSON.stringify(params))
+    console.log(`Event 2.0: eventId ${eventId} params  ${JSON.stringify(params)}`)
     console.log(`Event 2.0: createRecurringEvents: startDateInterval ${startDateInterval} recurrenceEndDateInterval ${recurrenceEndDateInterval} recurrence ${recurrence}`)
 
     while (nextStartDate <= recurrenceEndDateInterval) {
@@ -158,15 +158,22 @@ function createRecurringEvents(eventId, params, recurrence, req, exports) {
             nextStartDate = nextStartDate + 7*24*3600
         } else if (recurrence == "monthly") {
             var date = new Date(nextStartDate * 1000) // in milliseconds
+            var hour = date.getHours()
+            console.log("Hour before setting month: " + hour)
             date.setMonth(date.getMonth()+1)
+            date.setHours(hour)
             nextStartDate = date.getTime() / 1000
+            console.log("Hour after setting month: " + date.getHours())
         }
     }
 
     var promises = []
     for (i = 0; i < eventStartDates.length; i++) {
         var nextParams = params
-        let newEventId = exports.createUniqueId()
+        var newEventId = eventId
+        if (i > 0) {
+            newEventId = eventId + `-${i}` // use same base id
+        }
         params["startTime"] = eventStartDates[i]
         params["endTime"] = eventStartDates[i] + eventLength
         console.log("Event2.0: creating recurring event " + i + " with id " + newEventId)
