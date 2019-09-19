@@ -406,7 +406,7 @@ exports.doUpdatePlayerStatus = function(admin, userId, leagueId, status) {
  * result: [ { eventId: String } ]
  */
 exports.createEvent = functions.https.onRequest((req, res) => {
-    return event2_0.createEvent(req, res, exports, admin)
+    return event2_0.createEvent(req, res, exports)
 })
 
 /**
