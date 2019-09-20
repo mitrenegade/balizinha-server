@@ -120,7 +120,7 @@ exports.createVenue = function(req, res, exports) {
 
 	// 	return doCreateVenue(userId, name, city, state, lat, lon, cityId, placeId)
 	// })
-	return doCreateVenue(userId, name, city, state, lat, lon, placeId, exports)
+	return doCreateVenue(userId, name, type, street, city, state, lat, lon, placeId, exports)
 }
 
 doCreateVenue = function(userId, name, type, street, city, state, lat, lon, placeId, exports) {
