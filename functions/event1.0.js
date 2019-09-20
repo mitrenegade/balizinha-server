@@ -255,16 +255,16 @@ exports.onUserJoinOrLeaveEvent = function(snapshot, context, exports, admin) {
     })
 }
 
-exports.onEventDelete = function(snapshot, context) {
-    var eventId = context.params.eventId
-    var deletedObject = snapshot.val()
+// exports.onEventDelete = function(snapshot, context) {
+//     var eventId = context.params.eventId
+//     var deletedObject = snapshot.val()
 
-    return console.log("Event delete v1.0: id " + eventId + " snapshot before " + JSON.stringify(deletedObject))
-    // do nothing
-    // should we delete all actionIds?
-    // should we delete all leagueEvents?
-    // should we delete all playerEvents?
-}
+//     return console.log("Event delete v1.0: id " + eventId + " snapshot before " + JSON.stringify(deletedObject))
+//     // do nothing
+//     // should we delete all actionIds?
+//     // should we delete all leagueEvents?
+//     // should we delete all playerEvents?
+// }
 
 // cloud function with promises: 
 // https://stackoverflow.com/questions/43242982/cloud-functions-for-firebase-return-array-of-promises-to-gcf
