@@ -276,6 +276,7 @@ exports.getEventsAvailableToUser = function(req, res, exports, admin) {
     // first, request all events where leagueIsPrivate = false
     // then, for each league belonging to the user that is private, request all events where leagueId = league.id
     var privateLeagues = []
+    var objectRef = `/events`
     // get all leagues and store which ones are private
     return admin.database().ref(`/leagues`).once('value').then(snapshot => {
         snapshot.forEach(child => {
@@ -289,7 +290,7 @@ exports.getEventsAvailableToUser = function(req, res, exports, admin) {
         //console.log("All private leagues: " + JSON.stringify(privateLeagues))
 
         // load all events that are public
-        let publicEventsRef = admin.database().ref(`/events`).orderByChild('leagueIsPrivate').equalTo(false)
+        let publicEventsRef = admin.database().ref(objectRef).orderByChild('leagueIsPrivate').equalTo(false).limitToFirst(50)
         return publicEventsRef.once('value').then(snapshot => {
             return snapshot.val()
         })
@@ -311,15 +312,20 @@ exports.getEventsAvailableToUser = function(req, res, exports, admin) {
                     }
                 })
             }
-            //console.log("Event 1.0: userPrivateLeagues: " + JSON.stringify(userPrivateLeagues))
             return eventsForLeagues(userPrivateLeagues, admin, {})
         }).then(privateEvents => {
             console.log("Event 1.0: getEventsAvailableToUser " + userId + " private events " + Object.keys(privateEvents).length)
             var allEvents = Object.assign({}, publicEvents, privateEvents)
-            res.status(200).json({"results": allEvents})
+            var results = {}
+            Object.keys(allEvents).forEach(function(key) {
+                var value = allEvents[key]
+                value.refUrl = `${objectRef}/${key}`
+                results[key] = value
+            })
+            res.status(200).json({"results": results})
         })
     }).catch(err => {
-        console.log("Event 1.0: getEventsAvailableToUser error " + JSON.stringify(err))
+        console.log("Event 1.0: getEventsAvailableToUser error " + err.message)
         res.status(500).json({"error": err.message})
     })
 }
