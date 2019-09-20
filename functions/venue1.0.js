@@ -120,10 +120,10 @@ exports.createVenue = function(req, res, exports) {
 
 	// 	return doCreateVenue(userId, name, city, state, lat, lon, cityId, placeId)
 	// })
-	return doCreateVenue(userId, name, city, state, lat, lon, placeId)
+	return doCreateVenue(userId, name, city, state, lat, lon, placeId, exports)
 }
 
-doCreateVenue = function(userId, name, type, street, city, state, lat, lon, placeId) {
+doCreateVenue = function(userId, name, type, street, city, state, lat, lon, placeId, exports) {
     var params = {userId, name, type, street, city, state, lat, lon}
     var createdAt = globals.secondsSince1970()
     params["createdAt"] = createdAt
