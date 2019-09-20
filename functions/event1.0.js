@@ -290,7 +290,7 @@ exports.getEventsAvailableToUser = function(req, res, exports, admin) {
         //console.log("All private leagues: " + JSON.stringify(privateLeagues))
 
         // load all events that are public
-        let publicEventsRef = admin.database().ref(objectRef).orderByChild('leagueIsPrivate').equalTo(false).limitToFirst(50)
+        let publicEventsRef = admin.database().ref(objectRef).orderByChild('leagueIsPrivate').equalTo(false).limitToLast(50)
         return publicEventsRef.once('value').then(snapshot => {
             return snapshot.val()
         })
