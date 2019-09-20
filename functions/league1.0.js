@@ -228,17 +228,26 @@ exports.changeLeaguePlayerStatus = function(req, res, exports, admin) {
     })
 }
 
+// returns league object with refUrl
 exports.getEventsForLeague = function(req, res, exports, admin) {
 	const leagueId = req.body.leagueId
 
 	// find all leagueId where playerId = true
-	var ref = admin.database().ref("events")
+	var objectRef = "/events"
+	var ref = admin.database().ref(objectRef)
 	console.log("getEventsForLeague " + leagueId)
 	return ref.orderByChild("leagueId").equalTo(leagueId).once('value').then(snapshot => {
 		console.log("orderByChild for league " + leagueId + " result: " + JSON.stringify(snapshot))
 		return snapshot.val()
-	}).then(result => {
-		return res.send(200, {"result": result})
+	}).then(allObjects => {
+        var results = {}
+        Object.keys(allObjects).forEach(function(key) {
+            var value = allObjects[key]
+            value.refUrl = `${objectRef}/${key}`
+            results[key] = value
+        })
+
+		return res.send(200, {"result": results})
 	}).catch( err => {
 		return res.send(500, {"error": err.message})
 	})
