@@ -639,6 +639,48 @@ exports.getVenues = functions.https.onRequest((req, res) => {
     return venue1_0.getVenues(req, res)
 })
 
+    if (userId == undefined) { 
+        return res.status(500).json({"error": "A valid user is required to create a venue"})
+    }
+
+    let name = req.body.name
+    var type = req.body.type
+    if (type == undefined) { 
+        type = "unknown"
+    }
+    let street = req.body.street
+    var lat = req.body.lat
+    var lon = req.body.lon
+    let city = req.body.city
+    let state = req.body.state
+    let placeId = req.body.placeId
+/**
+ * params: 
+ *
+ * Required:
+ *  userId: String
+ *  name: String (venue name)
+ *  street, city, state: String
+ *  lat, lon: Double
+ *
+ * Optional:
+ *  placeId: Google place Id, Apple Place Id, or other.
+ *  type: String
+
+ Types for venue:
+        case grass
+        case turf
+        case wood
+        case concrete
+        case mats
+        case rubber
+        case other
+        case unknown
+
+ * result: [ success: true, venueId: String ]
+ */
+
+
 exports.createVenue = functions.https.onRequest((req, res) => {
     return venue1_0.createVenue(req, res, exports)
 })
