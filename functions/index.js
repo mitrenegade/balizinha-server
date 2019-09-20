@@ -395,15 +395,22 @@ exports.doUpdatePlayerStatus = function(admin, userId, leagueId, status) {
 // EVENT //////////////////////////////////////////////////////////////////////////////////
 /**
  * params: 
- ** required: userId, city, place: String
+ ** required: userId: String
  **           startTime, endTime: Int (seconds from 1970)
  **           
+ ** Either: venueId: String (loaded from venues)
+ ** Or: city, state, place, lat, lon
+ **
  ** optional: 
- **           league, name, type, state, info: String
+ **           league, name, type, info: String
  **           maxPlayers: Int
  **           paymentRequired: Bool
- **           amount, lat, lon: Double
+ **           amount: Double
+ **           recurrence: none, daily, weekly, monthly
+ **           recurrenceEndDate: Int (seconds from 1970)
+ **
  * result: [ { eventId: String } ]
+ *** for a recurrence event, the eventId is the original event
  */
 exports.createEvent = functions.https.onRequest((req, res) => {
     return event2_0.createEvent(req, res, exports)
