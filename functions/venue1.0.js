@@ -2,23 +2,37 @@ const admin = require('firebase-admin');
 const globals = require('./globals')
 
 exports.getVenues = function(req, res) {
-	let ref = `/venues/`
+	let ref = `/venues`
 	return admin.database().ref(ref).once('value').then(snapshot => {
 		if (!snapshot.exists()) {
 	 		res.status(500).json({"error": "No venues found"})
 		} else {
-	 		res.status(200).json({"results": snapshot.val()})
+			var allObjects = snapshot.val()
+			var results = {}
+	        Object.keys(allObjects).forEach(function(key) {
+    	        var value = allObjects[key]
+        	    value.refUrl = `${ref}/${key}`
+            	results[key] = value
+        	})
+	 		res.status(200).json({"results": results})
 		}
 	})
 }
 
 exports.getCities = function(req, res) {
-	let ref = `/cities/`
+	let ref = `/cities`
 	return admin.database().ref(ref).once('value').then(snapshot => {
 		if (!snapshot.exists()) {
 	 		res.status(500).json({"error": "No cities found"})
 		} else {
-	 		res.status(200).json({"results": snapshot.val()})
+			var allObjects = snapshot.val()
+			var results = {}
+	        Object.keys(allObjects).forEach(function(key) {
+    	        var value = allObjects[key]
+        	    value.refUrl = `${ref}/${key}`
+            	results[key] = value
+        	})
+	 		res.status(200).json({"results": results})
 		}
 	})
 }

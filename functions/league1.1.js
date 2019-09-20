@@ -54,10 +54,18 @@ exports.getOwnerLeaguesAndSubscriptions = function(req, res) {
 
 // returns: {results: [League] where league.owner = userId }
 doGetOwnerLeagues = function(userId) {
-    return admin.database().ref(`/leagues`).orderByChild('owner').equalTo(userId).once('value').then(snapshot => {
+	const objectRef = '/leagues'
+    return admin.database().ref(objectRef).orderByChild('owner').equalTo(userId).once('value').then(snapshot => {
     	if (!snapshot.exists()) {
     		throw new Error("User is not part of any leagues")
     	}
-    	return {leagues: snapshot.val()}
+        var results = {}
+        var allObjects = snapshot.val()
+        Object.keys(allObjects).forEach(function(key) {
+            var value = allObjects[key]
+            value.refUrl = `${objectRef}/${key}`
+            results[key] = value
+        })
+    	return {leagues: results}
 	})
 }
