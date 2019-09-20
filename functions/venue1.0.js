@@ -120,10 +120,20 @@ exports.createVenue = function(req, res, exports) {
 
 	// 	return doCreateVenue(userId, name, city, state, lat, lon, cityId, placeId)
 	// })
-	return doCreateVenue(userId, name, type, street, city, state, lat, lon, placeId, exports)
+    let venueId = exports.createUniqueId()
+	return doCreateVenue(venueId, userId, name, type, street, city, state, lat, lon, placeId).then(results => {
+        // create action
+        let type = globals.ActionType.createVenue
+        return exports.createAction(type, userId, venueId, `A new venue was created`)
+    }).then(result => {
+        return res.status(200).json({"success": true, "venueId": venueId})
+    }).catch(err => {
+        console.log("CreateVenue v1.0 error: " + JSON.stringify(err));
+        return res.status(500).json({"error": err.message})
+    })
 }
 
-doCreateVenue = function(userId, name, type, street, city, state, lat, lon, placeId, exports) {
+doCreateVenue = function(venueId, userId, name, type, street, city, state, lat, lon, placeId) {
     var params = {userId, name, type, street, city, state, lat, lon}
     var createdAt = globals.secondsSince1970()
     params["createdAt"] = createdAt
@@ -131,17 +141,7 @@ doCreateVenue = function(userId, name, type, street, city, state, lat, lon, plac
     	params["placeId"] = placeId
     }
 
-    let venueId = exports.createUniqueId()
 	console.log("Venue 1.0: doCreateVenue " + venueId + ": " + JSON.stringify(params))
     let ref = `/venues/${venueId}`
-    return admin.database().ref(ref).set(params).then(result => {
-        // create action
-        let type = globals.ActionType.createVenue
-        return exports.createAction(type, userId, venueId, null)
-    }).then(result => {
-        return res.status(200).json({"result": result, "venueId": venueId})
-    }).catch(err => {
-        console.log("CreateVenue v1.0 error: " + JSON.stringify(err));
-        return res.status(500).json({"error": err.message})
-    })
+    return admin.database().ref(ref).set(params)
 }
