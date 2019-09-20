@@ -91,7 +91,7 @@ exports.deleteEvent = function(req, res) {
  	}).then(snapshot => {
         if (!snapshot.exists()) {
             console.log("Event 1.1: deleteEvent: no users found for snapshot")
-            return res.status(200).json({"success": true})
+            return // continue to removing eventUsers ref
         }
 
         var promises = []
@@ -103,7 +103,7 @@ exports.deleteEvent = function(req, res) {
 
         return Promise.all(promises)
 	}).then(() => {
-			return admin.database().ref(`eventUsers/${eventId}`).remove()
+		return admin.database().ref(`eventUsers/${eventId}`).remove()
 	}).then(() => {
 		return res.status(200).json({"success": true})
 	}).catch(err => {

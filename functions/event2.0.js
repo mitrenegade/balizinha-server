@@ -53,6 +53,7 @@ exports.createEvent = function(req, res, exports) {
     if (info) { params["info"] = info }
 
     let eventId = exports.createUniqueId()
+    var newEventIds = []
     var promises = []
     if (venueId == undefined) {
         // promises remains empty
@@ -106,17 +107,34 @@ exports.createEvent = function(req, res, exports) {
             return createRecurringEvents(eventId, params, recurrence, req, exports)
         }
     }).then(result => {
+        newEventIds = result["eventIds"] 
+        console.log("Setting newEventIds to " + JSON.stringify(newEventIds))
+        return result
+    }).then(result => {
         // create action
-        console.log("CreateEvent v2.0 createAction event " + eventId + " organizer " + userId)
+        console.log("After Setting newEventIds, result = " + JSON.stringify(result) + " newEventIds " + JSON.stringify(newEventIds))
         var type = globals.ActionType.createEvent
-        return exports.createAction(type, userId, eventId, null)
+        var actionPromises = []
+        newEventIds.forEach(thisEventId => {
+            console.log("CreateEvent v2.0 createAction organizer " + userId + " eventId " + thisEventId)
+            actionPromises.push(exports.createAction(type, userId, thisEventId, null))
+        })
+        return Promise.all(actionPromises)
     }).then(result => {
         // join event
         console.log("CreateEvent v2.0 success for event " + eventId + " with result " + JSON.stringify(result))
-        return exports.doJoinOrLeaveEvent(userId, eventId, true, admin)
+        var joinPromises = []
+        newEventIds.forEach(thisEventId => {
+            joinPromises.push(exports.doJoinOrLeaveEvent(userId, thisEventId, true, admin))
+        })
+        return Promise.all(joinPromises)
     }).then(result => {
-        console.log("CreateEvent v2.0: createOrganizerTopicForNewEvent " + eventId + " adding organizer " + userId)
-        return exports.createOrganizerTopicForNewEvent(eventId, userId)
+        var topicPromises = []
+        newEventIds.forEach(thisEventId => {
+            console.log("CreateEvent v2.0: createOrganizerTopicForNewEvent " + thisEventId + " adding organizer " + userId)
+            topicPromises.push(exports.createOrganizerTopicForNewEvent(thisEventId, userId))
+        })
+        return Promise.all(topicPromises)
     }).then(result => {
         var placeName = city
         if (city == undefined) {
@@ -161,6 +179,7 @@ createRecurringEvents = function(eventId, params, recurrence, req, exports) {
     }
 
     var promises = []
+    var eventIds = []
     for (i = 0; i < eventStartDates.length; i++) {
         var nextParams = params
         var newEventId = eventId
@@ -172,6 +191,9 @@ createRecurringEvents = function(eventId, params, recurrence, req, exports) {
         let ref = `/events/` +  newEventId
         let promiseRef = admin.database().ref(ref).set(params)
         promises.push(promiseRef)
+        eventIds.push(newEventId)
     }
-    return Promise.all(promises)
+    return Promise.all(promises).then(result => {
+        return {"eventIds": eventIds}
+    })
 }
