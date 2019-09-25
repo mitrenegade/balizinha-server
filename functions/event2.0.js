@@ -102,7 +102,9 @@ exports.createEvent = function(req, res, exports) {
 
         if (recurrence == "none") {
             let ref = `/events/` + eventId
-            return admin.database().ref(ref).set(params)
+            return admin.database().ref(ref).set(params).then(result => {
+                return {"eventIds": [eventId]} // createRecurringEvent returns this
+            })
         } else {
             return createRecurringEvents(eventId, params, recurrence, req, exports)
         }
@@ -144,7 +146,7 @@ exports.createEvent = function(req, res, exports) {
     }).then(result => {
         return res.status(200).json({"result": result, "eventId": eventId})
     }).catch(err => {
-        console.log("CreateEvent v2.0 error: " + JSON.stringify(err));
+        console.log("CreateEvent v2.0 error: " + err.message);
         return res.status(500).json({"error": err.message})
     })
 }
