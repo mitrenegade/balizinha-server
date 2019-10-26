@@ -81,6 +81,9 @@ exports.createEvent = function(req, res, exports) {
         if (state == undefined) { return res.status(500).json({"error": "State is required to create event"}) }
         if (place == undefined) { return res.status(500).json({"error": "Location is required to create event"}) }
         if (lat == undefined || lon == undefined) { return res.status(500).json({"error": "Latitude and longitude are required to create event"}) }
+        if (typeof lat != "number") { return res.status(500).json({"error": "Latitude is not a valid number"})}
+        if (typeof lon != "number") { return res.status(500).json({"error": "Longitude is not a valid number"})}
+        if (lat == 0 || lon == 0) { return res.status(500).json({"error": "Invalid latitude and longitude for event"})}
 
         params["place"] = place
         params["city"] = city
