@@ -8,7 +8,7 @@ const API_VERSION = 2.0
 const BUILD_VERSION = 146 // for internal tracking
 
 // TO TOGGLE BETWEEN DEV AND PROD: change this to .dev or .prod for functions:config variables to be correct
-const config = functions.config().prod
+const config = functions.config().dev
 
 // exports are used like: globals.isDev, globals.apiKey, globals.stripeToken
 module.exports = {

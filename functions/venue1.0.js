@@ -100,6 +100,10 @@ exports.createVenue = function(req, res, exports) {
     if (city == undefined) { return res.status(500).json({"error": "Select a city to create a venue"}) }
     if (state == undefined) { return res.status(500).json({"error": "Select a state to create a venue"}) }
 
+    if (typeof lat != "number") { return res.status(500).json({"error": "Latitude is not a valid number"})}
+    if (typeof lon != "number") { return res.status(500).json({"error": "Longitude is not a valid number"})}
+    if (lat == 0 || lon == 0) { return res.status(500).json({"error": "Invalid latitude and longitude for venue"})}
+
     console.log("Venue 1.0: createVenue city: " + city + " state " + state +  " User lat/lon: (" + lat + ", " + lon + ") placeId: " + placeId)
  //    let ref = `/cities/${cityId}`
  //    return admin.database().ref(ref).once('value').then(snapshot => {

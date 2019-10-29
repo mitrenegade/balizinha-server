@@ -407,7 +407,7 @@ exports.doUpdatePlayerStatus = function(admin, userId, leagueId, status) {
  **           paymentRequired: Bool
  **           amount: Double
  **           recurrence: none, daily, weekly, monthly
- **           recurrenceEndDate: Int (seconds from 1970)
+ **           recurrenceEndDate: Int (seconds from 1970) - the timestamp of the event end time on the last day
  **
  * result: [ { eventId: String } ]
  *** for a recurrence event, the eventId is the original event

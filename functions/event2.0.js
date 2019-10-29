@@ -77,10 +77,13 @@ exports.createEvent = function(req, res, exports) {
     }
     Promise.all(promises).then(result => {
         // city, state and place are required if venue is not
-        if (city == undefined) { return res.status(500).json({"error": "City is required to create event"}) }
-        if (state == undefined) { return res.status(500).json({"error": "State is required to create event"}) }
-        if (place == undefined) { return res.status(500).json({"error": "Location is required to create event"}) }
-        if (lat == undefined || lon == undefined) { return res.status(500).json({"error": "Latitude and longitude are required to create event"}) }
+        if (city == undefined) { throw new Error("City is required to create event") }
+        if (state == undefined) { throw new Error("State is required to create event") }
+        if (place == undefined) { throw new Error("Location is required to create event") }
+        if (lat == undefined || lon == undefined) { throw new Error("Latitude and longitude are required to create event") }
+        if (typeof lat != "number") { throw new Error("Latitude is not a valid number") }
+        if (typeof lon != "number") { throw new Error("Longitude is not a valid number") }
+        if (lat == 0 || lon == 0) { throw new Error("Invalid latitude and longitude for event") }
 
         params["place"] = place
         params["city"] = city
