@@ -9,12 +9,12 @@
     "logs": "firebase functions:log"
   },
   "dependencies": {
-    "@google-cloud/logging": "^4.2.0",
+    "@google-cloud/logging": "^7.2.2",
     "axios": "^0.18.0",
     "dateformat": "^3.0.3",
     "express": "^4.16.4",
-    "firebase-admin": "^6.5.1",
-    "firebase-functions": "^2.3.0",
+    "firebase-admin": "^8.9.2",
+    "firebase-functions": "^3.3.0",
     "moment": "^2.24.0",
     "psl": "^1.1.31",
     "request": "^2.88.0",
