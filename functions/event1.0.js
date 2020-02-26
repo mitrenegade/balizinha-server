@@ -227,7 +227,7 @@ exports.onUserJoinOrLeaveEvent = function(snapshot, context, exports, admin) {
     var eventUserChanged = false;
     var eventUserCreated = false;
 
-    if (!snapshot.exists()) {
+    if (!old.exists()) {
         // deleteEvent also deleted this reference
         return
     }
