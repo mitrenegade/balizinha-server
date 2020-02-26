@@ -228,11 +228,6 @@ exports.onUserJoinOrLeaveEvent = function(snapshot, context, exports, admin) {
     var eventUserCreated = false;
 
     if (!old.exists()) {
-        // deleteEvent also deleted this reference
-        return
-    }
-
-    if (!old.exists()) {
         eventUserCreated = true;
         console.log("OnUserJoinOrLeaveEvent v1.0: created user " + userId + " for event " + eventId + ": " + JSON.stringify(data))
     }
