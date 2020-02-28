@@ -136,6 +136,16 @@ doCreateFeedItem = function(id, type, userId, leagueId, actionId, eventId, messa
         params["visible"] = false
     }
 
-    var ref = `/feedItems/` + feedItemId
-    return admin.database().ref(ref).set(params)
+    // this shouldn't happen
+    if (leagueId == undefined) {
+        var ref = `/feedItems/` + feedItemId
+        return admin.database().ref(ref).set(params)
+    } else {
+        var feedItemRef = `/feedItems/` + feedItemId
+        var leagueFeedRef = `/leagueFeedItems/` + leagueId
+        return admin.database().ref(feedItemRef).set(params).then(result => {
+            let params = {[feedItemId]: true}
+            return admin.database().ref(leagueFeedRef).update(params)
+        })
+    }
 }
