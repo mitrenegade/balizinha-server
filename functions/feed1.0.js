@@ -144,7 +144,7 @@ doCreateFeedItem = function(id, type, userId, leagueId, actionId, eventId, messa
         var feedItemRef = `/feedItems/` + feedItemId
         var leagueFeedRef = `/leagueFeedItems/` + leagueId
         return admin.database().ref(feedItemRef).set(params).then(result => {
-            return admin.database().ref(leagueFeedRef).set({[feedItemId]:true})
+            return admin.database().ref(leagueFeedRef).update({[feedItemId]:true})
         })
     }
 }
