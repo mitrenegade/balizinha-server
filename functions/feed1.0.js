@@ -96,12 +96,16 @@ exports.createFeedItemForEventAction = function(type, userId, actionId, message,
             feedMessage = username + " left " + eventName
         } else if (type == "chat") {
             feedMessage = username + " said: " + message
+        } else if (type == "addedToEvent") {
+            feedMessage = username + " was added to " + eventName
+        } else if (type == "removedFromEvent") {
+            feedMessage = username + " was removed from " + eventName
         } else {
             feedMessage = undefined
         }
 
         console.log("createFeedItemForEventAction: type " + type + " leagueId " + leagueId + " actionId " + actionId + " message " + message + " default " + defaultMessage)
-        return doCreateFeedItem(id, "action", userId, leagueId, actionId, eventId, feedMessage, feedMessage, exports, admin)
+        return doCreateFeedItem(id, "action", userId, leagueId, actionId, eventId, feedMessage, defaultMessage, exports, admin)
     })
 }
 
