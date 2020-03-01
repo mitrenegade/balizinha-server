@@ -1,8 +1,8 @@
 const admin = require('firebase-admin');
 const globals = require('./globals')
 // actions
-exports.createAction = function(type, userId, eventId, message, defaultMessage, exports, admin) {
-    console.log("createAction type: " + type + " event id: " + eventId + " message: " + message)
+exports.createAction = function(type, userId, objectId, message, defaultMessage, exports, admin) {
+    console.log("createAction type: " + type + " object id: " + objectId + " message: " + message)
     // NOTE: ref url is actions. iOS < v0.7.1 uses /action
     // This is called for event actions such as joinEvent, leaveEvent, createEvent
     // - does not include chats which are created through an action service call
@@ -11,8 +11,13 @@ exports.createAction = function(type, userId, eventId, message, defaultMessage, 
 
     var params = {}
     params["type"] = type
-    params["event"] = eventId // android 1.0.7 still uses event
-    params["eventId"] = eventId // slowly transitioning to use eventId
+    if (type == "createVenue") {
+        params["venueId"] = objectId
+    } else {
+        // other actions are all related to an event
+        params["event"] = objectId // android 1.0.7 still uses event
+        params["eventId"] = objectId // slowly transitioning to use eventId
+    }
     params["user"] = userId // android 1.0.7 still uses user
     params["userId"] = userId // slowly transitioning to use userId
     params["message"] = message
@@ -37,14 +42,16 @@ exports.createAction = function(type, userId, eventId, message, defaultMessage, 
         return admin.database().ref(ref).set(params)
     }).then(action => {
         // create eventAction
-        if (eventId != undefined) {
-            var ref = `/eventActions/` + eventId
+        if (objectId != undefined && type != "createVenue") {
+            var ref = `/eventActions/` + objectId
             // when initializing a dict, use [var] notation. otherwise use params[var] = val
             var params = { [actionId] : true}
-            console.log("Creating eventAction for event " + eventId + " and action " + actionId + " with params " + JSON.stringify(params))
+            console.log("Creating eventAction for event " + objectId + " and action " + actionId + " with params " + JSON.stringify(params))
             return admin.database().ref(ref).update(params).then(() => {
                 return exports.createFeedItemForEventAction(type, userId, actionId, message, defaultMessage)
             })
+        } else {
+            return actionId
         }
     }).then(() => {
         return actionId
