@@ -474,10 +474,6 @@ exports.onUserJoinOrLeaveEvent = functions.database.ref('/eventUsers/{eventId}/{
     return event1_0.onUserJoinOrLeaveEvent(snapshot, context, exports, admin)
 })
 
-exports.onEventDelete = functions.database.ref('/events/{eventId}').onDelete((snapshot, context) => {
-    return event1_0.onEventDelete(snapshot, context)
-})
-
 // helpers - must be defined here in order to use in module
 exports.doJoinOrLeaveEvent = function(userId, eventId, join, admin) {
     return event1_0.doJoinOrLeaveEvent(userId, eventId, join, admin)
