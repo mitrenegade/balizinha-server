@@ -37,18 +37,12 @@ exports.createLeague = function(req, res, exports, admin) {
 }
 
 // returns: {results: [League] where league.owner = userId }
-expors.doGetOwnerLeagues = function(userId) {
+exports.doGetOwnerLeagues = function(userId) {
     const objectRef = '/ownerLeagues/userId'
     return admin.database().ref(objectRef).once('value').then(snapshot => {
         if (!snapshot.exists()) {
             throw new Error("User is not an owner of any leagues")
         }
-        var leagueIds = []
-        snapshot.forEach(child => {
-            let leagueId = child.key
-            let owners = child.val()
-            var ownerId = league.
-        })
         var results = {}
         var allObjects = snapshot.val()
         Object.keys(allObjects).forEach(function(key) {
