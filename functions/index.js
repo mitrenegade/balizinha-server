@@ -738,6 +738,13 @@ exports.migrateStripeCustomers = functions.https.onRequest((req, res) => {
     return adminUtils1_0.migrateStripeCustomers(req, res)
 })
 
+/**
+ * Takes current league/id/ownerId and adds it to /leagueOwners/id
+ * result: {result}
+ */
+exports.migrateLeagueOwnerIdToLeagueOwnersArray = functions.https.onRequest((req, res) => {
+    return adminUtils1_0.migrateLeagueOwnerIdToLeagueOwnersArray(req, res)
+})
 /* Resources
 * Versioning: https://github.com/googleapis/nodejs-datastore/tree/master/src
 * Documentation generation: https://jonathas.com/documenting-your-nodejs-api-with-apidoc/
