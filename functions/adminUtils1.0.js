@@ -190,3 +190,19 @@ exports.migrateStripeCustomers = function(req, res) {
         res.status(500).json({"error": err})
     })
 }
+
+exports.migrateLeagueOwnerIdToLeagueOwnersArray = function(req, res) {
+    var promises = []
+    return admin.database().ref('/leagues').once('value').then(snapshot => {
+        for (league in snapshot.val()) {
+            let leagueId = league.id
+            let ownerId = league.ownerId
+            console.log("Migrating league " + league.id + " with owner " + ownerId)
+            var promise = admin.database().ref(`/leagueOwners/${leagueId}`).set({[ownerId]: true})
+            promises.push(promise)
+        }
+        return Promise.all(promises).then(result => {
+            return res.status(200).json({"result": result})
+        }
+    })
+}
