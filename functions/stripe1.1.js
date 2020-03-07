@@ -198,7 +198,7 @@ exports.capturePayment = function(req, res, exports) {
  */
 checkForStripeConnectForEvent = function(eventId) {
     var foundEvent = undefined
-    var organizerId = undefined
+    var ownerId = undefined
     return admin.database().ref(`events/${eventId}`).once('value').then(snapshot => {
         if (!snapshot.exists()) {
             throw new Error("Event not found")
@@ -207,9 +207,12 @@ checkForStripeConnectForEvent = function(eventId) {
         return snapshot.val()
     }).then(event => {
         foundEvent = event
-        organizerId = event.organizer
-        console.log("checkForStripeConnectForEvent: organizerId " + organizerId)
-        return admin.database().ref(`stripeConnectAccounts/${organizerId}`).once('value')
+        ownerId = event.ownerId
+        if (ownerId == undefined) {
+            ownerId = event.owner // old
+        }
+        console.log("checkForStripeConnectForEvent: ownerId " + ownerId)
+        return admin.database().ref(`stripeConnectAccounts/${ownerId}`).once('value')
     }).then(snapshot => {
         if (!snapshot.exists()) {
             return {'type': 'none', 'event': foundEvent}
@@ -217,7 +220,7 @@ checkForStripeConnectForEvent = function(eventId) {
         const account = snapshot.val()
         console.log("checkForStripeConnectForEvent: stripeConnectAccount " + JSON.stringify(account))
         if (account.stripeUserId != undefined) {
-            return {'type': 'stripeConnectAccount', 'connectId': organizerId, 'event': foundEvent}
+            return {'type': 'stripeConnectAccount', 'connectId': ownerId, 'event': foundEvent}
         } else {
             return {'type': 'none', 'event': foundEvent}
         }
