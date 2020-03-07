@@ -5,6 +5,7 @@ const app = require('express')
 const moment = require('moment')
 const league1_0 = require('./league1.0')
 const league1_1 = require('./league1.1')
+const league2_0 = require('./league2.0')
 const event1_0 = require('./event1.0')
 const event1_1 = require('./event1.1')
 const event2_0 = require('./event2.0')
@@ -295,7 +296,7 @@ exports.createStripeConnectCharge = functions.https.onRequest((req, res) => {
 
 // http functions
 exports.createLeague = functions.https.onRequest((req, res) => {
-    return league1_0.createLeague(req, res, exports, admin);
+    return league2_0.createLeague(req, res, exports, admin);
 });
 
 /**
