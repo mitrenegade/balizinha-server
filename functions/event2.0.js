@@ -41,6 +41,11 @@ exports.createEvent = function(req, res, exports) {
     params["leagueId"] = league
     params["league"] = league
 
+    // param can include an ownerId if a game belongs to a league owner, who should receive payment
+    if (req.body.ownerId != undefined) {
+        params["ownerId"] = req.body.ownerId
+    }
+
     var recurrence = req.body.recurrence
     if (recurrence == undefined) {
         recurrence = "none"
@@ -102,12 +107,15 @@ exports.createEvent = function(req, res, exports) {
         } else {
             params["leagueIsPrivate"] = snapshot.val().isPrivate
         }
-        var ownerId = snapshot.val().ownerId
-        if (ownerId == undefined) {
-            ownerId = snapshot.val().owner
+
+        // set event owner if ownerId is not sent in as a parameter
+        if (params["ownerId"] == undefined) {
+            var ownerId = snapshot.val().ownerId
+            if (ownerId == undefined) {
+                ownerId = snapshot.val().owner
+            }
+            params["ownerId"] = ownerId
         }
-        params["owner"] = ownerId
-        params["ownerId"] = ownerId
 
         if (recurrence == "none") {
             let ref = `/events/` + eventId
