@@ -361,7 +361,7 @@ exports.getLeagueStats = functions.https.onRequest((req, res) => {
  * results: {leagues: [League], subscriptions: [Subscription]}
  */
 exports.getOwnerLeaguesAndSubscriptions = functions.https.onRequest((req, res) => {
-    return league1_1.getOwnerLeaguesAndSubscriptions(req, res)
+    return league2.0.getOwnerLeaguesAndSubscriptions(req, res)
 })
 
 /*
@@ -369,7 +369,7 @@ exports.getOwnerLeaguesAndSubscriptions = functions.https.onRequest((req, res) =
  * results: {leagues: [League]}
  */
 exports.getLeaguesOwnedByUser = functions.https.onRequest((req, res) => {
-    return league1_1.getLeaguesOwnedByUser(req, res)
+    return league2.0.getLeaguesOwnedByUser(req, res)
 })
 
 // database changes
