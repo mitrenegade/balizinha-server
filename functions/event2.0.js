@@ -110,10 +110,7 @@ exports.createEvent = function(req, res, exports) {
 
         // set event owner if ownerId is not sent in as a parameter
         if (params["ownerId"] == undefined) {
-            var ownerId = snapshot.val().ownerId
-            if (ownerId == undefined) {
-                ownerId = snapshot.val().owner
-            }
+            let ownerId = snapshot.val().ownerId
             params["ownerId"] = ownerId
         }
 
