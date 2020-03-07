@@ -202,9 +202,11 @@ exports.migrateLeagueOwnerIdToLeagueOwnersArray = function(req, res) {
             var ownerId = league.ownerId
             if (ownerId == undefined) {
                 ownerId = league.owner
+                var promise = admin.database().ref(`/leagues/${leagueId}`).update({"ownerId": ownerId})
+                promises.push(promise)
             }
             console.log("Migrating league " + league.id + " with owner " + ownerId)
-            var promise = admin.database().ref(`/leagueOwners/${leagueId}`).set({[ownerId]: true}).then(() => {
+            var promise = admin.database().ref(`/leagueOwners/${leagueId}`).update({[ownerId]: true}).then(() => {
                 admin.database().ref(`/ownerLeagues/${ownerId}`).update({[leagueId]: true})
             })
             promises.push(promise)
