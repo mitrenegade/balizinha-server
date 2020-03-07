@@ -194,9 +194,12 @@ exports.migrateStripeCustomers = function(req, res) {
 exports.migrateLeagueOwnerIdToLeagueOwnersArray = function(req, res) {
     var promises = []
     return admin.database().ref('/leagues').once('value').then(snapshot => {
-        for (league in snapshot.val()) {
-            let leagueId = league.id
-            let ownerId = league.ownerId
+        for ((key, league) in snapshot.val()) {
+            let leagueId = key
+            var ownerId = league.ownerId
+            if (ownerId == undefined) {
+                ownerId = league.owner
+            }
             console.log("Migrating league " + league.id + " with owner " + ownerId)
             var promise = admin.database().ref(`/leagueOwners/${leagueId}`).set({[ownerId]: true})
             promises.push(promise)
