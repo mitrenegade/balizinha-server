@@ -37,9 +37,7 @@ exports.createEvent = function(req, res, exports) {
     var createdAt = exports.secondsSince1970()
     params["createdAt"] = createdAt
     params["organizer"] = userId // old apps still use this info ??
-    params["owner"] = userId // old apps still use this info
     params["organizerId"] = userId // who is allowed to modify
-    params["ownerId"] = userId // who gets paid
     params["leagueId"] = league
     params["league"] = league
 
@@ -104,6 +102,12 @@ exports.createEvent = function(req, res, exports) {
         } else {
             params["leagueIsPrivate"] = snapshot.val().isPrivate
         }
+        var ownerId = snapshot.val().ownerId
+        if (ownerId == undefined) {
+            ownerId = snapshot.val().owner
+        }
+        params["owner"] = ownerId
+        params["ownerId"] = ownerId
 
         if (recurrence == "none") {
             let ref = `/events/` + eventId
