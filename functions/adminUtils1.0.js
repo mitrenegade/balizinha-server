@@ -191,6 +191,8 @@ exports.migrateStripeCustomers = function(req, res) {
     })
 }
 
+// updates /leagueOwners and /ownerleagues based on /leagues/ownerId.
+// content is userId: true or leagueId: true
 exports.migrateLeagueOwnerIdToLeagueOwnersArray = function(req, res) {
     var promises = []
     return admin.database().ref('/leagues').once('value').then(snapshot => {
@@ -202,7 +204,9 @@ exports.migrateLeagueOwnerIdToLeagueOwnersArray = function(req, res) {
                 ownerId = league.owner
             }
             console.log("Migrating league " + league.id + " with owner " + ownerId)
-            var promise = admin.database().ref(`/leagueOwners/${leagueId}`).set({[ownerId]: true})
+            var promise = admin.database().ref(`/leagueOwners/${leagueId}`).set({[ownerId]: true}).then(() => {
+                admin.database().ref(`/ownerLeagues/${ownerId}`).update({[leagueId]: true})
+            })
             promises.push(promise)
         })
         return Promise.all(promises).then(result => {

@@ -1,6 +1,7 @@
 const admin = require('firebase-admin');
 // https://stackoverflow.com/questions/43486278/how-do-i-structure-cloud-functions-for-firebase-to-deploy-multiple-functions-fro
 const globals = require('./globals')
+const league2_0 = require('./league2.0')
 
 /*
  * params: userId
@@ -12,7 +13,7 @@ exports.getLeaguesOwnedByUser = function(req, res) {
 	if (userId == undefined) {
 		return res.status(500).json("Invalid owner user id")
 	}
-	return doGetOwnerLeagues(userId).then(results => {
+	return league2_0.doGetOwnerLeagues(userId).then(results => {
 		console.log("League 1.1: getLeaguesOwnedByUser results " + JSON.stringify(results, null, " "))
 		return res.status(200).json(results)
 	}).catch(err => {
@@ -36,7 +37,7 @@ exports.getOwnerLeaguesAndSubscriptions = function(req, res) {
 	}
     var promises = []
 
-    return doGetOwnerLeagues(userId).then(leagues => {
+    return league2_0.doGetOwnerLeagues(userId).then(leagues => {
     	if (leagues.count == 0) {
     		throw new Error("User is not part of any leagues")
     	}
@@ -53,6 +54,8 @@ exports.getOwnerLeaguesAndSubscriptions = function(req, res) {
 }
 
 // returns: {results: [League] where league.owner = userId }
+ // deprecated league2.0
+ /*
 doGetOwnerLeagues = function(userId) {
 	const objectRef = '/leagues'
     return admin.database().ref(objectRef).orderByChild('owner').equalTo(userId).once('value').then(snapshot => {
@@ -69,3 +72,4 @@ doGetOwnerLeagues = function(userId) {
     	return {leagues: results}
 	})
 }
+*/
