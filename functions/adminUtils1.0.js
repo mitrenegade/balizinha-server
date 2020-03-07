@@ -204,7 +204,7 @@ exports.migrateLeagueOwnerIdToLeagueOwnersArray = function(req, res) {
             console.log("Migrating league " + league.id + " with owner " + ownerId)
             var promise = admin.database().ref(`/leagueOwners/${leagueId}`).set({[ownerId]: true})
             promises.push(promise)
-        }
+        })
         return Promise.all(promises).then(result => {
             return res.status(200).json({"result": result})
         })
