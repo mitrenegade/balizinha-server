@@ -203,6 +203,6 @@ exports.migrateLeagueOwnerIdToLeagueOwnersArray = function(req, res) {
         }
         return Promise.all(promises).then(result => {
             return res.status(200).json({"result": result})
-        }
+        })
     })
 }
