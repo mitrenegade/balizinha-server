@@ -36,10 +36,15 @@ exports.createEvent = function(req, res, exports) {
     var params = {"league": league, "name": name, "type": type, "city": city, "place": place, "startTime": startTime, "endTime": endTime, "maxPlayers": maxPlayers}
     var createdAt = exports.secondsSince1970()
     params["createdAt"] = createdAt
-    params["organizer"] = userId
-    params["owner"] = userId // old apps still use this info
+    params["organizer"] = userId // old apps still use this info ??
+    params["organizerId"] = userId // who is allowed to modify
     params["leagueId"] = league
     params["league"] = league
+
+    // param can include an ownerId if a game belongs to a league owner, who should receive payment
+    if (req.body.ownerId != undefined) {
+        params["ownerId"] = req.body.ownerId
+    }
 
     var recurrence = req.body.recurrence
     if (recurrence == undefined) {
@@ -101,6 +106,12 @@ exports.createEvent = function(req, res, exports) {
             params["leagueIsPrivate"] = false
         } else {
             params["leagueIsPrivate"] = snapshot.val().isPrivate
+        }
+
+        // set event owner if ownerId is not sent in as a parameter
+        if (params["ownerId"] == undefined) {
+            let ownerId = snapshot.val().ownerId
+            params["ownerId"] = ownerId
         }
 
         if (recurrence == "none") {

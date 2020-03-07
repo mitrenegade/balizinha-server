@@ -53,7 +53,7 @@ exports.getOwnerLeaguesAndSubscriptions = function(req, res) {
 	})
 }
 
-// returns: {results: [League] where league.owner = userId }
+// returns: {results: [League] where league.ownerId = userId }
  // deprecated league2.0
  /*
 doGetOwnerLeagues = function(userId) {

@@ -36,7 +36,7 @@ exports.createLeague = function(req, res, exports, admin) {
     })
 }
 
-// returns: {results: [League] where league.owner = userId }
+// returns: {results: [League] where league.ownerId = userId, using the ownerLeagues endpoint }
 exports.doGetOwnerLeagues = function(userId) {
     const objectRef = '/ownerLeagues/userId'
     return admin.database().ref(objectRef).once('value').then(snapshot => {
