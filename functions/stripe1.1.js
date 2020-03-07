@@ -125,6 +125,7 @@ makePaymentForPlatformCharge = function(userId, eventId, amount, chargeId, expor
     })
 }
 
+// deprecated (not used)
 exports.capturePayment = function(req, res, exports) {
     const userId = req.body.userId
     const eventId = req.body.eventId
@@ -141,11 +142,11 @@ exports.capturePayment = function(req, res, exports) {
         return snapshot.val()
     }).then(eventDict => {
         // BOBBY TODO move event request earlier
-        if (eventDict["organizer"] == userId || eventDict["owner"] == userId || isAdmin == true) {
+        if (eventDict["organizer"] == userId || eventDict["owner"] == userId || eventDict["ownerId"] == userId || isAdmin == true) {
             var initiatedBy = "unknown"
             if (eventDict["organizer"] == userId) {
                 initiatedBy = "organizer " + userId
-            } else if (eventDict["owner"] == userId) {
+            } else if (eventDict["owner"] == userId || eventDict["ownerId"] == userId) {
                 initiatedBy = "organizer " + userId
             } else if (isAdmin) {
                 initiatedBy = "admin " + userId

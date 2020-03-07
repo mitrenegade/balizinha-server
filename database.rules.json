@@ -15,7 +15,7 @@
       ".indexOn": ["userId", "leagueId"]
     },
     "leagues": {
-      ".indexOn": ["owner", "isPrivate"]
+      ".indexOn": ["owner", "ownerId", "isPrivate"]
     }
   }
 }
