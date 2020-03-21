@@ -221,12 +221,15 @@ createRecurringEvents = function(eventId, params, recurrence, req, exports) {
 
 validateVideoUrl = function(urlString) {
     const myURL = new URL(urlString)
+    console.log("validateVideoUrl: " + myURL + " with host: " + myURL.host)
     if (myURL == undefined) {
         return false
     }
     if (myURL.host == "zoom.us") {
         // only whitelist zoom
+        console.log("validateVideoUrl: video is whitelisted")
         return true
     }
+    console.log("validateVideoUrl: invalid")
     return false
 }
