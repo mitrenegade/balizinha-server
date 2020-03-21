@@ -42,8 +42,12 @@ exports.createEvent = function(req, res, exports) {
     params["leagueId"] = league
     params["league"] = league
 
-    if (validateVideoUrl(req.body.videoUrl)) {
+    if (validateVideoUrl(req.body.videoUrl) == true) {
+        const myURL = new URL(req.body.videoUrl)
+        console.log("CreateEvent: validateVideoUrl for " + req.body.videoUrl + " with host " + myURL.host)
         params["videoUrl"] = req.body.videoUrl
+    } else {
+        console.log("CreateEvent: invalid url: " + req.body.videoUrl)
     }
 
     // param can include an ownerId if a game belongs to a league owner, who should receive payment
