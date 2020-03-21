@@ -1,6 +1,7 @@
 const admin = require('firebase-admin');
 const globals = require('./globals')
 const event1_0 = require('./event1.0')
+const urllib = require('url')
 
 exports.createEvent = function(req, res, exports) {
     const userId = req.body.userId
@@ -40,6 +41,10 @@ exports.createEvent = function(req, res, exports) {
     params["organizerId"] = userId // who is allowed to modify
     params["leagueId"] = league
     params["league"] = league
+
+    if (validateVideoUrl(req.body.videoUrl)) {
+        params["videoUrl"] = req.body.videoUrl
+    }
 
     // param can include an ownerId if a game belongs to a league owner, who should receive payment
     if (req.body.ownerId != undefined) {
@@ -212,4 +217,16 @@ createRecurringEvents = function(eventId, params, recurrence, req, exports) {
     return Promise.all(promises).then(result => {
         return {"eventIds": eventIds}
     })
+}
+
+validateVideoUrl = function(urlString) {
+    const myURL = new URL(urlString)
+    if (myURL == undefined) {
+        return false
+    }
+    if (myURL.host == "zoom.us") {
+        // only whitelist zoom
+        return true
+    }
+    return false
 }
