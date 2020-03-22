@@ -46,7 +46,7 @@ exports.createEvent = function(req, res, exports) {
         params["videoUrl"] = req.body.videoUrl
     } else {
         console.log("CreateEvent: invalid url: " + req.body.videoUrl)
-        throw new Error("Invalid video url")
+        return res.status(500).json({"error":"Invalid video url"})
     }
 
     // param can include an ownerId if a game belongs to a league owner, who should receive payment
