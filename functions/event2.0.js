@@ -52,6 +52,7 @@ exports.createEvent = function(req, res, exports) {
     // param can include an ownerId if a game belongs to a league owner, who should receive payment
     if (req.body.ownerId != undefined) {
         params["ownerId"] = req.body.ownerId
+        params["owner"] = req.body.ownerId // Android apps 1.4.0 and below use owner
     }
 
     var recurrence = req.body.recurrence
@@ -120,6 +121,7 @@ exports.createEvent = function(req, res, exports) {
         if (params["ownerId"] == undefined) {
             let ownerId = snapshot.val().ownerId
             params["ownerId"] = ownerId
+            params["owner"] = ownerId // old Android apps (1.4.0) still use owner
         }
 
         if (recurrence == "none") {
