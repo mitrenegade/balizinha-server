@@ -1,7 +1,7 @@
 const admin = require('firebase-admin');
 const globals = require('./globals')
 const event1_0 = require('./event1.0')
-const urllib = require('url')
+const url = require('url')
 
 exports.createEvent = function(req, res, exports) {
     const userId = req.body.userId
@@ -43,11 +43,10 @@ exports.createEvent = function(req, res, exports) {
     params["league"] = league
 
     if (validateVideoUrl(req.body.videoUrl) == true) {
-        const myURL = new URL(req.body.videoUrl)
-        console.log("CreateEvent: validateVideoUrl for " + req.body.videoUrl + " with host " + myURL.host)
         params["videoUrl"] = req.body.videoUrl
     } else {
         console.log("CreateEvent: invalid url: " + req.body.videoUrl)
+        throw new Error("Invalid video url")
     }
 
     // param can include an ownerId if a game belongs to a league owner, who should receive payment
@@ -224,16 +223,16 @@ createRecurringEvents = function(eventId, params, recurrence, req, exports) {
 }
 
 validateVideoUrl = function(urlString) {
-    const myURL = new URL(urlString)
-    console.log("validateVideoUrl: " + myURL + " with host: " + myURL.host)
-    if (myURL == undefined) {
+    if (urlString == undefined) {
         return false
     }
-    if (myURL.host == "zoom.us") {
+    const result = url.parse(urlString, true)
+    console.log("validateVideoUrl: " + urlString + " with host: " + result.host)
+    if (result.host == "zoom.us") {
         // only whitelist zoom
-        console.log("validateVideoUrl: video is whitelisted")
+        console.log("validateVideoUrl: video is whitelisted for host " + result.host + " path " + result.pathname)
         return true
     }
-    console.log("validateVideoUrl: invalid")
+    console.log("validateVideoUrl: invalid url: " + urlString)
     return false
 }
