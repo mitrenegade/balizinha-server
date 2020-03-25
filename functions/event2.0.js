@@ -244,8 +244,8 @@ createRecurringEvents = function(eventId, params, recurrence, req, exports) {
 }
 
 validateVideoUrl = function(urlString) {
-    if (urlString == undefined) {
-        return false
+    if (urlString == undefined || urlString == "") {
+        return true
     }
     const result = url.parse(urlString, true)
     console.log("validateVideoUrl: " + urlString + " with host: " + result.host)
