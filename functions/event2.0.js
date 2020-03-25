@@ -42,11 +42,14 @@ exports.createEvent = function(req, res, exports) {
     params["leagueId"] = league
     params["league"] = league
 
-    if (validateVideoUrl(req.body.videoUrl) == true) {
-        params["videoUrl"] = req.body.videoUrl
-    } else {
-        console.log("CreateEvent: invalid url: " + req.body.videoUrl)
-        return res.status(500).json({"error":"Invalid video url"})
+    var videoUrl = req.body.videoUrl
+    if (videoUrl != undefined) {
+        if (validateVideoUrl(videoUrl) == true) {
+            params["videoUrl"] = req.body.videoUrl
+        } else {
+            console.log("CreateEvent: invalid url: " + videoUrl)
+            return res.status(500).json({"error":"Invalid video url"})
+        }
     }
 
     // param can include an ownerId if a game belongs to a league owner, who should receive payment
@@ -244,8 +247,8 @@ createRecurringEvents = function(eventId, params, recurrence, req, exports) {
 }
 
 validateVideoUrl = function(urlString) {
-    if (urlString == undefined || urlString == "") {
-        return true
+    if (urlString == undefined) {
+        return false
     }
     const result = url.parse(urlString, true)
     console.log("validateVideoUrl: " + urlString + " with host: " + result.host)
