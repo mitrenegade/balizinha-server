@@ -142,7 +142,12 @@ exports.createVenue = function(req, res, exports) {
 }
 
 doCreateVenue = function(venueId, userId, name, type, street, city, state, lat, lon, placeId) {
-    var params = {userId, name, type, street, city, state, lat, lon}
+    var params
+    if (type == "remote") {
+    	params = {userId, name, type}
+    } else {
+    	params = {userId, name, type, street, city, state, lat, lon}
+    }
     var createdAt = globals.secondsSince1970()
     params["createdAt"] = createdAt
     if (placeId != undefined) {
