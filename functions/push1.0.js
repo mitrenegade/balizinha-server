@@ -145,7 +145,10 @@ exports.subscribeToEvent = function(eventId, userId, join, exports, admin) {
 exports.pushForCreateEvent = function(eventId, leagueId, name, place, exports, admin) {
     var title = "New event available"
     let topic = topicForLeague(leagueId)
-    var msg = "A new event, " + name + ", is available in " + place
+    var msg = "A new event, " + name + ", is available"
+    if (place != undefined) {
+        msg = msg + " in " + place
+    }
     console.log("Push v1.0 for CreateEvent: sending push " + title + " to " + topic + " with msg " + msg)
     let info = {"type": "createEvent", "eventId": eventId}
     return exports.sendPushToTopic(title, topic, msg, info)

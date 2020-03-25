@@ -34,7 +34,7 @@ exports.createEvent = function(req, res, exports) {
     const paymentRequired = req.body.paymentRequired
     const amount = req.body.amount
 
-    var params = {"league": league, "name": name, "type": type, "city": city, "place": place, "startTime": startTime, "endTime": endTime, "maxPlayers": maxPlayers}
+    var params = {"league": league, "name": name, "type": type, "startTime": startTime, "endTime": endTime, "maxPlayers": maxPlayers}
     var createdAt = exports.secondsSince1970()
     params["createdAt"] = createdAt
     params["organizer"] = userId // old apps still use this info ??
