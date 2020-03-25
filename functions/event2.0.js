@@ -34,7 +34,7 @@ exports.createEvent = function(req, res, exports) {
     const paymentRequired = req.body.paymentRequired
     const amount = req.body.amount
 
-    var params = {"league": league, "name": name, "type": type, "city": city, "place": place, "startTime": startTime, "endTime": endTime, "maxPlayers": maxPlayers}
+    var params = {"league": league, "name": name, "type": type, "startTime": startTime, "endTime": endTime, "maxPlayers": maxPlayers}
     var createdAt = exports.secondsSince1970()
     params["createdAt"] = createdAt
     params["organizer"] = userId // old apps still use this info ??
@@ -42,11 +42,14 @@ exports.createEvent = function(req, res, exports) {
     params["leagueId"] = league
     params["league"] = league
 
-    if (validateVideoUrl(req.body.videoUrl) == true) {
-        params["videoUrl"] = req.body.videoUrl
-    } else {
-        console.log("CreateEvent: invalid url: " + req.body.videoUrl)
-        return res.status(500).json({"error":"Invalid video url"})
+    var videoUrl = req.body.videoUrl
+    if (videoUrl != undefined) {
+        if (validateVideoUrl(videoUrl) == true) {
+            params["videoUrl"] = req.body.videoUrl
+        } else {
+            console.log("CreateEvent: invalid url: " + videoUrl)
+            return res.status(500).json({"error":"Invalid video url"})
+        }
     }
 
     // param can include an ownerId if a game belongs to a league owner, who should receive payment
@@ -69,6 +72,7 @@ exports.createEvent = function(req, res, exports) {
     let eventId = exports.createUniqueId()
     var newEventIds = []
     var promises = []
+    var isVenueRemote = false
     if (venueId == undefined) {
         // promises remains empty
         console.log("CreateEvent 2.0: no venueId provided")
@@ -76,12 +80,17 @@ exports.createEvent = function(req, res, exports) {
         let venueRef = `/venues/${venueId}`
         var promiseRef = admin.database().ref(venueRef).once('value').then().then(snapshot => {
             if (snapshot.exists()) {
-                city = snapshot.val().city
-                state = snapshot.val().state
-                place = snapshot.val().name
-                lat = snapshot.val().lat
-                lon = snapshot.val().lon
-                console.log("CreateEvent 2.0: loaded city, state, place, lat, lon using existing venue")
+                if (snapshot.val().type == "remote") {
+                    isVenueRemote = true
+                    console.log("CreateEvent 2.0: loaded existing remote venue")
+                } else {
+                    city = snapshot.val().city
+                    state = snapshot.val().state
+                    place = snapshot.val().name
+                    lat = snapshot.val().lat
+                    lon = snapshot.val().lon
+                    console.log("CreateEvent 2.0: loaded city, state, place, lat, lon using existing venue")                    
+                }
             } else {
                 console.log("CreateEvent 2.0: venueId was invalid")
                 throw new Error("Invalid venue specified for event")
@@ -91,19 +100,32 @@ exports.createEvent = function(req, res, exports) {
     }
     Promise.all(promises).then(result => {
         // city, state and place are required if venue is not
-        if (city == undefined) { throw new Error("City is required to create event") }
-        if (state == undefined) { throw new Error("State is required to create event") }
-        if (place == undefined) { throw new Error("Location is required to create event") }
-        if (lat == undefined || lon == undefined) { throw new Error("Latitude and longitude are required to create event") }
-        if (typeof lat != "number") { throw new Error("Latitude is not a valid number") }
-        if (typeof lon != "number") { throw new Error("Longitude is not a valid number") }
-        if (lat == 0 || lon == 0) { throw new Error("Invalid latitude and longitude for event") }
+        if (isVenueRemote == false) {
+            if (city == undefined) { throw new Error("City is required to create event") }
+            if (state == undefined) { throw new Error("State is required to create event") }
+            if (place == undefined) { throw new Error("Location is required to create event") }
+            if (lat == undefined || lon == undefined) { throw new Error("Latitude and longitude are required to create event") }
+            if (typeof lat != "number") { throw new Error("Latitude is not a valid number") }
+            if (typeof lon != "number") { throw new Error("Longitude is not a valid number") }
+            if (lat == 0 || lon == 0) { throw new Error("Invalid latitude and longitude for event") }
+        }
 
-        params["place"] = place
-        params["city"] = city
-        params["state"] = state
-        params["lat"] = lat
-        params["lon"] = lon
+        // remote venue could still have a location; just don't validate for it
+        if (place != undefined) {
+            params["place"] = place
+        }
+        if ( city != undefined ) {
+            params["city"] = city
+        }
+        if ( state != undefined ) {
+            params["state"] = state
+        }
+        if ( lat != undefined ) {
+            params["lat"] = lat
+        }
+        if ( lon != undefined ) {
+            params["lon"] = lon
+        }
         if (venueId) {
             params["venueId"] = venueId
         }
