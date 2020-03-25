@@ -108,11 +108,21 @@ exports.createEvent = function(req, res, exports) {
         }
 
         // remote venue could still have a location; just don't validate for it
-        params["place"] = place
-        params["city"] = city
-        params["state"] = state
-        params["lat"] = lat
-        params["lon"] = lon
+        if (place != undefined) {
+            params["place"] = place
+        }
+        if ( city != undefined ) {
+            params["city"] = city
+        }
+        if ( state != undefined ) {
+            params["state"] = state
+        }
+        if ( lat != undefined ) {
+            params["lat"] = lat
+        }
+        if ( lon != undefined ) {
+            params["lon"] = lon
+        }
         if (venueId) {
             params["venueId"] = venueId
         }
