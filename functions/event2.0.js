@@ -252,7 +252,8 @@ validateVideoUrl = function(urlString) {
     }
     const result = url.parse(urlString, true)
     console.log("validateVideoUrl: " + urlString + " with host: " + result.host)
-    if (result.host == "zoom.us") {
+    if (result.host.includes("zoom.us") || 
+        result.host.includes("meet.google.com")) {
         // only whitelist zoom
         console.log("validateVideoUrl: video is whitelisted for host " + result.host + " path " + result.pathname)
         return true
