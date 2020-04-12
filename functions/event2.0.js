@@ -249,6 +249,9 @@ validateVideoUrl = function(urlString) {
         throw new Error("No url was provided.")
     }
     const result = url.parse(urlString, true)
+    if (result.host == undefined) {
+        throw new Error("Invalid url provided. Please use http or https.")
+    }
     console.log("validateVideoUrl: " + urlString + " with host: " + result.host)
     if (result.host.includes("zoom.us") || 
         result.host.includes("meet.google.com")) {
