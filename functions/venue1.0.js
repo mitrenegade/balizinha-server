@@ -106,6 +106,13 @@ exports.createVenue = function(req, res, exports) {
 	    if (lat == 0 || lon == 0) { return res.status(500).json({"error": "Invalid latitude and longitude for venue"})}
 	    console.log("Venue 1.0: createVenue " + name + " city: " + city + " state " + state +  " User lat/lon: (" + lat + ", " + lon + ") placeId: " + placeId)
 	} else {
+		// do not save any other location attributes
+		street = undefined
+		lat = undefined
+		lon = undefined
+		city = undefined
+		state = undefined
+		placeId = undefined
 		console.log("Venue 1.0: createVenue " + name + " (remote)")
 	}
 
