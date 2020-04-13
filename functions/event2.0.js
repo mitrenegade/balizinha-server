@@ -43,15 +43,6 @@ exports.createEvent = function(req, res, exports) {
     params["league"] = league
 
     var videoUrl = req.body.videoUrl
-    if (videoUrl != undefined) {
-        if (validateVideoUrl(videoUrl) == true) {
-            params["videoUrl"] = req.body.videoUrl
-        } else {
-            console.log("CreateEvent: invalid url: " + videoUrl)
-            return res.status(500).json({"error":"Invalid video url"})
-        }
-    }
-
     // param can include an ownerId if a game belongs to a league owner, who should receive payment
     if (req.body.ownerId != undefined) {
         params["ownerId"] = req.body.ownerId
@@ -128,6 +119,13 @@ exports.createEvent = function(req, res, exports) {
         }
         if (venueId) {
             params["venueId"] = venueId
+        }
+
+        // validate videoUrl here to catch errors thrown
+        if (videoUrl != undefined) {
+            if (validateVideoUrl(videoUrl) == true) {
+                params["videoUrl"] = req.body.videoUrl
+            } // errors are thrown
         }
 
         let leagueRef = `/leagues/${league}`
@@ -248,15 +246,19 @@ createRecurringEvents = function(eventId, params, recurrence, req, exports) {
 
 validateVideoUrl = function(urlString) {
     if (urlString == undefined) {
-        return false
+        throw new Error("No url was provided.")
     }
     const result = url.parse(urlString, true)
+    if (result.host == undefined) {
+        throw new Error("Invalid url provided. Please use http or https.")
+    }
     console.log("validateVideoUrl: " + urlString + " with host: " + result.host)
-    if (result.host == "zoom.us") {
+    if (result.host.includes("zoom.us") || 
+        result.host.includes("meet.google.com")) {
         // only whitelist zoom
         console.log("validateVideoUrl: video is whitelisted for host " + result.host + " path " + result.pathname)
         return true
     }
     console.log("validateVideoUrl: invalid url: " + urlString)
-    return false
+    throw new Error("Unsupported video url. Please use Zoom or Google Hangouts.")
 }
