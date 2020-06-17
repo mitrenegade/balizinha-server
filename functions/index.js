@@ -105,13 +105,12 @@ exports.onPlayerCreate = functions.database.ref('/players/{userId}').onCreate((s
 })
 
 exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite((snapshot, context) => {
-    console.log("onPlayerChange triggered with snapshot " + JSON.stringify(snapshot) + " context " + JSON.stringify(context))
     var playerId = context.params.userId
     var data = snapshot.after.val()
     var old = snapshot.before.val()
 
     // update city
-    if (data["cityId"] != undefined) {
+    if (data["cityId"] != undefined && data["cityId"] != old["cityId"]) {
         var cityId = data["cityId"]
         var ref = `/cityPlayers/` + cityId
         console.log("Creating cityPlayers for cityId " + cityId + " and player " + playerId)
