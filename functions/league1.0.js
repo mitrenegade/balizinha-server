@@ -68,7 +68,7 @@ exports.joinLeaveLeague = function(req, res, exports, admin) {
         }
         return exports.doUpdatePlayerStatus(admin, userId, leagueId, status)
     }).then((result) => {
-		console.log("League 1.0: joinLeaveLeague: status " + status + " userId " + userId + " leagueId " + leagueId " result: " + JSON.stringify(result))
+		console.log("League 1.0: joinLeaveLeague: status " + status + " userId " + userId + " leagueId " + leagueId + " result: " + JSON.stringify(result))
 		// subscribe to league
 		return exports.subscribeToLeague(leagueId, userId, isJoin)
 	}).then(() => {
