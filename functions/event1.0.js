@@ -33,8 +33,6 @@ exports.createEvent = function(req, res, exports, admin) {
     const lat = req.body.lat
     const lon = req.body.lon
 
-    console.log("lat " + lat + " lon " + lon)
-
     var params = {"league": league, "name": name, "type": type, "city": city, "place": place, "startTime": startTime, "endTime": endTime, "maxPlayers": maxPlayers}
     var createdAt = exports.secondsSince1970()
     params["createdAt"] = createdAt
@@ -64,7 +62,6 @@ exports.createEvent = function(req, res, exports, admin) {
         return admin.database().ref(ref).set(params)
     }).then(result => {
         // create action
-        console.log("CreateEvent v1.0 createAction event " + eventId + " organizer " + userId)
         var type = globals.ActionType.createEvent
         return exports.createAction(type, userId, eventId, null)
     }).then(result => {
@@ -83,7 +80,7 @@ exports.createEvent = function(req, res, exports, admin) {
     }).then(result => {
         return res.status(200).json({"result": result, "eventId": eventId})
     }).catch(err => {
-        console.log("CreateEvent v1.0 error: " + JSON.stringify(err));
+        console.error("CreateEvent v1.0 error: " + JSON.stringify(err));
         return res.status(500).json({"error": err.message})
     })
 }
@@ -113,7 +110,7 @@ exports.joinOrLeaveEvent = function(req, res, exports, admin) {
              //////////// Find event's league and add event to default league if necessary
             if (!snapshot.exists()) {
                 // event doesn't exist
-                console.log("JoinOrLeaveEvent: could not find event " + eventId)
+                console.error("JoinOrLeaveEvent: could not find event " + eventId)
                 throw new Error("Could not join event; event not found")
             }
             leagueId = snapshot.val().leagueId
@@ -121,14 +118,12 @@ exports.joinOrLeaveEvent = function(req, res, exports, admin) {
                 leagueId = snapshot.val().league
             }
             // find if league contains that player
-            console.log("JoinOrLeaveEvent: checking player's league status for " + leagueId)
             return admin.database().ref(`/leaguePlayers/${leagueId}/${userId}`).once('value')
         }).then(snapshot => { //////////// Find league's players and add player to league if necessary
             if (!snapshot.exists() || (snapshot.val() != "member" && snapshot.val() != "organizer")) {
                 // player is not part of the same league
                 // for backwards compatibility - add user to league. for games that are paid, the app process
                 // payment first (as of 1.0.5) so the user should not be rejected after payment
-                console.log("JoinOrLeaveEvent: adding user " + userId + " to league " + leagueId + " on joining event")
                 const status = "member"
                 return exports.doUpdatePlayerStatus(admin, userId, leagueId, status).then(() => {
                     return exports.subscribeToLeague(leagueId, userId, true)
@@ -138,12 +133,11 @@ exports.joinOrLeaveEvent = function(req, res, exports, admin) {
                 })
             } else {
                 // load player
-                console.log("JoinOrLeaveEvent: player " + userId + " is already part of event's league " + leagueId)
                 return admin.database().ref(`/players/${userId}`).once('value')
             }
         }).then(snapshot => { /////////// Load player and join event; filters for anonymous players
             if (!snapshot.exists()) {
-                console.log("JoinOrLeaveEvent v1.0: no player found for userId " + userId + ": must be anonymous")
+                console.error("JoinOrLeaveEvent v1.0: no player found for userId " + userId + ": must be anonymous")
                 throw new Error("Please sign up to join this game")
             }
             return exports.doJoinOrLeaveEvent(userId, eventId, join, admin)
@@ -154,7 +148,7 @@ exports.joinOrLeaveEvent = function(req, res, exports, admin) {
              //////////// Make sure event exists
             if (!snapshot.exists()) {
                 // event doesn't exist
-                console.log("JoinOrLeaveEvent: could not find event " + eventId)
+                console.error("JoinOrLeaveEvent: could not find event " + eventId)
                 throw new Error("Could not join event; event not found")
             }
             return exports.doJoinOrLeaveEvent(userId, eventId, join, admin)
@@ -162,11 +156,6 @@ exports.joinOrLeaveEvent = function(req, res, exports, admin) {
     }
 
     return promise.then(result => {
-        if (join) {
-            console.log("JoinOrLeaveEvent v1.0: join results " + JSON.stringify(result))
-        } else {
-            console.log("JoinOrLeaveEvent v1.0: leave results " + JSON.stringify(result))
-        }
         if (addedByOrganizer) {
             return exports.createAction(globals.ActionType.addedToEvent, userId, eventId, null, "A player was added to this game").then(result => {
                 return res.status(200).json({"result": result, "eventId": eventId})
@@ -179,7 +168,7 @@ exports.joinOrLeaveEvent = function(req, res, exports, admin) {
             return res.status(200).json({"result": result, "eventId": eventId})
         }
     }).catch( (err) => {
-        console.log("JoinOrLeaveEvent v1.0: event " + eventId + " error: " + err)
+        console.error("JoinOrLeaveEvent v1.0: event " + eventId + " error: " + err)
         return res.status(500).json({"error": err.message})
     })
 
@@ -189,8 +178,6 @@ exports.onEventCreate = function(snapshot, context, exports) {
     const eventId = context.params.eventId
     const userId = context.params.userId
     var data = snapshot.val()
-    console.log("onEventCreate: eventName: " + data.name + " eventInfo: " + data.info)
-    console.log("onEventCreate: JSON " + JSON.stringify(data))
     var name = data.name
     if (name == undefined) {
         name = "Panna Social Leagues"
@@ -208,12 +195,10 @@ exports.onEventCreate = function(snapshot, context, exports) {
             "socialDescription": info
             // for now, no socialImage
         }
-        console.log("onEventCreate: calling createDynamicLink with eventId " + eventId + " meta " + JSON.stringify(meta))
         return exports.createDynamicLink(type, eventId, meta)
     }).catch(err => {
-        console.log("onEventCreate: error " + JSON.stringify(err))
+        console.error("onEventCreate: countEvents error " + JSON.stringify(err))
     })
-    // create a dynamic link for the event
 } 
 
 
@@ -271,12 +256,10 @@ exports.getEventsAvailableToUser = function(req, res, exports, admin) {
         snapshot.forEach(child => {
             const leagueId = child.key
             const league = child.val()
-            //console.log("League: " + JSON.stringify(league) + " private " + league.isPrivate)
             if (league.isPrivate == true) {
                 privateLeagues.push(leagueId)
             }
         })
-        //console.log("All private leagues: " + JSON.stringify(privateLeagues))
 
         // load all events that are public
         let publicEventsRef = admin.database().ref(objectRef).orderByChild('leagueIsPrivate').equalTo(false).limitToLast(50)
@@ -286,11 +269,10 @@ exports.getEventsAvailableToUser = function(req, res, exports, admin) {
     }).then(publicEvents => {
         // publicEvents is a dictionary of {eventId: event}
         // load all leagueIds for a player
-        console.log("Event 1.0: getEventsAvailableToUser " + userId + " public events " + Object.keys(publicEvents).length)
         var userPrivateLeagues = []
         return admin.database().ref(`/playerLeagues/${userId}`).once('value').then(snapshot => {
             if (!snapshot.exists()) {
-                console.log("userPrivateLeagues: playerLeagues does not exist")
+                console.error(`getEventsAvailableToUser: playerLeagues for ${userId} does not exist`)
                 return {}
             } else {
                 snapshot.forEach(child => {
@@ -303,7 +285,6 @@ exports.getEventsAvailableToUser = function(req, res, exports, admin) {
             }
             return eventsForLeagues(userPrivateLeagues, admin, {})
         }).then(privateEvents => {
-            console.log("Event 1.0: getEventsAvailableToUser " + userId + " private events " + Object.keys(privateEvents).length)
             var allEvents = Object.assign({}, publicEvents, privateEvents)
             var results = {}
             Object.keys(allEvents).forEach(function(key) {
@@ -314,7 +295,7 @@ exports.getEventsAvailableToUser = function(req, res, exports, admin) {
             res.status(200).json({"results": results})
         })
     }).catch(err => {
-        console.log("Event 1.0: getEventsAvailableToUser error " + err.message)
+        console.error("Event 1.0: getEventsAvailableToUser error " + err.message)
         res.status(500).json({"error": err.message})
     })
 }
@@ -322,7 +303,6 @@ exports.getEventsAvailableToUser = function(req, res, exports, admin) {
 eventsForLeagues = function(leagueIds, admin, eventAccumulator) {
     return new Promise(function(resolve, reject) {
         if (leagueIds.length == 0) {
-            //console.log("EventsForLeagues: no more leagueIds. Returning " + JSON.stringify(eventAccumulator))
             resolve(eventAccumulator)
         }
         var leagueId = leagueIds[0]
@@ -330,7 +310,6 @@ eventsForLeagues = function(leagueIds, admin, eventAccumulator) {
         return admin.database().ref(`/events`).orderByChild('leagueId').equalTo(leagueId).once('value').then(snapshot => {
             if (snapshot.exists()) {
                 var accumulatedEvents = Object.assign({}, eventAccumulator, snapshot.val())
-                //console.log("EventsForLeagues: leagueId " + leagueId + " accumulator " + JSON.stringify(eventAccumulator) + " new elements " + snapshot.numChildren() + " leagues left: " + remainingLeagues.count + " new accumulatedEvents " + JSON.stringify(accumulatedEvents))
                 return eventsForLeagues(remainingLeagues, admin, accumulatedEvents).then(results => {
                     resolve(results)
                 })
@@ -353,7 +332,6 @@ countEvents = function(snapshot, admin) {
     }
     let leagueRef = `/leagues/${leagueId}`
     let countRef = admin.database().ref(leagueRef).child(`eventCount`)
-    console.log("CountEvents: countRef " + countRef)
 
     // Return the promise from countRef.transaction() so our function
     // waits for this async event to complete before it exits.
@@ -372,11 +350,9 @@ exports.recountEvents = function(snapshot, admin) {
 
     return leagueRef.once('value').then(snapshot => {
         if (!snapshot.exists()) {
-            console.log("RecountEvents: league " + leagueId + " no longer exists")
             return // do not recount if league was deleted
         }
         var leagueId = leagueRef.key
-        console.log("Event v1.0 recountEvents for league " + leagueId)
         return admin.database().ref(`/events`).orderByChild('leagueId').equalTo(leagueId).once('value')
         .then(leagueEventsSnapshot => {
             var active = 0
@@ -385,7 +361,6 @@ exports.recountEvents = function(snapshot, admin) {
                     active = active + 1
                 }
             })
-            console.log("Event v1.0 recountEvents resulted in " + leagueEventsSnapshot.numChildren() + " events, " + active + " active")
             return countRef.transaction((current) => {
                 return active;
             }).then((value) => {
