@@ -68,7 +68,7 @@ exports.postChat = function(req, res, exports, admin) {
     // this triggers side effects in createAction: createFeedItemForEventAction
     // this also triggers side effects in onActionChange: adding player name, createdAt, and pushForChatAction
     return exports.createAction(type, userId, eventId, message, undefined, exports, admin).then((result) => {
-        console.log("postChat: created action with id " + result)
+        console.log("Action 1.0: postChat: created action with id " + result + " from userId " + userId + " message " + message)
         res.status(200).json({"actionId": result})
     })
 }
@@ -121,7 +121,6 @@ exports.onActionChange = function(snapshot, context, exports, admin) {
             return admin.database().ref(ref).update(params)
         }).then(result => {
             // send push
-            console.log("Action 1.0: onActionChange: pushForChatAction with result " + JSON.stringify(result))
             exports.pushForChatAction(actionId, eventId, userId, data)
             return result
         }).catch(err => {
@@ -134,8 +133,6 @@ exports.onActionChange = function(snapshot, context, exports, admin) {
 }
 
 exports.pushForChatAction = function(actionId, eventId, userId, data, exports, admin) {
-    console.log("push for chat: " + actionId + " event: " + eventId + " user: " + userId + " data: " + JSON.stringify(data))
-
     var eventTopic = "event" + eventId
     return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
         return snapshot.val();
@@ -146,7 +143,7 @@ exports.pushForChatAction = function(actionId, eventId, userId, data, exports, a
         var msg = name + " said: " + message
         var title = "Event chat"
         var topic = "event" + eventId 
-        console.log("Sending push for chat by user " + name + " " + email + " for chat to topic " + topic + " with message: " + msg)
+        console.log("Action 1.0: pushForChatAction for chat by user " + name + " " + email + " topic: " + topic + " message: " + msg)
         let info = {"type": data.type, "eventId": eventId}
         return exports.sendPushToTopic(title, topic, msg, info)
     })

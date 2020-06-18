@@ -46,10 +46,10 @@ subscribeToTopic = function(token, topic) {
         .then(function(response) {
         // See the MessagingTopicManagementResponse reference documentation
         // for the contents of response.
-            console.log("Push v1.0: subscribeToTopic: Successfully subscribed " + token + " to topic: " + topic + " successful registrations: " + response["successCount"] + " failures: " + response["failureCount"])
+            return response
         })
         .catch(function(error) {
-            console.error("Push v1.0: subscribeToTopic: Error subscribing to topic: " + topit + " error: " + JSON.stringify(error))
+            return console.error("Push v1.0: subscribeToTopic: Error subscribing to topic: " + topit + " error: " + JSON.stringify(error))
         }
     );
 }

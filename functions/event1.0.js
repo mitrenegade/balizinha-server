@@ -214,11 +214,9 @@ exports.onUserJoinOrLeaveEvent = function(snapshot, context, exports, admin) {
 
     if (!old.exists()) {
         eventUserCreated = true;
-        console.log("OnUserJoinOrLeaveEvent v1.0: created user " + userId + " for event " + eventId + ": " + JSON.stringify(data))
     }
     if (!eventUserCreated) {
         eventUserChanged = true;
-        console.log("OnUserJoinOrLeaveEvent v1.0: updated user " + userId + " for event " + eventId + ": " + JSON.stringify(data))
     }
 
     var join = true
