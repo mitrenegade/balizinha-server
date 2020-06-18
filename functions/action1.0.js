@@ -68,7 +68,7 @@ exports.postChat = function(req, res, exports, admin) {
     // this triggers side effects in createAction: createFeedItemForEventAction
     // this also triggers side effects in onActionChange: adding player name, createdAt, and pushForChatAction
     return exports.createAction(type, userId, eventId, message, undefined, exports, admin).then((result) => {
-        console.log("postChat: created action with id " + result)
+        console.log("Action 1.0: postChat: created action with id " + result + " from userId " + userId + " message " + message)
         res.status(200).json({"actionId": result})
     })
 }
@@ -93,15 +93,13 @@ exports.onActionChange = function(snapshot, context, exports, admin) {
 
     if (!old.exists()) {
         created = true
-        console.log("onActionChange: created action " + actionId + " type " + actionType)
     } else if (old.val()["active"] == true && data["active"] == false) {
         deleted = true
-        console.log("onActionChange: deleted action " + actionId)
+        console.log("Action 1.0: onActionChange: deleted action " + actionId)
     }
 
     if (!created && !deleted) {
         changed = true;
-        console.log("onActionChange: changed action " + actionId)
     }
 
     if (actionType == "chat" && created == true) {
@@ -113,22 +111,20 @@ exports.onActionChange = function(snapshot, context, exports, admin) {
             // add player username and createdAt
             var ref = `/actions/` + actionId
             var name = player["name"]
-            console.log("Action: adding createdAt " + createdAt)
             return admin.database().ref(ref).update({"createdAt": createdAt, "username": name})
         }).then(result => {
             // create eventAction
             var ref = `/eventActions/` + eventId
             // when initializing a dict, use [var] notation. otherwise use params[var] = val
             var params = { [actionId] : true}
-            console.log("Creating eventAction for event " + eventId + " and action " + actionId + " with params " + JSON.stringify(params))
+            console.log("Action 1.0: onActionChange: Creating chat eventAction for event " + eventId + " and action " + actionId + " with params " + JSON.stringify(params))
             return admin.database().ref(ref).update(params)
         }).then(result => {
             // send push
-            console.log("onActionChange: pushForChatAction with result " + JSON.stringify(result))
             exports.pushForChatAction(actionId, eventId, userId, data)
             return result
         }).catch(err => {
-            console.log("onActionChange: error " + err.message + " action " + JSON.stringify(data))
+            console.error("Action 1.0: onActionChange: error " + err.message + " action " + JSON.stringify(data))
             return snapshot
         })
     } else {
@@ -137,8 +133,6 @@ exports.onActionChange = function(snapshot, context, exports, admin) {
 }
 
 exports.pushForChatAction = function(actionId, eventId, userId, data, exports, admin) {
-    console.log("push for chat: " + actionId + " event: " + eventId + " user: " + userId + " data: " + JSON.stringify(data))
-
     var eventTopic = "event" + eventId
     return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
         return snapshot.val();
@@ -149,7 +143,7 @@ exports.pushForChatAction = function(actionId, eventId, userId, data, exports, a
         var msg = name + " said: " + message
         var title = "Event chat"
         var topic = "event" + eventId 
-        console.log("Sending push for chat by user " + name + " " + email + " for chat to topic " + topic + " with message: " + msg)
+        console.log("Action 1.0: pushForChatAction for chat by user " + name + " " + email + " topic: " + topic + " message: " + msg)
         let info = {"type": data.type, "eventId": eventId}
         return exports.sendPushToTopic(title, topic, msg, info)
     })

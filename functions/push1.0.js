@@ -46,10 +46,10 @@ subscribeToTopic = function(token, topic) {
         .then(function(response) {
         // See the MessagingTopicManagementResponse reference documentation
         // for the contents of response.
-            console.log("Push v1.0: Successfully subscribed " + token + " from topic: " + topic + " successful registrations: " + response["successCount"] + " failures: " + response["failureCount"]);
+            return response
         })
         .catch(function(error) {
-            console.log("Push v1.0: Error subscribing to topic:", error);
+            return console.error("Push v1.0: subscribeToTopic: Error subscribing to topic: " + topit + " error: " + JSON.stringify(error))
         }
     );
 }
@@ -59,10 +59,10 @@ unsubscribeFromTopic = function(token, topic) {
         .then(function(response) {
         // See the MessagingTopicManagementResponse reference documentation
         // for the contents of response.
-            console.log("Push v1.0: Successfully unsubscribed " + token + " from topic: " + topic + " successful registrations: " + response["successCount"] + " failures: " + response["failureCount"]);
+            console.log("Push v1.0: unsubscribeToTopic: Successfully unsubscribed " + token + " from topic: " + topic + " successful registrations: " + response["successCount"] + " failures: " + response["failureCount"])
         })
         .catch(function(error) {
-            console.log("Push v1.0: Error unsubscribing from topic:", error);
+            console.error("Push v1.0: unsubscribeToTopic: Error unsubscribing from topic: " + topic + " error: " + JSON.stringify(error))
         }
     );
 }
@@ -70,11 +70,6 @@ unsubscribeFromTopic = function(token, topic) {
 // subscription list on player
 doUpdateSubscriptionStatus = function(userId, topic, enabled) {
     var params = {[topic]: enabled}
-    if (enabled) {
-        console.log("DoUpdateSubscriptionStatus SUBSCRIBE for user: " + userId + " topic " + topic)
-    } else {
-        console.log("DoUpdateSubscriptionStatus UNSUBSCRIBE for user: " + userId + " topic " + topic)
-    }
     return admin.database().ref(`playerTopics/${userId}`).update(params)
 }
 
@@ -90,10 +85,10 @@ exports.subscribeToOrganizerPush = function(snapshot, context, exports, admin) {
     }).then(player => {
         var token = player["fcmToken"]
         if (token && token.length > 0) {
-            console.log("organizer: created " + organizerId + " subscribed to organizers")
+            console.log("Push 1.0: subscribeToOrganizerPush: userId: " + organizerId + " subscribed to " + topic)
             return subscribeToTopic(token, topic)
         } else {
-            console.log("subscribeToOrganizerPush: logged in with id: " + organizerId + " but no token available")
+            console.error("Push 1.0: subscribeToOrganizerPush: logged in with id: " + organizerId + " but no token available")
         }
     }).then(result => {
         return doUpdateSubscriptionStatus(organizerId, topic, true)
@@ -108,7 +103,7 @@ exports.createOrganizerTopicForNewEvent = function(eventId, organizerId, exports
     }).then(player => {
         var token = player["fcmToken"]
         if (token && token.length > 0) {
-            console.log("CreateOrganizerTopicForNewEvent v1.0: " + eventId + " subscribing " + organizerId + " to " + topic)
+            console.log("Push 1.0: createOrganizerTopicForNewEvent: " + eventId + " subscribing " + organizerId + " to " + topic)
             return subscribeToTopic(token, topic)
         } else {
             return console.log("CreateOrganizerTopicForNewEvent v1.0: " + eventId + " user " + organizerId + " did not have fcm token")
@@ -120,21 +115,18 @@ exports.createOrganizerTopicForNewEvent = function(eventId, organizerId, exports
 
 // Events
 exports.subscribeToEvent = function(eventId, userId, join, exports, admin) {
-    console.log("SubscribeToEvent: " + eventId + " user: " + userId + " joining: " + join)
     let topic = topicForEvent(eventId)
     return admin.database().ref(`/players/${userId}`).once('value').then(snapshot => {
         let player = snapshot.val()
         var token = player["fcmToken"]
+        console.log("Push 1.0: subscribeToEvent: userId: " + userId + " topic " + topic + " join " + join)
         if (token == undefined || token.length == 0) {
-            let message = "Subscribe to event topic: no token available"
-            return console.log(message)
+            return console.error("Push 1.0: subscribeToEvent: userId: " + userId + " no token available")
         } else if (join) {
-            console.log("Subscribe to event topic: " + topic + " token: " + token)
             return subscribeToTopic(token, topic).then(result => {
                 return doUpdateSubscriptionStatus(userId, topic, join)
             })
         } else {
-            console.log("Unsubscribe to event topic: " + topic + " token: " + token)
             return unsubscribeFromTopic(token, topic).then(result => {
                 return doUpdateSubscriptionStatus(userId, topic, join)
             })
@@ -179,16 +171,15 @@ exports.subscribeToLeague = function(leagueId, userId, isSubscribe, exports, adm
         }
         let player = snapshot.val()
         var token = player["fcmToken"]
+        console.log("Push 1.0: subscribeToLeague: userId: " + userId + " topic " + topic)
         if (token == undefined || token.length == 0) {
-            console.log("Subscribe to league topic: no token available")
+            console.error("Push 1.0: subscribeToLeague: userId: " + userId + " no token available")
             return // do nothing
         } else if (isSubscribe) {
-            console.log("Subscribe to League topic: " + topic + " token: " + token)
             return subscribeToTopic(token, topic).then(result => {
                 return doUpdateSubscriptionStatus(userId, topic, isSubscribe)
             })
         } else {
-            console.log("Unsubscribe to League topic: " + topic + " token: " + token)
             return unsubscribeFromTopic(token, topic).then(result => {
                 return doUpdateSubscriptionStatus(userId, topic, isSubscribe)
             })

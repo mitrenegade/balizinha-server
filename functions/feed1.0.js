@@ -104,7 +104,6 @@ exports.createFeedItemForEventAction = function(type, userId, actionId, message,
             feedMessage = undefined
         }
 
-        console.log("createFeedItemForEventAction: type " + type + " leagueId " + leagueId + " actionId " + actionId + " message " + message + " default " + defaultMessage)
         return doCreateFeedItem(id, "action", userId, leagueId, actionId, eventId, feedMessage, defaultMessage, exports, admin)
     })
 }
