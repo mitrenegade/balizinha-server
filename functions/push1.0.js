@@ -121,9 +121,7 @@ exports.subscribeToEvent = function(eventId, userId, join, exports, admin) {
         var token = player["fcmToken"]
         console.log("Push 1.0: subscribeToEvent: userId: " + userId + " topic " + topic + " join " + join)
         if (token == undefined || token.length == 0) {
-            let message = "Subscribe to event topic: no token available"
-            console.error("Push 1.0: subscribeToEvent: userId: " + userId + " no token available")
-            return console.log(message)
+            return console.error("Push 1.0: subscribeToEvent: userId: " + userId + " no token available")
         } else if (join) {
             return subscribeToTopic(token, topic).then(result => {
                 return doUpdateSubscriptionStatus(userId, topic, join)
