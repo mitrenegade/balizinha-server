@@ -109,6 +109,11 @@ exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite((sn
     var data = snapshot.after.val()
     var old = snapshot.before.val()
 
+    if (data == undefined) {
+        // player was deleted
+        return
+    }
+
     // update city
     if (data["cityId"] != undefined && data["cityId"] != old["cityId"]) {
         var cityId = data["cityId"]

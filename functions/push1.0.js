@@ -260,8 +260,8 @@ doRefreshPlayerTopics = function(userId) {
                 }
             }
         })
-
-        console.log("refreshAllPlayerTopics: leagues done with snapshot " + JSON.stringify(snapshot))    
+        return topics
+    }).then(topics => {
         return admin.database().ref(`userEvents/${userId}`).once('value').then(snapshot => {
             snapshot.forEach(child => {
                 if (child.exists()) {
@@ -271,23 +271,21 @@ doRefreshPlayerTopics = function(userId) {
                     topics[eventTopic] = active
                 }
             })
-            return console.log("refreshAllPlayerTopics: events done with snapshot " + JSON.stringify(snapshot))    
+            return topics
         })
-    }).then(() => {
-        console.log("refreshAllPlayerTopics: user " + userId + " topics " + JSON.stringify(topics))
+    }).then(topcs => {
+        console.log("Push 1.0: doRefreshPlayerTopics: user " + userId + " topics " + JSON.stringify(topics))
         return admin.database().ref(`playerTopics/${userId}`).update(topics)
     })
 }
 
 exports.refreshAllPlayerTopics = function(req, res, exports, admin) {
     let userId = req.body.userId
-
-    console.log("refreshAllPlayerTopics: user " + userId)
     // user should be subscribed to leagues and events
     return doRefreshPlayerTopics(userId).then(() => {
         res.status(200).json({"success": true})
     }).catch(err => {
-        console.log("refreshAllPlayerTopics error: " + JSON.stringify(err));
+        console.error("Push 1.0: refreshAllPlayerTopics error: " + JSON.stringify(err));
         return res.status(500).json({"error": err.message})
     })
 }
@@ -313,7 +311,7 @@ exports.refreshPlayerSubscriptions = function(req, res, exports, admin) {
         console.log("Push 1.0: RefreshPlayerSubscriptions: subscribed " + subscribed + " unsubscribed " + unsubscribed)
         return res.status(200).json({"success": true, "subscribed": subscribed, "unsubscribed": unsubscribed})        
     }).catch(err => {
-        console.log("Push 1.0: RefreshPlayerSubscriptions error: " + JSON.stringify(err));
+        console.error("Push 1.0: RefreshPlayerSubscriptions error: " + JSON.stringify(err));
         return res.status(500).json({"error": err.message})
     })
 }
