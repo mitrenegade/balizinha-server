@@ -117,7 +117,6 @@ exports.onActionChange = function(snapshot, context, exports, admin) {
             var ref = `/eventActions/` + eventId
             // when initializing a dict, use [var] notation. otherwise use params[var] = val
             var params = { [actionId] : true}
-            console.log("Action 1.0: onActionChange: Creating chat eventAction for event " + eventId + " and action " + actionId + " with params " + JSON.stringify(params))
             return admin.database().ref(ref).update(params)
         }).then(result => {
             // send push
