@@ -80,8 +80,12 @@ exports.onActionChange = function(snapshot, context, exports, admin) {
     var deleted = false
     var data = snapshot.after.val()
     var old = snapshot.before
-    const actionType = data["type"]
+    if (data == undefined) {
+        // action was deleted; do nothing
+        return snapshot
+    }
 
+    const actionType = data["type"]
     var eventId = data["eventId"]
     if (eventId == undefined) {
         eventId = data["event"] // backwards compatibility to support event

@@ -216,3 +216,28 @@ exports.migrateLeagueOwnerIdToLeagueOwnersArray = function(req, res) {
         })
     })
 }
+
+// delete n=500 oldest actions
+exports.cleanupOldActions = function(req, res) {
+    let ref = admin.database().ref('/actions')
+    let query = ref.limitToFirst(50)
+    console.log("*** cleanupOldActions started")
+    return query.once('value').then(snapshot => {
+        console.log("*** actions done with snapshot " + JSON.stringify(snapshot.val()))
+        var updates = {};
+        snapshot.forEach(function(child) {
+            console.log("*** cleanup " + child.key)
+            updates[child.key] = null;
+        });
+        ref.update(updates);
+        let number = Object.keys(updates).length
+        console.log("*** count length " + number)
+        return number
+    }).then(result => {
+        console.log("*** count " + result)
+        return res.status(200).json({"result":"success", "count": result})
+    }).catch(err => {
+        console.error("Admin 1.0: cleanupOldActions: error " + err)
+        return res.status(500).json({"error": JSON.stringify(err)})
+    })
+}
