@@ -151,3 +151,31 @@ exports.pushForChatAction = function(actionId, eventId, userId, data, exports, a
         return exports.sendPushToTopic(title, topic, msg, info)
     })
 }
+
+exports.deleteActionAndEventAction = function(req, res, admin) {
+    let actionId = req.body.actionId
+    if (actionId == undefined) {
+        return res.status(500).json({"error": "Invalid action; id not supplied"})
+    }
+    let ref = admin.database().ref(`/actions`)
+    var promises = []
+    return ref.child(actionId).once('value').then(snapshot => {
+        // console.log("*** actions done with snapshot " + JSON.stringify(snapshot.val()))
+        if (!snapshot.exists()) {
+            return res.status(200).json({"result": "Action already doesn't exist"})
+        }
+        let eventId = snapshot.val().eventId
+        if (eventId != undefined) {
+            let eventRef = admin.database().ref(`/eventActions/${eventId}`)
+            promises.push(eventRef.update({[snapshot.key]: null}))
+        }
+        promises.push(ref.update({[actionId]:null}))
+        return Promise.all(promises)
+    }).then(result => {
+        console.log("*** count " + promises.count)
+        return res.status(200).json({"result":"success", "count": result})
+    }).catch(err => {
+        console.error("Action 1.0: deleteActionAndEventAction: error " + err)
+        return res.status(500).json({"error": JSON.stringify(err)})
+    })
+}

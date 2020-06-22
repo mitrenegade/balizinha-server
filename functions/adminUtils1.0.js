@@ -222,19 +222,26 @@ exports.cleanupOldActions = function(req, res) {
     let ref = admin.database().ref('/actions')
     let query = ref.limitToFirst(500)
     // console.log("*** cleanupOldActions started")
+    var promises = []
     return query.once('value').then(snapshot => {
         // console.log("*** actions done with snapshot " + JSON.stringify(snapshot.val()))
         var updates = {};
         snapshot.forEach(function(child) {
             // console.log("*** cleanup " + child.key)
             updates[child.key] = null;
+
+            let eventId = child.eventId
+            if (eventId != undefined) {
+                let eventRef = admin.database().ref(`/eventActions/${eventId}`)
+                promises.push(eventRef.update({[child.key]: null}))
+            }
         });
-        ref.update(updates);
-        let number = Object.keys(updates).length
+        promises.push(ref.update(updates))
         // console.log("*** count length " + number)
-        return number
+        return Promise.all(promises)
     }).then(result => {
-        console.log("*** count " + result)
+        let number = promises.length
+        console.log("*** count " + number)
         return res.status(200).json({"result":"success", "count": result})
     }).catch(err => {
         console.error("Admin 1.0: cleanupOldActions: error " + err)
