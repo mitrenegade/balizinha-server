@@ -152,7 +152,7 @@ exports.pushForChatAction = function(actionId, eventId, userId, data, exports, a
     })
 }
 
-exports.deleteActionAndEventAction = function(req, res, admin) {
+exports.deleteActionAndEventAction = function(req, res) {
     let actionId = req.body.actionId
     if (actionId == undefined) {
         return res.status(500).json({"error": "Invalid action; id not supplied"})

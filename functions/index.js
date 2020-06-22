@@ -517,7 +517,7 @@ exports.pushForChatAction = function(actionId, eventId, userId, data) {
 
 
 exports.deleteActionAndEventAction = functions.https.onRequest((req, res) => {
-    return action1_0.deleteActionAndEventAction(req, res, admin)
+    return action1_0.deleteActionAndEventAction(req, res)
 })
 
 // PUSH //////////////////////////////////////////////////////////////////////////////////

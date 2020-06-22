@@ -1,4 +1,5 @@
 const admin = require('firebase-admin');
+const globals = require('./globals')
 /*
  updateEventLeagueIsPrivate
  - fixes various missing parameters such as leagueIsPrivate
@@ -222,9 +223,17 @@ exports.cleanupOldActions = function(req, res) {
     let ref = admin.database().ref('/actions')
     let query = ref.limitToFirst(500)
     var promises = []
+
+    let threeMonthsAgo = globals.secondsSince1970() - 3600 * 24 * 90
+
     return query.once('value').then(snapshot => {
         var updates = {};
         snapshot.forEach(function(child) {
+            let createdAt = child.val().createdAt
+            if (createdAt > threeMonthsAgo) {
+                throw new Error(`Admin 1.0: cannot delete actions newer than 3 months old. ${child.key}: ${createdAt}`)
+            }
+
             updates[child.key] = null;
 
             let eventId = child.val().eventId
@@ -247,6 +256,6 @@ exports.cleanupOldActions = function(req, res) {
         return res.status(200).json({"result":"references deleted", "count": number})
     }).catch(err => {
         console.error("Admin 1.0: cleanupOldActions: error " + err)
-        return res.status(500).json({"error": JSON.stringify(err)})
+        return res.status(500).json({"error": err.message})
     })
 }
