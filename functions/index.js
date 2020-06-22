@@ -109,6 +109,11 @@ exports.onPlayerChange = functions.database.ref('/players/{userId}').onWrite((sn
     var data = snapshot.after.val()
     var old = snapshot.before.val()
 
+    if (data == undefined) {
+        // player was deleted
+        return
+    }
+
     // update city
     if (data["cityId"] != undefined && data["cityId"] != old["cityId"]) {
         var cityId = data["cityId"]
@@ -743,6 +748,16 @@ exports.migrateStripeCustomers = functions.https.onRequest((req, res) => {
 exports.migrateLeagueOwnerIdToLeagueOwnersArray = functions.https.onRequest((req, res) => {
     return adminUtils1_0.migrateLeagueOwnerIdToLeagueOwnersArray(req, res)
 })
+
+/**
+ * Deletes old actions. Delete oldest n=500 actions
+ * result: {success}
+ */
+exports.cleanupOldActions = functions.https.onRequest((req, res) => {
+    console.log("CleanupOldActions")
+    return adminUtils1_0.cleanupOldActions(req, res)
+})
+
 /* Resources
 * Versioning: https://github.com/googleapis/nodejs-datastore/tree/master/src
 * Documentation generation: https://jonathas.com/documenting-your-nodejs-api-with-apidoc/
