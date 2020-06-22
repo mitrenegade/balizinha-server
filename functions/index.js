@@ -515,6 +515,11 @@ exports.pushForChatAction = function(actionId, eventId, userId, data) {
     return action1_0.pushForChatAction(actionId, eventId, userId, data, exports, admin)
 }
 
+
+exports.deleteActionAndEventAction = functions.https.onRequest((req, res) => {
+    return action1_0.deleteActionAndEventAction(req, res)
+})
+
 // PUSH //////////////////////////////////////////////////////////////////////////////////
 
 // iOS 1.1.1 and below

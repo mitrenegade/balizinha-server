@@ -1,4 +1,5 @@
 const admin = require('firebase-admin');
+const globals = require('./globals')
 /*
  updateEventLeagueIsPrivate
  - fixes various missing parameters such as leagueIsPrivate
@@ -221,23 +222,40 @@ exports.migrateLeagueOwnerIdToLeagueOwnersArray = function(req, res) {
 exports.cleanupOldActions = function(req, res) {
     let ref = admin.database().ref('/actions')
     let query = ref.limitToFirst(500)
-    // console.log("*** cleanupOldActions started")
+    var promises = []
+
+    let threeMonthsAgo = globals.secondsSince1970() - 3600 * 24 * 90
+
     return query.once('value').then(snapshot => {
-        // console.log("*** actions done with snapshot " + JSON.stringify(snapshot.val()))
         var updates = {};
         snapshot.forEach(function(child) {
-            // console.log("*** cleanup " + child.key)
+            let createdAt = child.val().createdAt
+            if (createdAt > threeMonthsAgo) {
+                throw new Error(`Admin 1.0: cannot delete actions newer than 3 months old. ${child.key}: ${createdAt}`)
+            }
+
             updates[child.key] = null;
+
+            let eventId = child.val().eventId
+            if (eventId != undefined) {
+                let eventRef = admin.database().ref(`/eventActions/${eventId}`)
+                promises.push(eventRef.update({[child.key]: null}))
+            } else {
+                let eventId = child.val().event
+                if (eventId != undefined) {
+                    let eventRef = admin.database().ref(`/eventActions/${eventId}`)
+                    promises.push(eventRef.update({[child.key]: null}))
+                }
+            }
         });
-        ref.update(updates);
-        let number = Object.keys(updates).length
-        // console.log("*** count length " + number)
-        return number
+        promises.push(ref.update(updates))
+        return Promise.all(promises)
     }).then(result => {
-        console.log("*** count " + result)
-        return res.status(200).json({"result":"success", "count": result})
+        let number = promises.length
+        console.log(`Admin 1.0: cleanupOldActions with ${number} references deleted`)
+        return res.status(200).json({"result":"references deleted", "count": number})
     }).catch(err => {
         console.error("Admin 1.0: cleanupOldActions: error " + err)
-        return res.status(500).json({"error": JSON.stringify(err)})
+        return res.status(500).json({"error": err.message})
     })
 }
