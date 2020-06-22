@@ -220,29 +220,35 @@ exports.migrateLeagueOwnerIdToLeagueOwnersArray = function(req, res) {
 // delete n=500 oldest actions
 exports.cleanupOldActions = function(req, res) {
     let ref = admin.database().ref('/actions')
-    let query = ref.limitToFirst(500)
+    let query = ref.limitToFirst(10)
     // console.log("*** cleanupOldActions started")
     var promises = []
     return query.once('value').then(snapshot => {
         // console.log("*** actions done with snapshot " + JSON.stringify(snapshot.val()))
         var updates = {};
         snapshot.forEach(function(child) {
-            // console.log("*** cleanup " + child.key)
             updates[child.key] = null;
 
-            let eventId = child.eventId
+            let eventId = child.val().eventId
             if (eventId != undefined) {
                 let eventRef = admin.database().ref(`/eventActions/${eventId}`)
                 promises.push(eventRef.update({[child.key]: null}))
+            } else {
+                let eventId = child.val().event
+                if (eventId != undefined) {
+                    let eventRef = admin.database().ref(`/eventActions/${eventId}`)
+                    promises.push(eventRef.update({[child.key]: null}))
+                }
             }
+            console.log(`*** cleanup ${child.key} event ${eventId} total ${promises.length}`)
         });
         promises.push(ref.update(updates))
         // console.log("*** count length " + number)
         return Promise.all(promises)
     }).then(result => {
         let number = promises.length
-        console.log("*** count " + number)
-        return res.status(200).json({"result":"success", "count": result})
+        console.log("*** result " + JSON.stringify(result))
+        return res.status(200).json({"result":"success", "count": number})
     }).catch(err => {
         console.error("Admin 1.0: cleanupOldActions: error " + err)
         return res.status(500).json({"error": JSON.stringify(err)})

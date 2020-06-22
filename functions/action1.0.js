@@ -172,8 +172,8 @@ exports.deleteActionAndEventAction = function(req, res, admin) {
         promises.push(ref.update({[actionId]:null}))
         return Promise.all(promises)
     }).then(result => {
-        console.log("*** count " + promises.count)
-        return res.status(200).json({"result":"success", "count": result})
+        console.log("*** count " + promises.length)
+        return res.status(200).json({"result":"success", "count": promises.length})
     }).catch(err => {
         console.error("Action 1.0: deleteActionAndEventAction: error " + err)
         return res.status(500).json({"error": JSON.stringify(err)})
