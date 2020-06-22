@@ -160,7 +160,6 @@ exports.deleteActionAndEventAction = function(req, res, admin) {
     let ref = admin.database().ref(`/actions`)
     var promises = []
     return ref.child(actionId).once('value').then(snapshot => {
-        // console.log("*** actions done with snapshot " + JSON.stringify(snapshot.val()))
         if (!snapshot.exists()) {
             return res.status(200).json({"result": "Action already doesn't exist"})
         }
@@ -168,11 +167,17 @@ exports.deleteActionAndEventAction = function(req, res, admin) {
         if (eventId != undefined) {
             let eventRef = admin.database().ref(`/eventActions/${eventId}`)
             promises.push(eventRef.update({[snapshot.key]: null}))
+        } else {
+            let eventId = snapshot.val().event
+            if (eventId != undefined) {
+                let eventRef = admin.database().ref(`/eventActions/${eventId}`)
+                promises.push(eventRef.update({[snapshot.key]: null}))
+            }
         }
         promises.push(ref.update({[actionId]:null}))
         return Promise.all(promises)
     }).then(result => {
-        console.log("*** count " + promises.length)
+        console.error("Action 1.0: deleteActionAndEventAction deleted action " + actionId)
         return res.status(200).json({"result":"success", "count": promises.length})
     }).catch(err => {
         console.error("Action 1.0: deleteActionAndEventAction: error " + err)

@@ -221,10 +221,8 @@ exports.migrateLeagueOwnerIdToLeagueOwnersArray = function(req, res) {
 exports.cleanupOldActions = function(req, res) {
     let ref = admin.database().ref('/actions')
     let query = ref.limitToFirst(10)
-    // console.log("*** cleanupOldActions started")
     var promises = []
     return query.once('value').then(snapshot => {
-        // console.log("*** actions done with snapshot " + JSON.stringify(snapshot.val()))
         var updates = {};
         snapshot.forEach(function(child) {
             updates[child.key] = null;
@@ -240,15 +238,13 @@ exports.cleanupOldActions = function(req, res) {
                     promises.push(eventRef.update({[child.key]: null}))
                 }
             }
-            console.log(`*** cleanup ${child.key} event ${eventId} total ${promises.length}`)
         });
         promises.push(ref.update(updates))
-        // console.log("*** count length " + number)
         return Promise.all(promises)
     }).then(result => {
         let number = promises.length
-        console.log("*** result " + JSON.stringify(result))
-        return res.status(200).json({"result":"success", "count": number})
+        console.log(`Admin 1.0: cleanupOldActions with ${number} references deleted`)
+        return res.status(200).json({"result":"references deleted", "count": number})
     }).catch(err => {
         console.error("Admin 1.0: cleanupOldActions: error " + err)
         return res.status(500).json({"error": JSON.stringify(err)})
